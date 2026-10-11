@@ -1,0 +1,768 @@
+State,Market,Commodity,Variety,observations,first_date,last_date,coverage,supported
+Maharashtra,APMC Ahilyanagar,Brinjal,Other,297,2023-01-14,2025-12-29,0.275,True
+Maharashtra,APMC Akluj,Brinjal,Other,740,2023-01-01,2025-12-31,0.675,True
+Maharashtra,APMC Bhusaval,Brinjal,Other,846,2023-01-01,2025-12-31,0.772,True
+Maharashtra,APMC Chandrapur,Brinjal,Other,1,2025-01-07,2025-01-07,1.0,False
+Maharashtra,APMC Chandwad,Brinjal,Other,276,2023-01-07,2025-10-04,0.275,True
+Maharashtra,APMC Chattrapati Sambhajinagar,Brinjal,Other,838,2023-01-01,2025-12-31,0.765,True
+Maharashtra,APMC Dharashiv,Brinjal,Other,314,2023-01-01,2025-12-31,0.286,True
+Maharashtra,APMC Ghoti,Brinjal,Other,254,2023-01-02,2025-10-28,0.246,True
+Maharashtra,APMC Hingna,Brinjal,Other,651,2023-01-04,2025-12-31,0.596,True
+Maharashtra,APMC Islampur,Brinjal,Other,396,2023-01-03,2025-12-19,0.366,True
+Maharashtra,APMC Jalgaon,Brinjal,Other,676,2023-01-02,2025-12-26,0.62,True
+Maharashtra,APMC Kalmeshwar,Brinjal,Other,869,2023-01-01,2025-12-28,0.795,True
+Maharashtra,APMC Kalyan,Brinjal,Other,400,2023-06-14,2025-12-30,0.43,True
+Maharashtra,APMC Kamthi,Brinjal,Other,894,2023-01-01,2025-12-29,0.817,True
+Maharashtra,APMC Karad,Brinjal,Other,739,2023-01-01,2025-12-31,0.674,True
+Maharashtra,APMC Khed,Brinjal,Other,81,2023-10-03,2025-03-06,0.155,False
+Maharashtra,APMC Kolhapur,Brinjal,Other,876,2023-01-01,2025-12-31,0.799,True
+Maharashtra,APMC Manchar,Brinjal,Other,660,2023-01-02,2025-12-31,0.603,True
+Maharashtra,APMC Mangal Wedha,Brinjal,Other,884,2023-01-01,2025-12-31,0.807,True
+Maharashtra,APMC Mumbai,Brinjal,Other,811,2023-01-02,2025-12-31,0.741,True
+Maharashtra,APMC Murbad,Brinjal,Other,117,2023-01-06,2025-12-26,0.108,False
+Maharashtra,APMC Nagpur,Brinjal,Other,716,2023-01-01,2025-12-23,0.658,True
+Maharashtra,APMC Nasik,Brinjal,Other,974,2023-01-01,2025-12-31,0.889,True
+Maharashtra,APMC Navapur,Brinjal,Other,241,2023-01-02,2025-08-25,0.249,True
+Maharashtra,APMC Palus,Brinjal,Other,140,2023-01-13,2025-12-16,0.131,False
+Maharashtra,APMC Pandharpur,Brinjal,Other,40,2023-01-12,2025-10-31,0.039,False
+Maharashtra,APMC Panvel,Brinjal,Other,167,2023-01-11,2025-12-22,0.155,False
+Maharashtra,APMC Paranda,Brinjal,Other,2,2024-07-24,2024-07-25,1.0,False
+Maharashtra,APMC Parshiwani,Brinjal,Other,54,2023-07-03,2025-12-01,0.061,False
+Maharashtra,APMC Patan,Brinjal,Other,358,2023-01-02,2025-12-27,0.328,True
+Maharashtra,APMC Pen,Brinjal,Other,412,2023-01-01,2025-12-31,0.376,True
+Maharashtra,APMC Phaltan,Brinjal,Other,444,2023-01-04,2025-12-23,0.409,True
+Maharashtra,APMC Pune,Brinjal,Other,865,2023-01-01,2025-12-31,0.789,True
+Maharashtra,APMC Rahata,Brinjal,Other,810,2023-01-01,2025-12-25,0.743,True
+Maharashtra,APMC Rahuri,Brinjal,Other,448,2023-01-04,2025-12-30,0.41,True
+Maharashtra,APMC Ramtek,Brinjal,Other,556,2023-01-01,2025-12-31,0.507,True
+Maharashtra,APMC Ratnagiri (Nachane),Brinjal,Other,514,2023-01-02,2025-12-31,0.469,True
+Maharashtra,APMC Satara,Brinjal,Other,809,2023-01-01,2025-12-31,0.738,True
+Maharashtra,APMC Shahapur,Brinjal,Other,23,2024-04-24,2025-05-12,0.06,False
+Maharashtra,APMC Shrirampur,Brinjal,Other,832,2023-01-01,2025-12-31,0.759,True
+Maharashtra,APMC Solapur,Brinjal,Other,819,2023-01-04,2025-12-31,0.749,True
+Maharashtra,APMC Vadgaonpeth,Brinjal,Other,452,2023-01-07,2025-12-31,0.415,True
+Maharashtra,APMC Vai,Brinjal,Other,683,2023-01-01,2025-12-29,0.624,True
+Maharashtra,APMC Vita,Brinjal,Other,391,2023-01-05,2025-12-29,0.359,True
+Maharashtra,All markets (state median),Brinjal,All varieties,1086,2023-01-01,2025-12-31,0.991,True
+Maharashtra,Amrawati(Frui & Veg. Market),Brinjal,Other,835,2023-01-02,2025-12-31,0.763,True
+Maharashtra,Chandrapur(Ganjwad),Brinjal,Other,420,2023-01-03,2025-12-29,0.385,True
+Maharashtra,Junnar(Narayangaon),Brinjal,Other,701,2023-01-07,2025-12-31,0.643,True
+Maharashtra,Junnar(Otur),Brinjal,Other,820,2023-01-02,2025-12-31,0.749,True
+Maharashtra,Khed(Chakan),Brinjal,Other,775,2023-01-01,2025-12-31,0.707,True
+Maharashtra,Kolhapur(Malkapur),Brinjal,Other,1,2025-01-04,2025-01-04,1.0,False
+Maharashtra,"Premium Krushi Utpanna Bazar, Nashik",Brinjal,Other,64,2024-05-07,2025-11-05,0.117,False
+Maharashtra,Pune(Khadiki),Brinjal,Other,699,2023-01-01,2025-12-31,0.638,True
+Maharashtra,Pune(Manjri),Brinjal,Other,973,2023-01-03,2025-12-31,0.889,True
+Maharashtra,Pune(Moshi),Brinjal,Other,882,2023-01-01,2025-12-30,0.805,True
+Maharashtra,Pune(Pimpri),Brinjal,Other,596,2023-02-09,2025-12-31,0.564,True
+Maharashtra,Rahuri(Songaon),Brinjal,Other,12,2024-09-03,2025-11-25,0.027,False
+Maharashtra,APMC Ahilyanagar,Cabbage,Other,294,2023-01-14,2025-12-29,0.272,True
+Maharashtra,APMC Akluj,Cabbage,Other,720,2023-01-01,2025-12-31,0.657,True
+Maharashtra,APMC Bhusaval,Cabbage,Other,812,2023-01-01,2025-12-31,0.741,True
+Maharashtra,APMC Chandrapur,Cabbage,Other,4,2023-05-05,2025-08-13,0.005,False
+Maharashtra,APMC Chattrapati Sambhajinagar,Cabbage,Other,817,2023-01-01,2025-12-31,0.745,True
+Maharashtra,APMC Dharashiv,Cabbage,Other,268,2023-01-27,2025-12-26,0.252,True
+Maharashtra,APMC Ghoti,Cabbage,Other,277,2023-01-02,2025-10-28,0.269,True
+Maharashtra,APMC Hingna,Cabbage,Other,418,2023-03-24,2025-12-31,0.412,True
+Maharashtra,APMC Islampur,Cabbage,Other,407,2023-01-03,2025-12-30,0.372,True
+Maharashtra,APMC Jalgaon,Cabbage,Other,707,2023-01-02,2025-12-29,0.647,True
+Maharashtra,APMC Kalmeshwar,Cabbage,Other,672,2023-01-18,2025-12-31,0.623,True
+Maharashtra,APMC Kalyan,Cabbage,Other,403,2023-05-24,2025-12-30,0.423,True
+Maharashtra,APMC Kamthi,Cabbage,Other,786,2023-01-01,2025-12-31,0.717,True
+Maharashtra,APMC Karad,Cabbage,Other,735,2023-01-01,2025-12-31,0.671,True
+Maharashtra,APMC Khed,Cabbage,Other,710,2023-01-01,2025-12-31,0.648,True
+Maharashtra,APMC Kolhapur,Cabbage,Other,877,2023-01-01,2025-12-31,0.8,True
+Maharashtra,APMC Manchar,Cabbage,Other,715,2023-01-02,2025-12-31,0.653,True
+Maharashtra,APMC Mumbai,Cabbage,Other,814,2023-01-02,2025-12-31,0.743,True
+Maharashtra,APMC Murbad,Cabbage,Other,9,2023-01-27,2025-09-19,0.009,False
+Maharashtra,APMC Nagpur,Cabbage,Other,644,2023-01-02,2025-12-31,0.588,True
+Maharashtra,APMC Nasik,Cabbage,Other,971,2023-01-01,2025-12-31,0.886,True
+Maharashtra,APMC Navapur,Cabbage,Other,249,2023-01-01,2025-08-25,0.257,True
+Maharashtra,APMC Palus,Cabbage,Other,79,2023-01-13,2025-09-19,0.081,False
+Maharashtra,APMC Pandharpur,Cabbage,Other,21,2023-01-12,2025-10-31,0.021,False
+Maharashtra,APMC Panvel,Cabbage,Other,347,2023-01-04,2025-12-08,0.324,True
+Maharashtra,APMC Paranda,Cabbage,Other,2,2024-07-24,2024-07-25,1.0,False
+Maharashtra,APMC Parshiwani,Cabbage,Other,3,2023-08-07,2023-09-11,0.083,False
+Maharashtra,APMC Patan,Cabbage,Other,101,2023-01-02,2025-08-04,0.107,False
+Maharashtra,APMC Pen,Cabbage,Other,153,2023-01-01,2024-08-04,0.263,False
+Maharashtra,APMC Pune,Cabbage,Other,866,2023-01-01,2025-12-31,0.79,True
+Maharashtra,APMC Rahata,Cabbage,Other,822,2023-01-01,2025-12-25,0.754,True
+Maharashtra,APMC Rahuri,Cabbage,Other,465,2023-01-01,2025-12-30,0.425,True
+Maharashtra,APMC Ramtek,Cabbage,Other,547,2023-01-01,2025-12-31,0.499,True
+Maharashtra,APMC Ratnagiri (Nachane),Cabbage,Other,549,2023-01-02,2025-12-31,0.501,True
+Maharashtra,APMC Satara,Cabbage,Other,817,2023-01-01,2025-12-31,0.745,True
+Maharashtra,APMC Shrirampur,Cabbage,Other,842,2023-01-01,2025-12-31,0.768,True
+Maharashtra,APMC Solapur,Cabbage,Other,800,2023-01-04,2025-12-31,0.732,True
+Maharashtra,APMC Vadgaonpeth,Cabbage,Other,453,2023-01-09,2025-12-30,0.417,True
+Maharashtra,APMC Vai,Cabbage,Other,751,2023-01-01,2025-12-31,0.685,True
+Maharashtra,All markets (state median),Cabbage,All varieties,1086,2023-01-01,2025-12-31,0.991,True
+Maharashtra,Amrawati(Frui & Veg. Market),Cabbage,Other,836,2023-01-02,2025-12-31,0.763,True
+Maharashtra,Chandrapur(Ganjwad),Cabbage,Other,437,2023-01-14,2025-12-29,0.404,True
+Maharashtra,Junnar(Narayangaon),Cabbage,Other,700,2023-01-07,2025-12-31,0.642,True
+Maharashtra,Junnar(Otur),Cabbage,Other,816,2023-01-02,2025-12-31,0.745,True
+Maharashtra,Khed(Chakan),Cabbage,Other,792,2023-01-01,2025-12-31,0.723,True
+Maharashtra,"Premium Krushi Utpanna Bazar, Nashik",Cabbage,Other,6,2024-05-07,2025-10-23,0.011,False
+Maharashtra,Pune(Khadiki),Cabbage,Other,884,2023-01-01,2025-12-31,0.807,True
+Maharashtra,Pune(Manjri),Cabbage,Other,974,2023-01-03,2025-12-31,0.89,True
+Maharashtra,Pune(Moshi),Cabbage,Other,882,2023-01-01,2025-12-30,0.805,True
+Maharashtra,Pune(Pimpri),Cabbage,Other,936,2023-01-01,2025-12-31,0.854,True
+Maharashtra,Rahuri(Songaon),Cabbage,Other,28,2023-02-21,2025-11-25,0.028,False
+Maharashtra,APMC Ahilyanagar,Cauliflower,Other,295,2023-01-14,2025-12-29,0.273,True
+Maharashtra,APMC Akluj,Cauliflower,Other,649,2023-01-02,2025-12-31,0.593,True
+Maharashtra,APMC Bhusaval,Cauliflower,Other,805,2023-01-01,2025-12-31,0.734,True
+Maharashtra,APMC Chandrapur,Cauliflower,Other,2,2025-01-07,2025-08-13,0.009,False
+Maharashtra,APMC Chattrapati Sambhajinagar,Cauliflower,Other,833,2023-01-01,2025-12-31,0.76,True
+Maharashtra,APMC Dharashiv,Cauliflower,Other,496,2023-01-08,2025-12-31,0.455,True
+Maharashtra,APMC Ghoti,Cauliflower,Other,203,2023-01-02,2025-10-28,0.197,True
+Maharashtra,APMC Hingna,Cauliflower,Other,556,2023-01-04,2025-12-31,0.509,True
+Maharashtra,APMC Islampur,Cauliflower,Other,371,2023-01-03,2025-12-30,0.339,True
+Maharashtra,APMC Jalgaon,Cauliflower,Other,719,2023-01-02,2025-12-22,0.662,True
+Maharashtra,APMC Kalmeshwar,Cauliflower,Other,652,2023-01-01,2025-12-21,0.6,True
+Maharashtra,APMC Kalyan,Cauliflower,Other,402,2023-06-19,2025-12-29,0.435,True
+Maharashtra,APMC Kamthi,Cauliflower,Other,868,2023-01-01,2025-12-25,0.796,True
+Maharashtra,APMC Karad,Cauliflower,Other,730,2023-01-01,2025-12-31,0.666,True
+Maharashtra,APMC Khed,Cauliflower,Other,708,2023-01-01,2025-12-31,0.646,True
+Maharashtra,APMC Kolhapur,Cauliflower,Other,874,2023-01-01,2025-12-31,0.797,True
+Maharashtra,APMC Manchar,Cauliflower,Other,662,2023-01-03,2025-12-30,0.606,True
+Maharashtra,APMC Mumbai,Cauliflower,Other,821,2023-01-02,2025-12-31,0.75,True
+Maharashtra,APMC Nagpur,Cauliflower,Other,664,2023-01-02,2025-12-30,0.607,True
+Maharashtra,APMC Nasik,Cauliflower,Other,970,2023-01-01,2025-12-31,0.885,True
+Maharashtra,APMC Navapur,Cauliflower,Other,255,2023-01-01,2025-08-25,0.263,True
+Maharashtra,APMC Palus,Cauliflower,Other,19,2023-02-24,2025-02-14,0.026,False
+Maharashtra,APMC Pandharpur,Cauliflower,Other,15,2023-01-12,2025-01-29,0.02,False
+Maharashtra,APMC Panvel,Cauliflower,Other,542,2023-01-11,2025-12-12,0.508,True
+Maharashtra,APMC Paranda,Cauliflower,Other,1,2024-07-25,2024-07-25,1.0,False
+Maharashtra,APMC Parshiwani,Cauliflower,Other,1,2023-08-14,2023-08-14,1.0,False
+Maharashtra,APMC Pen,Cauliflower,Other,92,2023-01-16,2024-03-30,0.209,False
+Maharashtra,APMC Pune,Cauliflower,Other,868,2023-01-01,2025-12-31,0.792,True
+Maharashtra,APMC Rahata,Cauliflower,Other,831,2023-01-01,2025-12-26,0.762,True
+Maharashtra,APMC Rahuri,Cauliflower,Other,452,2023-01-01,2025-12-30,0.413,True
+Maharashtra,APMC Ramtek,Cauliflower,Other,543,2023-01-01,2025-12-31,0.495,True
+Maharashtra,APMC Ratnagiri (Nachane),Cauliflower,Other,136,2023-01-02,2025-12-31,0.124,False
+Maharashtra,APMC Sangamner,Cauliflower,Other,70,2023-07-18,2024-12-21,0.134,False
+Maharashtra,APMC Satara,Cauliflower,Other,810,2023-01-01,2025-12-27,0.742,True
+Maharashtra,APMC Shrirampur,Cauliflower,Other,840,2023-01-01,2025-12-31,0.766,True
+Maharashtra,APMC Solapur,Cauliflower,Other,754,2023-01-04,2025-12-31,0.69,True
+Maharashtra,APMC Vadgaonpeth,Cauliflower,Other,365,2023-01-09,2025-12-31,0.335,True
+Maharashtra,APMC Vai,Cauliflower,Other,690,2023-01-02,2025-12-30,0.631,True
+Maharashtra,All markets (state median),Cauliflower,All varieties,1086,2023-01-01,2025-12-31,0.991,True
+Maharashtra,Amrawati(Frui & Veg. Market),Cauliflower,Other,827,2023-01-02,2025-12-23,0.761,True
+Maharashtra,Chandrapur(Ganjwad),Cauliflower,Other,439,2023-01-03,2025-12-31,0.401,True
+Maharashtra,Junnar(Narayangaon),Cauliflower,Other,696,2023-01-07,2025-12-31,0.639,True
+Maharashtra,Junnar(Otur),Cauliflower,Other,819,2023-01-02,2025-12-31,0.748,True
+Maharashtra,Khed(Chakan),Cauliflower,Other,789,2023-01-01,2025-12-31,0.72,True
+Maharashtra,Kolhapur(Malkapur),Cauliflower,Other,1,2025-01-04,2025-01-04,1.0,False
+Maharashtra,"Premium Krushi Utpanna Bazar, Nashik",Cauliflower,Other,6,2024-05-07,2024-06-21,0.13,False
+Maharashtra,Pune(Khadiki),Cauliflower,Other,896,2023-01-01,2025-12-31,0.818,True
+Maharashtra,Pune(Manjri),Cauliflower,Other,976,2023-01-03,2025-12-31,0.892,True
+Maharashtra,Pune(Moshi),Cauliflower,Other,877,2023-01-01,2025-12-22,0.807,True
+Maharashtra,Pune(Pimpri),Cauliflower,Other,744,2023-01-01,2025-12-31,0.679,True
+Maharashtra,Rahuri(Songaon),Cauliflower,Other,29,2023-01-17,2025-11-25,0.028,False
+Maharashtra,APMC Ahilyanagar,Onion,Other,261,2023-01-07,2025-12-25,0.241,True
+Maharashtra,APMC Ahilyanagar,Onion,Red,118,2023-01-07,2025-12-25,0.109,False
+Maharashtra,APMC Akluj,Onion,Other,143,2023-12-22,2025-12-31,0.193,False
+Maharashtra,APMC Akluj,Onion,Red,200,2023-01-01,2025-12-14,0.185,True
+Maharashtra,APMC Akola,Onion,Other,701,2023-05-15,2025-12-31,0.729,True
+Maharashtra,APMC Akole,Onion,Other,247,2023-01-01,2025-12-07,0.23,True
+Maharashtra,APMC Akole,Onion,Red,4,2024-01-02,2025-01-05,0.011,False
+Maharashtra,APMC Amalner,Onion,Other,2,2023-03-29,2023-03-31,0.667,False
+Maharashtra,APMC Ausa,Onion,Local,5,2024-08-02,2025-08-06,0.014,False
+Maharashtra,APMC Baramati,Onion,Other,2,2023-05-15,2023-05-18,0.5,False
+Maharashtra,APMC Baramati,Onion,Red,250,2023-05-17,2025-03-12,0.375,True
+Maharashtra,APMC Barshi,Onion,Other,55,2023-03-08,2024-01-08,0.179,False
+Maharashtra,APMC Bhusaval,Onion,Other,334,2023-05-12,2025-12-31,0.346,True
+Maharashtra,APMC Bhusaval,Onion,Red,483,2023-01-01,2025-06-09,0.542,True
+Maharashtra,APMC Chalisgaon,Onion,Other,2,2023-01-04,2023-03-13,0.029,False
+Maharashtra,APMC Chalisgaon,Onion,Red,22,2023-01-11,2025-12-30,0.02,False
+Maharashtra,APMC Chandrapur,Onion,Other,6,2023-04-18,2025-08-12,0.007,False
+Maharashtra,APMC Chandwad,Onion,Other,543,2023-01-02,2025-12-31,0.496,True
+Maharashtra,APMC Chandwad,Onion,Red,307,2023-01-02,2025-12-31,0.28,True
+Maharashtra,APMC Chattrapati Sambhajinagar,Onion,Other,848,2023-01-01,2025-12-31,0.774,True
+Maharashtra,APMC Devala,Onion,Other,462,2023-01-03,2025-12-31,0.422,True
+Maharashtra,APMC Devala,Onion,Red,252,2023-01-03,2025-12-31,0.23,True
+Maharashtra,APMC Dharashiv,Onion,Red,580,2023-01-05,2025-12-31,0.531,True
+Maharashtra,APMC Dhule,Onion,Other,1,2025-12-26,2025-12-26,1.0,False
+Maharashtra,APMC Dhule,Onion,Red,610,2023-01-02,2025-12-31,0.557,True
+Maharashtra,APMC Dhule,Onion,White,2,2024-01-02,2024-12-14,0.006,False
+Maharashtra,APMC Dindori,Onion,Other,236,2023-03-27,2025-10-09,0.254,True
+Maharashtra,APMC Dindori,Onion,Red,2,2023-03-22,2023-12-14,0.007,False
+Maharashtra,APMC Fulmbri,Onion,Other,11,2025-06-13,2025-09-27,0.103,False
+Maharashtra,APMC Gangapur,Onion,Hybrid,11,2023-03-27,2023-04-20,0.44,False
+Maharashtra,APMC Gangapur,Onion,Other,360,2023-03-25,2025-12-15,0.361,True
+Maharashtra,APMC Gangapur,Onion,Red,15,2023-03-25,2024-12-04,0.024,False
+Maharashtra,APMC Gangapur,Onion,White,8,2023-05-11,2024-06-22,0.02,False
+Maharashtra,APMC Hingna,Onion,Other,31,2023-08-24,2024-04-15,0.131,False
+Maharashtra,APMC Hingna,Onion,Red,397,2024-04-20,2025-12-31,0.639,True
+Maharashtra,APMC Hingna,Onion,White,55,2024-06-20,2025-11-24,0.105,False
+Maharashtra,APMC Indapur,Onion,Other,7,2023-06-19,2025-12-30,0.008,False
+Maharashtra,APMC Indapur,Onion,Red,97,2023-01-25,2025-11-11,0.095,False
+Maharashtra,APMC Islampur,Onion,Local,111,2024-04-02,2025-12-30,0.174,False
+Maharashtra,APMC Jalana,Onion,Local,13,2024-12-28,2025-08-23,0.054,False
+Maharashtra,APMC Jalana,Onion,Other,52,2024-03-04,2025-12-22,0.079,False
+Maharashtra,APMC Jalgaon,Onion,Other,35,2024-10-05,2025-12-12,0.081,False
+Maharashtra,APMC Jalgaon,Onion,Red,703,2023-01-02,2025-12-23,0.647,True
+Maharashtra,APMC Jalgaon,Onion,White,18,2023-12-16,2025-12-12,0.025,False
+Maharashtra,APMC Jamkhed,Onion,Local,239,2023-01-07,2025-12-11,0.223,True
+Maharashtra,APMC Jamkhed,Onion,Other,1,2024-01-22,2024-01-22,1.0,False
+Maharashtra,APMC Jamkhed,Onion,Red,45,2023-12-07,2025-01-09,0.112,False
+Maharashtra,APMC Junnar,Onion,Local,3,2023-01-27,2023-05-16,0.027,False
+Maharashtra,APMC Junnar,Onion,Other,211,2023-01-01,2025-12-28,0.193,True
+Maharashtra,APMC Kada,Onion,Other,67,2023-07-02,2025-08-27,0.085,False
+Maharashtra,APMC Kada,Onion,Red,28,2023-01-01,2025-02-23,0.036,False
+Maharashtra,APMC Kada,Onion,White,4,2024-02-03,2025-08-03,0.007,False
+Maharashtra,APMC Kalvan,Onion,Other,482,2023-01-02,2025-12-30,0.441,True
+Maharashtra,APMC Kalvan,Onion,Red,132,2023-01-17,2025-12-30,0.122,False
+Maharashtra,APMC Kalyan,Onion,1st Sort,423,2023-11-19,2025-12-31,0.547,True
+Maharashtra,APMC Kalyan,Onion,2nd Sort,170,2024-11-26,2025-12-31,0.424,False
+Maharashtra,APMC Kamthi,Onion,Local,664,2023-01-02,2025-12-31,0.606,True
+Maharashtra,APMC Karad,Onion,Other,705,2023-01-01,2025-12-31,0.643,True
+Maharashtra,APMC Karjat,Onion,1st Sort,47,2023-10-18,2024-06-09,0.199,False
+Maharashtra,APMC Karjat,Onion,Local,298,2024-06-29,2025-12-30,0.542,True
+Maharashtra,APMC Karjat(Raigad),Onion,1st Sort,251,2023-01-03,2024-02-23,0.602,True
+Maharashtra,APMC Karjat(Raigad),Onion,Other,1,2023-04-13,2023-04-13,1.0,False
+Maharashtra,APMC Kolhapur,Onion,Other,856,2023-01-02,2025-12-31,0.782,True
+Maharashtra,APMC Kopargaon,Onion,Other,562,2023-01-04,2025-12-31,0.514,True
+Maharashtra,APMC Kopargaon,Onion,Red,250,2023-01-04,2025-12-31,0.229,True
+Maharashtra,APMC Lasalgaon,Onion,Other,617,2023-01-03,2025-12-25,0.567,True
+Maharashtra,APMC Lasalgaon,Onion,Red,357,2023-01-02,2025-12-31,0.326,True
+Maharashtra,APMC Lasur Station,Onion,Other,656,2023-01-02,2025-12-31,0.599,True
+Maharashtra,APMC Lonand,Onion,Other,146,2023-02-09,2025-12-29,0.138,False
+Maharashtra,APMC Lonand,Onion,Red,75,2023-01-05,2025-12-25,0.069,False
+Maharashtra,APMC Malkapur,Onion,Local,206,2023-01-10,2025-12-30,0.19,True
+Maharashtra,APMC Manchar,Onion,Other,345,2023-01-03,2025-12-30,0.316,True
+Maharashtra,APMC Mangal Wedha,Onion,Local,599,2023-07-21,2025-12-31,0.669,True
+Maharashtra,APMC Mangal Wedha,Onion,Other,80,2023-01-02,2023-07-19,0.402,False
+Maharashtra,APMC Manmad,Onion,Other,566,2023-01-02,2025-12-31,0.517,True
+Maharashtra,APMC Manmad,Onion,Red,347,2023-01-02,2025-12-31,0.317,True
+Maharashtra,APMC Manmad,Onion,White,64,2023-12-28,2025-02-28,0.149,False
+Maharashtra,APMC Murbad,Onion,Hybrid,3,2023-01-20,2023-02-03,0.2,False
+Maharashtra,APMC Nagpur,Onion,Red,633,2023-01-04,2025-12-31,0.579,True
+Maharashtra,APMC Nagpur,Onion,White,613,2023-01-04,2025-12-31,0.561,True
+Maharashtra,APMC Nampur,Onion,Other,362,2023-01-03,2025-12-30,0.331,True
+Maharashtra,APMC Nampur,Onion,Red,173,2023-01-03,2025-12-30,0.158,False
+Maharashtra,APMC Nandgaon,Onion,Other,392,2023-01-02,2025-12-30,0.358,True
+Maharashtra,APMC Nandgaon,Onion,Red,207,2023-01-02,2025-12-31,0.189,True
+Maharashtra,APMC Nandura,Onion,Other,14,2023-07-25,2024-08-06,0.037,False
+Maharashtra,APMC Nandurbar,Onion,Red,61,2024-01-29,2024-06-14,0.442,False
+Maharashtra,APMC Nasik,Onion,Other,610,2023-01-04,2025-12-31,0.558,True
+Maharashtra,APMC Nasik,Onion,Pole,288,2023-01-04,2025-12-31,0.263,True
+Maharashtra,APMC Navapur,Onion,Other,107,2023-01-10,2025-06-27,0.119,False
+Maharashtra,APMC Nira,Onion,Other,1,2024-02-17,2024-02-17,1.0,False
+Maharashtra,APMC Paithan,Onion,Other,171,2023-05-03,2025-11-22,0.183,False
+Maharashtra,APMC Paithan,Onion,Red,23,2023-01-04,2025-11-29,0.022,False
+Maharashtra,APMC Pandharpur,Onion,Red,133,2023-01-07,2025-11-27,0.126,False
+Maharashtra,APMC Paranda,Onion,Other,105,2023-05-18,2025-12-16,0.111,False
+Maharashtra,APMC Paranda,Onion,Red,54,2024-11-12,2025-12-31,0.13,False
+Maharashtra,APMC Parner,Onion,Other,302,2023-01-15,2025-12-12,0.284,True
+Maharashtra,APMC Parner,Onion,Red,113,2023-01-01,2025-12-31,0.103,False
+Maharashtra,APMC Pathardi,Onion,Red,345,2023-01-10,2025-12-31,0.317,True
+Maharashtra,APMC Pen,Onion,Red,128,2023-01-02,2024-07-03,0.233,False
+Maharashtra,APMC Phaltan,Onion,Hybrid,83,2023-01-03,2025-12-23,0.076,False
+Maharashtra,APMC Pimpalgaon Baswant,Onion,Other,649,2023-01-02,2025-12-31,0.593,True
+Maharashtra,APMC Pimpalgaon Baswant,Onion,Pole,337,2023-01-02,2025-12-31,0.308,True
+Maharashtra,APMC Pune,Onion,Local,859,2023-01-01,2025-12-31,0.784,True
+Maharashtra,APMC Rahata,Onion,Other,339,2023-01-01,2025-12-12,0.315,True
+Maharashtra,APMC Rahata,Onion,Red,39,2023-01-27,2025-02-04,0.053,False
+Maharashtra,APMC Rahuri,Onion,Other,331,2023-01-01,2025-12-30,0.302,True
+Maharashtra,APMC Rahuri,Onion,Red,20,2023-02-17,2024-01-19,0.059,False
+Maharashtra,APMC Ramtek,Onion,Other,405,2023-01-01,2025-12-31,0.37,True
+Maharashtra,APMC Ratnagiri (Nachane),Onion,Other,2,2024-12-20,2024-12-23,0.5,False
+Maharashtra,APMC Sakri,Onion,Other,110,2025-05-05,2025-12-15,0.489,False
+Maharashtra,APMC Sakri,Onion,Red,344,2023-01-04,2025-04-19,0.411,True
+Maharashtra,APMC Sangamner,Onion,1st Sort,2,2023-01-04,2023-03-01,0.035,False
+Maharashtra,APMC Sangamner,Onion,Other,516,2023-03-29,2025-12-31,0.511,True
+Maharashtra,APMC Sangamner,Onion,Red,278,2023-01-04,2025-12-31,0.254,True
+Maharashtra,APMC Sangamner,Onion,White,1,2023-10-24,2023-10-24,1.0,False
+Maharashtra,APMC Satana,Onion,Other,405,2023-01-04,2025-12-31,0.371,True
+Maharashtra,APMC Satana,Onion,Red,172,2023-01-04,2025-12-31,0.157,False
+Maharashtra,APMC Satara,Onion,Other,803,2023-01-01,2025-12-31,0.733,True
+Maharashtra,APMC Shevgaon,Onion,1st Sort,277,2023-02-13,2025-12-29,0.264,True
+Maharashtra,APMC Shevgaon,Onion,2nd Sort,266,2023-02-13,2025-12-29,0.253,True
+Maharashtra,APMC Shevgaon,Onion,Other,251,2023-02-13,2025-11-03,0.252,True
+Maharashtra,APMC Shirpur,Onion,Red,170,2023-08-02,2025-12-31,0.193,False
+Maharashtra,APMC Shirpur,Onion,White,14,2023-08-16,2025-10-04,0.018,False
+Maharashtra,APMC Shirur,Onion,Other,58,2024-08-16,2025-01-19,0.369,False
+Maharashtra,APMC Shrigonda,Onion,Other,168,2023-01-23,2025-06-15,0.192,False
+Maharashtra,APMC Shrirampur,Onion,Other,327,2023-01-10,2025-12-29,0.301,True
+Maharashtra,APMC Shrirampur,Onion,Red,18,2023-03-03,2023-12-28,0.06,False
+Maharashtra,APMC Sinner,Onion,Other,394,2023-02-14,2025-12-22,0.378,True
+Maharashtra,APMC Sinner,Onion,Red,203,2023-01-03,2025-12-31,0.186,True
+Maharashtra,APMC Solapur,Onion,Red,791,2023-01-04,2025-12-31,0.724,True
+Maharashtra,APMC Solapur,Onion,White,77,2023-08-30,2025-11-19,0.095,False
+Maharashtra,APMC Suragana,Onion,Other,1,2023-06-18,2023-06-18,1.0,False
+Maharashtra,APMC Umrane,Onion,Other,291,2023-01-04,2025-12-30,0.266,True
+Maharashtra,APMC Umrane,Onion,Red,192,2023-01-04,2025-12-30,0.176,True
+Maharashtra,APMC Vadgaonpeth,Onion,Local,374,2023-01-27,2025-12-31,0.35,True
+Maharashtra,APMC Vaduj,Onion,Local,4,2025-12-20,2025-12-31,0.333,False
+Maharashtra,APMC Vaduj,Onion,Red,20,2025-07-05,2025-12-13,0.123,False
+Maharashtra,APMC Vai,Onion,Local,412,2023-01-01,2025-12-28,0.377,True
+Maharashtra,APMC Vaijpur,Onion,Other,502,2023-01-03,2025-12-31,0.459,True
+Maharashtra,APMC Vaijpur,Onion,Red,241,2023-01-03,2025-12-31,0.22,True
+Maharashtra,APMC Varora,Onion,Local,2,2023-03-30,2023-03-31,1.0,False
+Maharashtra,APMC Vita,Onion,Other,165,2023-01-06,2025-12-29,0.152,False
+Maharashtra,APMC Wardha,Onion,Local,24,2023-06-03,2023-08-09,0.353,False
+Maharashtra,APMC Yawal,Onion,Red,231,2023-01-01,2025-12-24,0.212,True
+Maharashtra,APMC Yeola,Onion,Other,450,2023-03-24,2025-12-29,0.445,True
+Maharashtra,APMC Yeola,Onion,Red,225,2023-01-02,2025-12-31,0.205,True
+Maharashtra,All markets (state median),Onion,All varieties,1088,2023-01-01,2025-12-31,0.993,True
+Maharashtra,Amrawati(Frui & Veg. Market),Onion,Local,531,2023-01-02,2025-12-05,0.497,True
+Maharashtra,Amrawati(Frui & Veg. Market),Onion,Red,295,2024-01-01,2025-12-31,0.404,True
+Maharashtra,"Bhagyoday Cotton And Agri Market, Vaijapur, Chattrapati Sambhajinagar",Onion,Hybrid,1,2023-08-04,2023-08-04,1.0,False
+Maharashtra,"Bhagyoday Cotton And Agri Market, Vaijapur, Chattrapati Sambhajinagar",Onion,Local,36,2023-07-01,2024-05-18,0.111,False
+Maharashtra,Chandrapur(Ganjwad),Onion,Other,522,2023-02-14,2025-12-31,0.496,True
+Maharashtra,Chandrapur(Ganjwad),Onion,Red,2,2024-12-23,2025-05-19,0.014,False
+Maharashtra,Chandrapur(Ganjwad),Onion,White,66,2023-01-03,2023-07-31,0.314,False
+Maharashtra,Dindori(Vani),Onion,Other,306,2023-01-02,2025-12-29,0.28,True
+Maharashtra,Dindori(Vani),Onion,Red,166,2023-01-02,2025-03-10,0.208,False
+Maharashtra,"Janata Agri Market (DLS Agro Infrastructure Pvt Ltd), Dist Dhule",Onion,Other,2,2023-09-29,2025-01-16,0.004,False
+Maharashtra,Junnar(Alephata),Onion,Other,377,2023-01-01,2025-12-30,0.344,True
+Maharashtra,Junnar(Narayangaon),Onion,Other,685,2023-01-07,2025-12-31,0.628,True
+Maharashtra,Junnar(Otur),Onion,Local,1,2025-03-07,2025-03-07,1.0,False
+Maharashtra,Junnar(Otur),Onion,Other,242,2023-01-08,2025-12-28,0.223,True
+Maharashtra,Junnar(Otur),Onion,Red,17,2025-01-16,2025-09-04,0.073,False
+Maharashtra,Khed(Chakan),Onion,Other,720,2023-01-01,2025-12-31,0.657,True
+Maharashtra,Kurdwadi(Modnimb),Onion,Red,252,2023-01-05,2025-12-29,0.231,True
+Maharashtra,Lasalgaon(Niphad),Onion,Other,646,2023-01-02,2025-12-30,0.59,True
+Maharashtra,Lasalgaon(Niphad),Onion,Red,304,2023-01-02,2025-12-31,0.278,True
+Maharashtra,Lasalgaon(Vinchur),Onion,Other,651,2023-03-20,2025-12-27,0.642,True
+Maharashtra,Lasalgaon(Vinchur),Onion,Red,333,2023-01-03,2025-12-31,0.304,True
+Maharashtra,"Laxmi-Sopan Agriculture Produce Marketing Co Ltd, Barshi, Dist Solapur",Onion,Other,334,2023-06-29,2025-12-31,0.364,True
+Maharashtra,"Malharshree Khajgi Krushi Utpann Bajar, Chandanpuri Tal Malegaon, Nashik",Onion,Other,108,2023-07-03,2025-12-18,0.12,False
+Maharashtra,"Malharshree Khajgi Krushi Utpann Bajar, Chandanpuri Tal Malegaon, Nashik",Onion,Red,9,2024-11-25,2025-01-10,0.191,False
+Maharashtra,"Mankameshwr Fpc Sanchalit Mankameshwar Khajagi Krushi Utpanna Bajar Ltd, Nifad Nashik",Onion,Other,133,2023-06-08,2025-06-21,0.179,False
+Maharashtra,Mumbai-Onion & Potato Market,Onion,Other,807,2023-01-02,2025-12-31,0.737,True
+Maharashtra,Newasa(Ghodegaon),Onion,Other,283,2023-01-07,2025-12-29,0.26,True
+Maharashtra,Newasa(Ghodegaon),Onion,Red,132,2023-01-07,2025-12-29,0.121,False
+Maharashtra,"Omchatinya Multi State Agro Purpose Co-Op Society, Dist Ahilyanagar",Onion,Other,218,2023-07-07,2025-12-30,0.24,True
+Maharashtra,"Omchatinya Multi State Agro Purpose Co-Op Society, Dist Ahilyanagar",Onion,Red,29,2024-03-08,2025-02-28,0.081,False
+Maharashtra,Pimpalgaon Baswant(Saykheda),Onion,Other,566,2023-01-02,2025-12-26,0.519,True
+Maharashtra,Pimpalgaon Baswant(Saykheda),Onion,Red,262,2023-01-02,2025-12-31,0.239,True
+Maharashtra,"Pratap Nana Mahale Khajgi Krushi Uttpana Bazar, Samati-Dhule",Onion,Other,21,2023-05-12,2023-08-11,0.228,False
+Maharashtra,"Pratap Nana Mahale Khajgi Krushi Uttpana Bazar, Samati-Dhule",Onion,Red,53,2023-05-02,2023-08-09,0.53,False
+Maharashtra,"Pratap Nana Mahale Khajgi Krushi Uttpana Bazar, Samati-Dhule",Onion,White,7,2023-05-04,2023-06-26,0.13,False
+Maharashtra,"Premium Krushi Utpanna Bazar, Nashik",Onion,Other,1,2024-08-01,2024-08-01,1.0,False
+Maharashtra,Pune(Khadiki),Onion,Local,850,2023-01-01,2025-12-31,0.776,True
+Maharashtra,Pune(Manjri),Onion,Local,962,2023-01-03,2025-12-31,0.879,True
+Maharashtra,Pune(Moshi),Onion,Local,885,2023-01-01,2025-12-30,0.808,True
+Maharashtra,Pune(Pimpri),Onion,Local,895,2023-01-12,2025-12-31,0.825,True
+Maharashtra,Pune(Pimpri),Onion,Other,2,2024-11-16,2025-11-03,0.006,False
+Maharashtra,Pune(Pimpri),Onion,Red,3,2023-03-25,2024-05-30,0.007,False
+Maharashtra,Rahuri(Vambori),Onion,Other,327,2023-01-07,2025-12-29,0.301,True
+Maharashtra,Rahuri(Vambori),Onion,Red,120,2023-01-07,2025-12-27,0.11,False
+Maharashtra,"Sangli(Phale, Bhajipala Market)",Onion,Local,777,2023-01-06,2025-12-31,0.712,True
+Maharashtra,Shivsiddha Govind Producer Company Ltd Sanchalit Khajgi Krushi Utpann Bajar Samati-Abhona-Kalwan,Onion,Local,153,2023-07-06,2024-10-28,0.318,False
+Maharashtra,Shivsiddha Govind Producer Company Ltd Sanchalit Khajgi Krushi Utpann Bajar Samati-Abhona-Kalwan,Onion,Other,132,2024-11-06,2025-11-10,0.357,False
+Maharashtra,Shivsiddha Govind Producer Company Ltd Sanchalit Khajgi Krushi Utpann Bajar Samati-Abhona-Kalwan,Onion,Red,21,2024-05-07,2025-02-05,0.076,False
+Maharashtra,"Shree Sairaj Krushi Market, Dist Ahilyanagar",Onion,Local,128,2023-07-05,2025-12-15,0.143,False
+Maharashtra,"Shri Rameshwar Krushi Market, M.Nagar, Tal Deola, Dist Nashik",Onion,Other,172,2023-07-03,2025-12-24,0.19,False
+Maharashtra,"Shri Rameshwar Krushi Market, M.Nagar, Tal Deola, Dist Nashik",Onion,Red,55,2023-10-24,2025-12-24,0.069,False
+Maharashtra,APMC Ahilyanagar,Potato,Other,287,2023-01-14,2025-12-29,0.265,True
+Maharashtra,APMC Akluj,Potato,Local,276,2023-01-02,2025-12-31,0.252,True
+Maharashtra,APMC Akluj,Potato,Other,481,2023-05-31,2025-12-14,0.518,True
+Maharashtra,APMC Akola,Potato,Other,696,2023-05-02,2025-12-31,0.714,True
+Maharashtra,APMC Bhivandi,Potato,Other,1,2025-06-03,2025-06-03,1.0,False
+Maharashtra,APMC Bhusaval,Potato,Other,751,2023-01-01,2025-12-31,0.685,True
+Maharashtra,APMC Chandrapur,Potato,Other,4,2023-05-22,2025-08-13,0.005,False
+Maharashtra,APMC Chattrapati Sambhajinagar,Potato,Other,840,2023-01-03,2025-12-31,0.768,True
+Maharashtra,APMC Dharashiv,Potato,Other,280,2023-01-01,2025-12-30,0.256,True
+Maharashtra,APMC Hingna,Potato,Local,414,2024-04-20,2025-12-31,0.667,True
+Maharashtra,APMC Hingna,Potato,Other,37,2023-07-06,2024-04-15,0.13,False
+Maharashtra,APMC Islampur,Potato,Other,203,2023-01-03,2025-12-30,0.186,True
+Maharashtra,APMC Jalana,Potato,Local,11,2024-06-08,2025-08-23,0.025,False
+Maharashtra,APMC Jalana,Potato,Other,47,2024-03-28,2025-12-22,0.074,False
+Maharashtra,APMC Jalgaon,Potato,Other,735,2023-01-02,2025-12-29,0.672,True
+Maharashtra,APMC Junnar,Potato,Local,113,2023-06-04,2025-12-28,0.12,False
+Maharashtra,APMC Junnar,Potato,Other,34,2023-01-01,2023-05-28,0.23,False
+Maharashtra,APMC Kalyan,Potato,Other,297,2023-04-18,2025-12-31,0.3,True
+Maharashtra,APMC Kamthi,Potato,Local,615,2023-05-30,2025-12-31,0.649,True
+Maharashtra,APMC Kamthi,Potato,Other,93,2023-01-02,2023-05-30,0.624,False
+Maharashtra,APMC Manchar,Potato,Local,145,2023-09-15,2025-09-11,0.199,False
+Maharashtra,APMC Manchar,Potato,Other,241,2023-01-03,2025-12-31,0.22,True
+Maharashtra,APMC Murbad,Potato,Other,5,2023-01-20,2025-07-15,0.006,False
+Maharashtra,APMC Nagpur,Potato,Local,556,2023-05-30,2025-12-31,0.587,True
+Maharashtra,APMC Nagpur,Potato,Other,89,2023-01-01,2023-05-30,0.593,False
+Maharashtra,APMC Nasik,Potato,Other,801,2023-01-04,2025-12-31,0.733,True
+Maharashtra,APMC Pen,Potato,Local,115,2023-06-01,2024-07-03,0.288,False
+Maharashtra,APMC Pen,Potato,Other,51,2023-01-02,2023-05-28,0.347,False
+Maharashtra,APMC Pune,Potato,Local,745,2023-05-30,2025-12-31,0.787,True
+Maharashtra,APMC Pune,Potato,Other,114,2023-01-01,2023-05-30,0.76,False
+Maharashtra,APMC Rahata,Potato,Other,870,2023-01-01,2025-12-26,0.797,True
+Maharashtra,APMC Rahuri,Potato,Other,596,2023-01-01,2025-12-30,0.544,True
+Maharashtra,APMC Ramtek,Potato,Local,375,2023-06-01,2025-12-31,0.397,True
+Maharashtra,APMC Ramtek,Potato,Other,40,2023-01-01,2023-05-28,0.27,False
+Maharashtra,APMC Satara,Potato,Other,723,2023-01-01,2025-12-31,0.66,True
+Maharashtra,APMC Shrirampur,Potato,Other,847,2023-01-01,2025-12-31,0.773,True
+Maharashtra,APMC Solapur,Potato,Local,685,2023-05-30,2025-12-31,0.723,True
+Maharashtra,APMC Solapur,Potato,Other,98,2023-01-04,2023-05-29,0.671,False
+Maharashtra,APMC Vadgaonpeth,Potato,Local,42,2023-05-31,2025-12-31,0.044,False
+Maharashtra,APMC Vadgaonpeth,Potato,Other,12,2023-02-04,2023-05-25,0.108,False
+Maharashtra,APMC Vaduj,Potato,Local,23,2025-07-05,2025-12-31,0.128,False
+Maharashtra,APMC Vai,Potato,Local,432,2023-05-30,2025-12-28,0.458,True
+Maharashtra,APMC Vai,Potato,Other,42,2023-01-01,2023-05-29,0.282,False
+Maharashtra,APMC Vita,Potato,Other,102,2023-02-06,2025-12-14,0.098,False
+Maharashtra,All markets (state median),Potato,All varieties,1086,2023-01-01,2025-12-31,0.991,True
+Maharashtra,Amrawati(Frui & Veg. Market),Potato,Local,728,2023-05-30,2025-12-31,0.769,True
+Maharashtra,Amrawati(Frui & Veg. Market),Potato,Other,109,2023-01-02,2025-09-27,0.109,False
+Maharashtra,Chandrapur(Ganjwad),Potato,Other,507,2023-01-03,2025-12-29,0.464,True
+Maharashtra,Junnar(Alephata),Potato,Other,1,2023-03-14,2023-03-14,1.0,False
+Maharashtra,Junnar(Narayangaon),Potato,Other,509,2023-01-07,2025-12-31,0.467,True
+Maharashtra,Junnar(Otur),Potato,Local,275,2023-05-31,2025-12-29,0.291,True
+Maharashtra,Junnar(Otur),Potato,Other,71,2023-01-02,2023-05-28,0.483,False
+Maharashtra,Khed(Chakan),Potato,Other,747,2023-01-01,2025-12-31,0.682,True
+Maharashtra,Mumbai-Onion & Potato Market,Potato,Other,815,2023-01-02,2025-12-31,0.744,True
+Maharashtra,Pune(Khadiki),Potato,Local,733,2023-06-01,2025-12-31,0.776,True
+Maharashtra,Pune(Khadiki),Potato,Other,76,2023-01-01,2023-05-28,0.514,False
+Maharashtra,Pune(Manjri),Potato,Other,946,2023-01-03,2025-12-31,0.865,True
+Maharashtra,Pune(Moshi),Potato,Local,771,2023-05-30,2025-12-30,0.815,True
+Maharashtra,Pune(Moshi),Potato,Other,123,2023-01-01,2024-07-04,0.223,False
+Maharashtra,Pune(Pimpri),Potato,Local,19,2024-03-05,2025-07-10,0.039,False
+Maharashtra,Pune(Pimpri),Potato,Other,2,2023-02-02,2023-03-01,0.071,False
+Maharashtra,Rahuri(Songaon),Potato,Local,1,2024-09-03,2024-09-03,1.0,False
+Maharashtra,Rahuri(Songaon),Potato,Other,35,2023-01-17,2025-11-25,0.034,False
+Maharashtra,"Sangli(Phale, Bhajipala Market)",Potato,Local,671,2023-05-29,2025-12-31,0.708,True
+Maharashtra,"Sangli(Phale, Bhajipala Market)",Potato,Other,108,2023-01-02,2023-05-27,0.74,False
+Maharashtra,APMC Ahilyanagar,Tomato,Other,297,2023-01-14,2025-12-29,0.275,True
+Maharashtra,APMC Akluj,Tomato,Local,465,2023-12-21,2025-12-31,0.627,True
+Maharashtra,APMC Akluj,Tomato,Other,14,2023-12-22,2025-05-25,0.027,False
+Maharashtra,APMC Akole,Tomato,Other,3,2023-08-20,2023-09-07,0.158,False
+Maharashtra,APMC Bhusaval,Tomato,Other,818,2023-01-01,2025-12-31,0.746,True
+Maharashtra,APMC Chandrapur,Tomato,Other,3,2024-08-26,2025-08-13,0.008,False
+Maharashtra,APMC Chandwad,Tomato,Local,283,2023-01-07,2025-12-21,0.262,True
+Maharashtra,APMC Chattrapati Sambhajinagar,Tomato,Other,851,2023-01-01,2025-12-31,0.776,True
+Maharashtra,APMC Dharashiv,Tomato,Other,52,2023-06-20,2025-12-30,0.056,False
+Maharashtra,APMC Dindori,Tomato,Other,51,2024-10-18,2025-11-03,0.134,False
+Maharashtra,APMC Ghoti,Tomato,Other,190,2023-01-02,2025-10-28,0.184,True
+Maharashtra,APMC Hingna,Tomato,Local,425,2024-04-22,2025-12-31,0.687,True
+Maharashtra,APMC Hingna,Tomato,Other,189,2023-01-04,2024-04-15,0.404,True
+Maharashtra,APMC Islampur,Tomato,Other,441,2023-01-03,2025-12-30,0.403,True
+Maharashtra,APMC Jalgaon,Tomato,Other,723,2023-01-02,2025-12-29,0.661,True
+Maharashtra,APMC Kalmeshwar,Tomato,Other,877,2023-01-01,2025-12-31,0.8,True
+Maharashtra,APMC Kalyan,Tomato,Other,386,2023-06-19,2025-12-29,0.417,True
+Maharashtra,APMC Kamthi,Tomato,Local,969,2023-01-01,2025-12-31,0.884,True
+Maharashtra,APMC Karad,Tomato,Other,737,2023-01-01,2025-12-31,0.672,True
+Maharashtra,APMC Kolhapur,Tomato,Other,877,2023-01-01,2025-12-31,0.8,True
+Maharashtra,APMC Lasalgaon,Tomato,Other,1,2025-10-23,2025-10-23,1.0,False
+Maharashtra,APMC Manchar,Tomato,Other,250,2023-01-12,2025-12-30,0.231,True
+Maharashtra,APMC Mangal Wedha,Tomato,Local,727,2023-07-21,2025-12-31,0.812,True
+Maharashtra,APMC Mangal Wedha,Tomato,Other,165,2023-01-01,2023-07-20,0.821,False
+Maharashtra,APMC Mumbai,Tomato,Local,4,2024-10-02,2025-11-12,0.01,False
+Maharashtra,APMC Mumbai,Tomato,Other,807,2023-01-02,2025-12-31,0.737,True
+Maharashtra,APMC Murbad,Tomato,Other,43,2023-01-06,2025-06-20,0.048,False
+Maharashtra,APMC Nagpur,Tomato,Local,749,2023-01-01,2025-12-31,0.683,True
+Maharashtra,APMC Nagpur,Tomato,Other,717,2023-01-01,2025-12-31,0.654,True
+Maharashtra,APMC Nasik,Tomato,Other,731,2023-01-01,2025-12-31,0.667,True
+Maharashtra,APMC Navapur,Tomato,Other,264,2023-01-01,2025-08-25,0.273,True
+Maharashtra,APMC Palus,Tomato,Other,204,2023-01-13,2025-12-16,0.191,True
+Maharashtra,APMC Pandharpur,Tomato,Other,451,2023-01-12,2025-12-31,0.416,True
+Maharashtra,APMC Panvel,Tomato,Other,839,2023-01-03,2025-12-31,0.767,True
+Maharashtra,APMC Paranda,Tomato,Other,3,2024-07-24,2024-08-02,0.3,False
+Maharashtra,APMC Parshiwani,Tomato,Local,45,2023-07-03,2025-12-01,0.051,False
+Maharashtra,APMC Patan,Tomato,Other,512,2023-01-02,2025-12-31,0.468,True
+Maharashtra,APMC Pen,Tomato,Local,261,2023-01-01,2024-08-09,0.445,True
+Maharashtra,APMC Phaltan,Tomato,Other,452,2023-01-04,2025-12-18,0.419,True
+Maharashtra,APMC Pimpalgaon Baswant,Tomato,Other,842,2023-01-01,2025-12-31,0.768,True
+Maharashtra,APMC Pune,Tomato,Local,872,2023-01-01,2025-12-31,0.796,True
+Maharashtra,APMC Rahata,Tomato,Other,862,2023-01-01,2025-12-26,0.79,True
+Maharashtra,APMC Rahuri,Tomato,Other,545,2023-01-01,2025-12-31,0.497,True
+Maharashtra,APMC Ramtek,Tomato,Other,555,2023-01-01,2025-12-31,0.506,True
+Maharashtra,APMC Ratnagiri (Nachane),Tomato,Other,528,2023-01-02,2025-12-31,0.482,True
+Maharashtra,APMC Sangamner,Tomato,Other,818,2023-01-12,2025-12-31,0.754,True
+Maharashtra,APMC Satara,Tomato,Other,824,2023-01-01,2025-12-31,0.752,True
+Maharashtra,APMC Shrirampur,Tomato,Other,838,2023-01-01,2025-12-31,0.765,True
+Maharashtra,APMC Sinner,Tomato,Other,8,2023-01-22,2023-01-29,1.0,False
+Maharashtra,APMC Solapur,Tomato,Other,817,2023-01-04,2025-12-31,0.747,True
+Maharashtra,APMC Vadgaonpeth,Tomato,Local,513,2023-01-07,2025-12-31,0.471,True
+Maharashtra,APMC Vaduj,Tomato,Local,1,2025-12-30,2025-12-30,1.0,False
+Maharashtra,APMC Vai,Tomato,Local,779,2023-01-01,2025-12-31,0.711,True
+Maharashtra,APMC Vai,Tomato,Other,1,2023-07-31,2023-07-31,1.0,False
+Maharashtra,APMC Vita,Tomato,Other,397,2023-01-05,2025-12-29,0.364,True
+Maharashtra,All markets (state median),Tomato,All varieties,1086,2023-01-01,2025-12-31,0.991,True
+Maharashtra,Amrawati(Frui & Veg. Market),Tomato,Local,837,2023-01-02,2025-12-31,0.764,True
+Maharashtra,Chandrapur(Ganjwad),Tomato,Other,458,2023-01-07,2025-12-31,0.42,True
+Maharashtra,Junnar(Narayangaon),Tomato,Local,812,2023-01-01,2025-12-31,0.741,True
+Maharashtra,Junnar(Narayangaon),Tomato,Other,8,2023-07-18,2025-04-22,0.012,False
+Maharashtra,Junnar(Otur),Tomato,Local,46,2023-12-19,2025-09-29,0.071,False
+Maharashtra,Khed(Chakan),Tomato,Other,798,2023-01-01,2025-12-31,0.728,True
+Maharashtra,Kolhapur(Malkapur),Tomato,Other,1,2025-01-04,2025-01-04,1.0,False
+Maharashtra,Pune(Khadiki),Tomato,Local,874,2023-01-01,2025-12-31,0.797,True
+Maharashtra,Pune(Khadiki),Tomato,Other,1,2023-03-24,2023-03-24,1.0,False
+Maharashtra,Pune(Manjri),Tomato,Other,979,2023-01-03,2025-12-31,0.895,True
+Maharashtra,Pune(Moshi),Tomato,Local,892,2023-01-01,2025-12-30,0.815,True
+Maharashtra,Pune(Pimpri),Tomato,Local,975,2023-01-01,2025-12-31,0.89,True
+Maharashtra,Rahuri(Songaon),Tomato,Other,34,2023-01-17,2025-11-25,0.033,False
+Maharashtra,"Shri Rameshwar Krushi Market, M.Nagar, Tal Deola, Dist Nashik",Tomato,Local,41,2023-08-24,2024-10-10,0.099,False
+Maharashtra,APMC Aarni,Wheat,Maharashtra 2189,3,2023-09-05,2025-03-26,0.005,False
+Maharashtra,APMC Achalpur,Wheat,Other,333,2023-01-07,2025-12-29,0.306,True
+Maharashtra,APMC Ahilyanagar,Wheat,Other,394,2023-01-09,2025-12-31,0.362,True
+Maharashtra,APMC Ahmedpur,Wheat,Other,240,2023-01-03,2025-12-27,0.22,True
+Maharashtra,APMC Akhadabalapur,Wheat,Maharashtra 2189,44,2023-01-11,2025-09-20,0.045,False
+Maharashtra,APMC Akkalkot,Wheat,Other,18,2023-04-25,2025-08-07,0.022,False
+Maharashtra,APMC Akkalkuwa,Wheat,Other,43,2023-03-06,2025-04-02,0.057,False
+Maharashtra,APMC Akluj,Wheat,Other,47,2025-02-07,2025-11-27,0.16,False
+Maharashtra,APMC Akluj,Wheat,Sharbati,3,2025-01-31,2025-02-22,0.13,False
+Maharashtra,APMC Akola,Wheat,Other,784,2023-01-02,2025-12-31,0.716,True
+Maharashtra,APMC Akola,Wheat,Sharbati,249,2023-01-02,2025-09-27,0.249,True
+Maharashtra,APMC Akot,Wheat,147 Average,82,2023-07-19,2025-10-11,0.1,False
+Maharashtra,APMC Amalner,Wheat,Other,691,2023-01-04,2025-12-05,0.648,True
+Maharashtra,APMC Amarawati,Wheat,147 Average,230,2023-01-04,2024-07-31,0.4,True
+Maharashtra,APMC Amarawati,Wheat,Other,758,2023-01-04,2025-12-31,0.694,True
+Maharashtra,APMC Ambad (Vadigodri),Wheat,Other,369,2023-01-04,2025-09-13,0.375,True
+Maharashtra,APMC Ambejogai,Wheat,Red,19,2024-03-04,2025-08-14,0.036,False
+Maharashtra,APMC Anajngaon,Wheat,Other,145,2023-01-03,2025-12-02,0.136,False
+Maharashtra,APMC Arvi,Wheat,Other,9,2025-04-25,2025-06-04,0.22,False
+Maharashtra,APMC Ashti,Wheat,Other,2,2023-03-29,2023-06-02,0.03,False
+Maharashtra,APMC Ashti(Jalna),Wheat,Maharashtra 2189,6,2024-03-05,2025-03-11,0.016,False
+Maharashtra,APMC Ashti(Jalna),Wheat,Other,10,2023-01-23,2025-01-07,0.014,False
+Maharashtra,APMC Aurad Shahajani,Wheat,Maharashtra 2189,293,2023-02-11,2025-12-31,0.278,True
+Maharashtra,APMC Ausa,Wheat,Maharashtra 2189,159,2023-01-05,2025-12-28,0.146,False
+Maharashtra,APMC BHOKARDAN,Wheat,Other,137,2023-01-07,2025-12-27,0.126,False
+Maharashtra,APMC Babhulgaon,Wheat,Other,52,2023-04-18,2025-09-26,0.058,False
+Maharashtra,APMC Balapur,Wheat,Other,60,2023-01-01,2025-11-30,0.056,False
+Maharashtra,APMC Baramati,Wheat,Kalyan,214,2023-01-02,2025-12-29,0.196,True
+Maharashtra,APMC Baramati,Wheat,Maharashtra 2189,215,2023-01-02,2025-12-29,0.197,True
+Maharashtra,APMC Barshi,Wheat,Bansi,3,2023-04-03,2023-06-12,0.042,False
+Maharashtra,APMC Barshi,Wheat,Other,390,2023-01-18,2025-12-29,0.362,True
+Maharashtra,APMC Basmat,Wheat,Maharashtra 2189,4,2023-02-23,2023-03-08,0.286,False
+Maharashtra,APMC Beed,Wheat,Other,515,2023-01-03,2025-12-26,0.473,True
+Maharashtra,APMC Bhandara,Wheat,Maharashtra 2189,294,2023-03-21,2025-12-22,0.292,True
+Maharashtra,APMC Bhiwapur,Wheat,Other,28,2023-05-28,2025-08-10,0.035,False
+Maharashtra,APMC Bhokar,Wheat,Other,193,2023-02-10,2025-10-08,0.199,True
+Maharashtra,APMC Bhusaval,Wheat,Other,1,2023-11-11,2023-11-11,1.0,False
+Maharashtra,APMC Buldhana,Wheat,Other,2,2023-02-27,2024-05-25,0.004,False
+Maharashtra,APMC Chakur,Wheat,Other,86,2023-02-08,2025-11-27,0.084,False
+Maharashtra,APMC Chalisgaon,Wheat,Maharashtra 2189,80,2023-01-02,2023-06-19,0.473,False
+Maharashtra,APMC Chalisgaon,Wheat,Other,383,2023-06-20,2025-12-22,0.418,True
+Maharashtra,APMC Chandur Bazar,Wheat,Other,497,2023-01-04,2025-12-23,0.458,True
+Maharashtra,APMC Chandur Railway,Wheat,Other,49,2023-02-27,2025-11-14,0.049,False
+Maharashtra,APMC Chattrapati Sambhajinagar,Wheat,Other,723,2023-01-03,2025-12-31,0.661,True
+Maharashtra,APMC Chikali,Wheat,Other,574,2023-01-04,2025-12-31,0.525,True
+Maharashtra,APMC Chopda,Wheat,Other,433,2023-01-02,2025-11-12,0.414,True
+Maharashtra,APMC Daryapur,Wheat,Other,18,2023-02-25,2025-01-24,0.026,False
+Maharashtra,APMC Deoulgaon Raja,Wheat,Other,640,2023-01-02,2025-12-31,0.584,True
+Maharashtra,APMC Devala,Wheat,Maharashtra 2189,318,2023-01-17,2025-12-31,0.294,True
+Maharashtra,APMC Dhadgaon,Wheat,Other,7,2024-03-19,2024-04-06,0.368,False
+Maharashtra,APMC Dhamngaon-Railway,Wheat,Other,194,2023-03-08,2025-09-24,0.208,True
+Maharashtra,APMC Dharangaon,Wheat,Other,149,2023-01-07,2025-11-10,0.143,False
+Maharashtra,APMC Dharni,Wheat,Other,53,2023-06-22,2025-12-29,0.057,False
+Maharashtra,APMC Dhule,Wheat,Other,700,2023-01-02,2025-12-31,0.639,True
+Maharashtra,APMC Digras,Wheat,Other,235,2023-01-06,2025-11-12,0.226,True
+Maharashtra,APMC Dondaicha,Wheat,Other,636,2023-01-03,2025-12-31,0.581,True
+Maharashtra,APMC Dound,Wheat,Maharashtra 2189,243,2023-01-01,2025-12-25,0.223,True
+Maharashtra,APMC Dudhani,Wheat,Maharashtra 2189,189,2023-04-12,2025-12-31,0.19,True
+Maharashtra,APMC Fulmbri,Wheat,Other,37,2023-08-02,2025-05-19,0.056,False
+Maharashtra,APMC Gangakhed,Wheat,Other,430,2023-01-02,2025-12-31,0.393,True
+Maharashtra,APMC Gangapur,Wheat,Bansi,2,2023-12-18,2025-01-27,0.005,False
+Maharashtra,APMC Gangapur,Wheat,Other,547,2023-01-07,2025-12-12,0.511,True
+Maharashtra,APMC Gevrai,Wheat,Other,633,2023-01-02,2025-12-31,0.578,True
+Maharashtra,APMC Ghansawangi,Wheat,147 Average,4,2023-03-15,2023-10-25,0.018,False
+Maharashtra,APMC Ghansawangi,Wheat,Maharashtra 2189,23,2023-03-08,2025-05-21,0.029,False
+Maharashtra,APMC Ghansawangi,Wheat,Other,2,2023-04-12,2023-08-23,0.015,False
+Maharashtra,APMC Himayatnagar,Wheat,Other,15,2023-02-23,2025-09-18,0.016,False
+Maharashtra,APMC Hinganghat,Wheat,Other,708,2023-01-06,2025-12-31,0.649,True
+Maharashtra,APMC Hingoli,Wheat,Sharbati,328,2023-01-02,2025-12-31,0.3,True
+Maharashtra,APMC Indapur,Wheat,Maharashtra 2189,2,2023-02-23,2024-11-25,0.003,False
+Maharashtra,APMC Indapur,Wheat,Other,15,2023-01-19,2025-04-21,0.018,False
+Maharashtra,APMC Jafrabad,Wheat,Other,20,2023-02-17,2025-10-03,0.021,False
+Maharashtra,APMC Jalana,Wheat,147 Average,17,2023-01-04,2023-09-01,0.071,False
+Maharashtra,APMC Jalana,Wheat,Other,730,2023-01-23,2025-12-31,0.68,True
+Maharashtra,APMC Jalgaon,Wheat,147 Average,165,2023-03-01,2025-11-27,0.165,False
+Maharashtra,APMC Jalgaon,Wheat,Maharashtra 2189,6,2023-03-16,2025-11-18,0.006,False
+Maharashtra,APMC Jalgaon(Jamod),Wheat,Maharashtra 2189,1,2025-07-22,2025-07-22,1.0,False
+Maharashtra,APMC Jamkhed,Wheat,Maharashtra 2189,198,2023-01-06,2025-07-14,0.215,True
+Maharashtra,APMC Jamkhed,Wheat,Other,539,2023-01-06,2025-12-30,0.494,True
+Maharashtra,APMC Jawali,Wheat,Other,8,2024-03-27,2025-04-03,0.021,False
+Maharashtra,APMC Jintur,Wheat,Other,55,2023-03-04,2025-12-10,0.054,False
+Maharashtra,APMC Kada,Wheat,Maharashtra 2189,186,2023-01-01,2025-09-02,0.191,True
+Maharashtra,APMC Kada,Wheat,Other,7,2023-10-26,2025-05-25,0.012,False
+Maharashtra,APMC Kaij,Wheat,Other,139,2023-01-02,2025-12-29,0.127,False
+Maharashtra,APMC Kalamb,Wheat,Other,19,2024-03-05,2025-11-07,0.031,False
+Maharashtra,APMC Kalamb (Dharashiv),Wheat,Bansi,22,2023-01-30,2025-10-06,0.022,False
+Maharashtra,APMC Kalamb (Dharashiv),Wheat,Maharashtra 2189,415,2023-01-09,2025-12-29,0.382,True
+Maharashtra,APMC Kalvan,Wheat,Other,94,2023-03-13,2025-12-30,0.092,False
+Maharashtra,APMC Kalyan,Wheat,Kalyan,1,2024-05-14,2024-05-14,1.0,False
+Maharashtra,APMC Kalyan,Wheat,Sharbati,443,2023-05-10,2025-12-31,0.458,True
+Maharashtra,APMC Kandhar,Wheat,Other,101,2023-01-03,2025-12-31,0.092,False
+Maharashtra,APMC Kannad,Wheat,Other,547,2023-01-01,2025-12-31,0.499,True
+Maharashtra,APMC Karanja,Wheat,Other,655,2023-01-02,2025-12-30,0.599,True
+Maharashtra,APMC Karjat,Wheat,Other,389,2024-02-28,2025-12-22,0.586,True
+Maharashtra,APMC Karjat(Raigad),Wheat,Other,330,2023-01-01,2024-02-23,0.788,True
+Maharashtra,APMC Karmala,Wheat,Other,476,2023-01-25,2025-12-30,0.444,True
+Maharashtra,APMC Katol,Wheat,Other,660,2023-01-02,2025-12-30,0.603,True
+Maharashtra,APMC Khamgaon,Wheat,Other,637,2023-01-03,2025-12-31,0.582,True
+Maharashtra,APMC Kille Dharur,Wheat,Other,229,2023-01-23,2025-11-11,0.224,True
+Maharashtra,APMC Kinwat,Wheat,Other,1,2024-03-28,2024-03-28,1.0,False
+Maharashtra,APMC Kopargaon,Wheat,Other,774,2023-01-04,2025-12-31,0.708,True
+Maharashtra,APMC Kurdwadi,Wheat,Other,63,2023-02-27,2025-11-26,0.063,False
+Maharashtra,APMC Lakhandur,Wheat,Other,4,2023-04-08,2024-03-20,0.011,False
+Maharashtra,APMC Lasalgaon,Wheat,Maharashtra 2189,543,2023-01-04,2025-12-31,0.497,True
+Maharashtra,APMC Lasur Station,Wheat,Other,428,2023-01-02,2025-12-08,0.399,True
+Maharashtra,APMC Latur,Wheat,Maharashtra 2189,30,2023-07-01,2023-08-23,0.556,False
+Maharashtra,APMC Loha,Wheat,Other,220,2023-01-18,2025-12-31,0.204,True
+Maharashtra,APMC Lonar,Wheat,Maharashtra 2189,10,2024-08-22,2025-05-26,0.036,False
+Maharashtra,APMC Lonar,Wheat,Other,545,2023-01-02,2025-12-30,0.498,True
+Maharashtra,APMC Mahagaon,Wheat,Other,1,2025-03-13,2025-03-13,1.0,False
+Maharashtra,APMC Majalgaon,Wheat,Other,600,2023-01-02,2025-12-31,0.548,True
+Maharashtra,APMC Malegaon,Wheat,Other,529,2023-01-02,2025-12-31,0.483,True
+Maharashtra,APMC Malegaon(Washim),Wheat,Other,11,2023-05-23,2025-07-31,0.014,False
+Maharashtra,APMC Malkapur,Wheat,Other,717,2023-01-04,2025-12-31,0.656,True
+Maharashtra,APMC Mandhal,Wheat,Other,6,2023-02-23,2023-04-06,0.14,False
+Maharashtra,APMC Mangal Wedha,Wheat,Other,196,2023-01-02,2025-12-29,0.179,True
+Maharashtra,APMC Mangrulpeer,Wheat,Kalyan,288,2024-03-22,2025-12-31,0.443,True
+Maharashtra,APMC Mangrulpeer,Wheat,Maharashtra 2189,11,2024-04-24,2025-08-06,0.023,False
+Maharashtra,APMC Mangrulpeer,Wheat,Other,209,2023-01-09,2025-12-31,0.192,True
+Maharashtra,APMC Mangrulpeer,Wheat,Sharbati,49,2024-04-15,2025-06-02,0.118,False
+Maharashtra,APMC Manmad,Wheat,Other,360,2023-01-06,2025-12-31,0.33,True
+Maharashtra,APMC Manora,Wheat,Other,374,2023-01-11,2025-12-19,0.348,True
+Maharashtra,APMC Mantha,Wheat,Other,79,2023-01-27,2025-11-07,0.078,False
+Maharashtra,APMC Manwat,Wheat,Other,73,2023-02-06,2025-10-08,0.075,False
+Maharashtra,APMC Mauda,Wheat,Other,11,2023-03-15,2025-05-30,0.014,False
+Maharashtra,APMC Mehekar,Wheat,Other,566,2023-01-04,2025-11-26,0.535,True
+Maharashtra,APMC Mohol,Wheat,Sharbati,5,2023-03-24,2025-07-30,0.006,False
+Maharashtra,APMC Morshi,Wheat,Other,212,2023-01-02,2025-12-22,0.195,True
+Maharashtra,APMC Motala,Wheat,Other,11,2024-08-01,2025-12-29,0.021,False
+Maharashtra,APMC Mudkhed,Wheat,Other,21,2023-01-06,2025-09-12,0.021,False
+Maharashtra,APMC Mukhed,Wheat,Other,1,2025-09-26,2025-09-26,1.0,False
+Maharashtra,APMC Mumbai,Wheat,Other,583,2023-01-02,2025-12-31,0.532,True
+Maharashtra,APMC Murtizapur,Wheat,Other,459,2023-01-04,2025-12-31,0.42,True
+Maharashtra,APMC Murum,Wheat,Bansi,261,2023-02-08,2025-12-31,0.247,True
+Maharashtra,APMC Nagpur,Wheat,Other,670,2023-01-02,2025-12-31,0.612,True
+Maharashtra,APMC Nagpur,Wheat,Sharbati,667,2023-01-02,2025-12-30,0.61,True
+Maharashtra,APMC Nampur,Wheat,Other,1,2023-03-14,2023-03-14,1.0,False
+Maharashtra,APMC Nanded,Wheat,Other,11,2023-05-27,2025-03-21,0.017,False
+Maharashtra,APMC Nanded,Wheat,Sharbati,403,2023-01-27,2025-12-26,0.378,True
+Maharashtra,APMC Nandgaon,Wheat,Maharashtra 2189,581,2023-01-06,2025-12-31,0.533,True
+Maharashtra,APMC Nandgaon Khandeshwar,Wheat,Other,140,2023-02-15,2025-10-13,0.144,False
+Maharashtra,APMC Nandura,Wheat,Other,277,2023-01-13,2025-12-27,0.256,True
+Maharashtra,APMC Nandurbar,Wheat,Bansi,1,2025-03-04,2025-03-04,1.0,False
+Maharashtra,APMC Nandurbar,Wheat,Other,388,2023-01-02,2025-12-29,0.355,True
+Maharashtra,APMC Navapur,Wheat,Other,126,2023-01-11,2025-10-13,0.125,False
+Maharashtra,APMC Ner Parasopant,Wheat,Other,26,2024-03-02,2025-03-19,0.068,False
+Maharashtra,APMC Newasa,Wheat,Maharashtra 2189,69,2023-02-28,2025-12-17,0.067,False
+Maharashtra,APMC Newasa,Wheat,Other,1,2025-04-16,2025-04-16,1.0,False
+Maharashtra,APMC Nilanga,Wheat,Maharashtra 2189,22,2023-01-06,2025-08-19,0.023,False
+Maharashtra,APMC Pachora,Wheat,Other,559,2023-01-09,2025-12-30,0.514,True
+Maharashtra,APMC Paithan,Wheat,Bansi,775,2023-01-01,2025-12-31,0.707,True
+Maharashtra,APMC Palam,Wheat,Other,26,2024-04-04,2025-10-31,0.045,False
+Maharashtra,APMC Palghar,Wheat,Other,468,2023-01-01,2025-12-31,0.427,True
+Maharashtra,APMC Palus,Wheat,Other,4,2024-03-19,2025-07-22,0.008,False
+Maharashtra,APMC Pandhakawada,Wheat,Other,1,2025-07-14,2025-07-14,1.0,False
+Maharashtra,APMC Pandharpur,Wheat,Maharashtra 2189,2,2023-06-20,2024-03-22,0.007,False
+Maharashtra,APMC Parali Vaijyanath,Wheat,Other,67,2023-03-14,2025-12-29,0.066,False
+Maharashtra,APMC Paranda,Wheat,Maharashtra 2189,4,2024-10-10,2025-05-17,0.018,False
+Maharashtra,APMC Paranda,Wheat,Other,182,2023-01-30,2025-12-29,0.171,True
+Maharashtra,APMC Parbhani,Wheat,Maharashtra 2189,17,2023-01-03,2025-05-19,0.02,False
+Maharashtra,APMC Parbhani,Wheat,Other,227,2023-01-22,2025-12-28,0.212,True
+Maharashtra,APMC Parola,Wheat,Kalyan,194,2023-01-01,2025-12-31,0.177,True
+Maharashtra,APMC Partur,Wheat,Maharashtra 2189,388,2023-01-07,2025-12-30,0.356,True
+Maharashtra,APMC Pathardi,Wheat,Maharashtra 2189,243,2023-01-11,2025-12-31,0.224,True
+Maharashtra,APMC Pathari,Wheat,Other,237,2023-02-11,2025-10-30,0.239,True
+Maharashtra,APMC Patoda,Wheat,Other,1,2025-04-18,2025-04-18,1.0,False
+Maharashtra,APMC Patur,Wheat,Maharashtra 2189,161,2023-01-20,2025-12-12,0.152,False
+Maharashtra,APMC Pavani,Wheat,Kalyan,1,2025-04-08,2025-04-08,1.0,False
+Maharashtra,APMC Phaltan,Wheat,Other,49,2023-01-29,2025-11-30,0.047,False
+Maharashtra,APMC Pulgaon,Wheat,Other,82,2023-02-24,2024-06-05,0.175,False
+Maharashtra,APMC Pune,Wheat,Sharbati,402,2023-01-02,2025-12-31,0.367,True
+Maharashtra,APMC Purna,Wheat,Maharashtra 2189,28,2023-03-10,2025-05-02,0.036,False
+Maharashtra,APMC Pusad,Wheat,Other,80,2023-02-20,2025-11-08,0.081,False
+Maharashtra,APMC Rahata,Wheat,Other,720,2023-01-04,2025-12-04,0.675,True
+Maharashtra,APMC Rahuri,Wheat,Other,486,2023-01-11,2025-12-30,0.448,True
+Maharashtra,APMC Ramtek,Wheat,Other,75,2023-01-12,2024-09-26,0.12,False
+Maharashtra,APMC Raver,Wheat,Other,446,2023-01-03,2025-12-29,0.408,True
+Maharashtra,APMC Sailu,Wheat,Other,41,2023-02-28,2025-12-31,0.039,False
+Maharashtra,APMC Sakri,Wheat,Other,115,2023-03-15,2025-12-03,0.116,False
+Maharashtra,APMC Samudrapur,Wheat,Other,7,2025-05-05,2025-06-28,0.127,False
+Maharashtra,APMC Sangamner,Wheat,Other,111,2023-01-11,2025-12-30,0.102,False
+Maharashtra,APMC Sangli,Wheat,Other,609,2023-01-02,2025-12-31,0.556,True
+Maharashtra,APMC Satana,Wheat,Other,481,2023-01-04,2025-12-31,0.44,True
+Maharashtra,APMC Savner,Wheat,Other,563,2023-02-01,2025-12-17,0.536,True
+Maharashtra,APMC Sengoan,Wheat,Other,2,2024-03-13,2024-03-20,0.25,False
+Maharashtra,APMC Shahada,Wheat,Other,548,2023-01-04,2025-12-29,0.502,True
+Maharashtra,APMC Shegaon,Wheat,Other,279,2023-03-25,2025-12-30,0.276,True
+Maharashtra,APMC Shevgaon,Wheat,Kalyan,1,2024-12-02,2024-12-02,1.0,False
+Maharashtra,APMC Shevgaon,Wheat,Maharashtra 2189,702,2023-01-01,2025-12-30,0.641,True
+Maharashtra,APMC Shevgaon,Wheat,Other,3,2024-09-25,2025-01-14,0.027,False
+Maharashtra,APMC Shirpur,Wheat,Other,502,2023-01-02,2025-12-31,0.458,True
+Maharashtra,APMC Shirur,Wheat,Other,154,2023-01-31,2025-12-30,0.145,False
+Maharashtra,APMC Shrigonda,Wheat,Other,133,2023-01-02,2025-12-18,0.123,False
+Maharashtra,APMC Shrirampur,Wheat,Other,447,2023-01-13,2025-12-29,0.413,True
+Maharashtra,APMC Sillod,Wheat,Other,835,2023-01-01,2025-12-31,0.762,True
+Maharashtra,APMC Sindi,Wheat,Other,50,2023-03-01,2025-06-17,0.06,False
+Maharashtra,APMC Sindkhed Raja,Wheat,Maharashtra 2189,93,2025-03-25,2025-12-06,0.362,False
+Maharashtra,APMC Sindkhed Raja,Wheat,Other,10,2025-02-18,2025-03-07,0.556,False
+Maharashtra,APMC Sinner,Wheat,Other,182,2023-01-02,2025-12-31,0.166,True
+Maharashtra,APMC Solapur,Wheat,Sharbati,795,2023-01-04,2025-12-31,0.727,True
+Maharashtra,APMC Sonpeth,Wheat,Bansi,7,2023-02-15,2025-11-03,0.007,False
+Maharashtra,APMC Sonpeth,Wheat,Other,38,2023-01-02,2025-11-10,0.036,False
+Maharashtra,APMC Tadkalas,Wheat,Other,75,2023-01-19,2025-11-20,0.072,False
+Maharashtra,APMC Taloda,Wheat,Other,116,2023-03-01,2025-06-05,0.14,False
+Maharashtra,APMC Tasgaon,Wheat,Other,315,2023-01-03,2025-12-31,0.288,True
+Maharashtra,APMC Telhara,Wheat,Other,203,2023-01-17,2025-12-11,0.192,True
+Maharashtra,APMC Tuljapur,Wheat,Other,210,2023-01-30,2025-11-22,0.204,True
+Maharashtra,APMC Tumsar,Wheat,Other,262,2023-02-01,2025-12-28,0.247,True
+Maharashtra,APMC Ulhasnagar,Wheat,Other,749,2023-01-02,2025-12-31,0.684,True
+Maharashtra,APMC Umared,Wheat,Other,242,2023-01-07,2025-12-27,0.223,True
+Maharashtra,APMC Umarga,Wheat,Kalyan,5,2023-02-24,2025-06-16,0.006,False
+Maharashtra,APMC Umarga,Wheat,Maharashtra 2189,169,2023-02-23,2025-12-09,0.166,False
+Maharashtra,APMC Umarga,Wheat,Other,1,2023-08-22,2023-08-22,1.0,False
+Maharashtra,APMC Umari,Wheat,Other,3,2023-03-17,2023-08-04,0.021,False
+Maharashtra,APMC Umarkhed,Wheat,Other,24,2023-05-13,2025-12-01,0.026,False
+Maharashtra,APMC VASAI,Wheat,Other,151,2023-01-07,2025-11-10,0.145,False
+Maharashtra,APMC Vaduj,Wheat,Maharashtra 2189,156,2023-01-07,2025-12-27,0.144,False
+Maharashtra,APMC Vadvani,Wheat,Other,51,2023-10-05,2025-12-24,0.063,False
+Maharashtra,APMC Vaijpur,Wheat,Other,134,2023-01-04,2025-08-02,0.142,False
+Maharashtra,APMC Vani,Wheat,Other,7,2024-05-02,2025-06-23,0.017,False
+Maharashtra,APMC Varora,Wheat,Sharbati,8,2023-05-05,2025-11-05,0.009,False
+Maharashtra,APMC Varud,Wheat,Other,16,2023-02-06,2025-11-23,0.016,False
+Maharashtra,APMC Wardha,Wheat,Other,495,2023-01-06,2025-12-31,0.454,True
+Maharashtra,APMC Washi (Dharashiv),Wheat,Other,11,2025-03-07,2025-04-01,0.423,False
+Maharashtra,APMC Washim,Wheat,Maharashtra 2189,546,2023-01-02,2025-12-31,0.499,True
+Maharashtra,APMC Yavatmal,Wheat,Other,499,2023-01-02,2025-12-31,0.456,True
+Maharashtra,APMC Yawal,Wheat,Other,128,2023-01-30,2025-09-27,0.132,False
+Maharashtra,APMC Yeola,Wheat,Maharashtra 2189,453,2023-01-02,2025-12-31,0.414,True
+Maharashtra,APMC Yeola,Wheat,Other,8,2023-02-03,2025-07-02,0.009,False
+Maharashtra,All markets (state median),Wheat,All varieties,1090,2023-01-01,2025-12-31,0.995,True
+Maharashtra,Ashti(Karanja),Wheat,Other,138,2023-01-08,2025-08-12,0.146,False
+Maharashtra,Barshi(Vairag),Wheat,Other,274,2023-01-04,2025-12-31,0.251,True
+Maharashtra,Bhokardan(Pimpalgaon Renu),Wheat,Other,118,2023-01-17,2025-12-30,0.109,False
+Maharashtra,Bori,Wheat,Other,8,2023-12-06,2025-11-26,0.011,False
+Maharashtra,"Bsk Krishi Bazar Private Limited, Mehkar, Dist Buldhana",Wheat,Other,170,2023-07-04,2025-10-29,0.2,False
+Maharashtra,Buldhana(Dhad),Wheat,Other,119,2023-02-17,2025-12-17,0.115,False
+Maharashtra,Dondaicha (Sindhkheda),Wheat,Other,149,2023-01-13,2025-11-26,0.142,False
+Maharashtra,Hingoli(Kanegoan Naka),Wheat,Other,114,2023-02-09,2025-03-17,0.148,False
+Maharashtra,Indapur(Bhigwan),Wheat,Maharashtra 2189,3,2023-05-21,2025-09-21,0.004,False
+Maharashtra,Indapur(Bhigwan),Wheat,Other,14,2023-02-05,2025-09-21,0.015,False
+Maharashtra,Indapur(Nimgaon Ketki),Wheat,Maharashtra 2189,26,2023-03-08,2025-11-29,0.026,False
+Maharashtra,Indapur(Nimgaon Ketki),Wheat,Other,3,2025-01-15,2025-11-05,0.01,False
+Maharashtra,"Jai Gajanan Krushi Bazar, Washim",Wheat,Other,35,2023-06-30,2024-04-05,0.125,False
+Maharashtra,Jalgaon Jamod(Aasalgaon),Wheat,Maharashtra 2189,78,2023-01-27,2025-10-07,0.079,False
+Maharashtra,Jalgaon(Masawat),Wheat,147 Average,104,2023-02-14,2025-12-19,0.1,False
+Maharashtra,Jalgaon(Masawat),Wheat,Maharashtra 2189,1,2025-03-01,2025-03-01,1.0,False
+Maharashtra,"Jaykissan Krushi Uttpan Khajgi Bazar, Khamgaon, Dist Buldhana",Wheat,Sharbati,1,2024-09-09,2024-09-09,1.0,False
+Maharashtra,KISAN MARKET YARD,Wheat,Other,192,2023-07-07,2025-12-08,0.217,True
+Maharashtra,Kada(Ashti),Wheat,Other,1,2025-05-21,2025-05-21,1.0,False
+Maharashtra,Karjat(Rashin),Wheat,Other,42,2025-09-10,2025-12-31,0.372,False
+Maharashtra,Kolhapur(Laxmipuri),Wheat,Other,19,2025-12-06,2025-12-31,0.731,False
+Maharashtra,"Krushna Krishi Bazar, Washim",Wheat,Other,6,2025-05-24,2025-12-30,0.027,False
+Maharashtra,Kurdwadi(Modnimb),Wheat,Other,223,2023-01-16,2025-12-29,0.207,True
+Maharashtra,Lasalgaon(Niphad),Wheat,Maharashtra 2189,777,2023-01-04,2025-12-31,0.711,True
+Maharashtra,Lasalgaon(Vinchur),Wheat,Other,320,2023-01-04,2025-05-09,0.373,True
+Maharashtra,Latur(Murud),Wheat,Maharashtra 2189,27,2023-02-08,2025-11-25,0.026,False
+Maharashtra,"Laxmi-Sopan Agriculture Produce Marketing Co Ltd, Barshi, Dist Solapur",Wheat,Other,1,2024-08-21,2024-08-21,1.0,False
+Maharashtra,"Maharaja Agresen Pvt Krushi Utappan Bazar Samati, Dist Buldhana",Wheat,Other,4,2024-06-28,2024-12-31,0.021,False
+Maharashtra,"Mahesh Krushi Utpanna Bazar, Digras, Dist Yeotmal",Wheat,Other,178,2023-07-05,2025-12-10,0.2,False
+Maharashtra,Nira(Saswad),Wheat,Other,32,2023-01-11,2025-10-15,0.032,False
+Maharashtra,"Omchatinya Multi State Agro Purpose Co-Op Society, Dist Ahilyanagar",Wheat,Other,422,2023-07-05,2025-12-31,0.463,True
+Maharashtra,PACHORA(BHADGAON),Wheat,Other,1,2025-05-21,2025-05-21,1.0,False
+Maharashtra,Rahuri(Vambori),Wheat,Other,613,2023-01-07,2025-12-31,0.562,True
+Maharashtra,Raver(Savda),Wheat,Other,4,2023-05-18,2025-05-31,0.005,False
+Maharashtra,Sangrampur(Varvatbakal),Wheat,Other,27,2023-01-05,2025-09-27,0.027,False
+Maharashtra,Shevgaon(Bodhegaon),Wheat,Maharashtra 2189,734,2023-01-07,2025-12-31,0.673,True
+Maharashtra,"Shree Salasar Krushi Bazar, Dist Parbhani",Wheat,Other,18,2023-07-03,2025-10-06,0.022,False
+Maharashtra,Shrigonda(Ghogargaon),Wheat,Other,64,2023-01-05,2025-07-02,0.07,False
+Maharashtra,Shrirampur(Belapur),Wheat,Other,276,2023-01-28,2025-12-29,0.259,True
+Maharashtra,Sillod(Bharadi),Wheat,Other,130,2023-01-14,2025-12-27,0.12,False
+Maharashtra,Sindi (Selu),Wheat,Other,444,2023-01-04,2025-12-31,0.406,True
+Maharashtra,Umarked(Danki),Wheat,Other,70,2023-01-20,2025-11-07,0.068,False
+Maharashtra,Varud(Rajura Bazar),Wheat,Other,51,2023-05-04,2025-11-28,0.054,False
+Maharashtra,"Vitthal Krushi Utpanna Bazar Pvt Ltd, Washim",Wheat,Other,53,2023-04-03,2025-07-03,0.064,False
+Maharashtra,Washim(Ansing),Wheat,Maharashtra 2189,229,2023-01-02,2025-12-22,0.211,True

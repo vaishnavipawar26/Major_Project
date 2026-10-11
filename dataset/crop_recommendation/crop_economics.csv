@@ -1,0 +1,8 @@
+crop,yield_q_per_acre,cost_per_acre_inr,cost_reference_year,post_harvest_loss_pct,storage_loss_pct_per_month,storage_cost_per_q_month,marketing_cost_pct,verification_status
+Brinjal,85,65000,2024,10,0,0,8,approximate_assumption
+Cabbage,110,50000,2024,12,0,0,8,approximate_assumption
+Cauliflower,90,55000,2024,12,0,0,8,approximate_assumption
+Onion,100,70000,2024,8,3,40,7,approximate_assumption
+Potato,90,85000,2024,6,1.5,60,7,approximate_assumption
+Tomato,150,110000,2024,15,0,0,8,approximate_assumption
+Wheat,16,28000,2024,2,0.5,15,4,approximate_assumption

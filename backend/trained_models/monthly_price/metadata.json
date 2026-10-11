@@ -1,0 +1,736 @@
+{
+  "model_type": "monthly_price",
+  "algorithm": "xgboost_regressor",
+  "version": "202610101456",
+  "trained_at": "2026-10-10T14:56:49+00:00",
+  "target": "log(real price[t+h] / real price[t]), h = 1..24 months",
+  "inflation_annual": 0.05,
+  "inflation_note": "Assumed constant annual inflation used to deflate prices for training and to re-inflate forecasts.",
+  "data_start": "2023-01",
+  "data_end": "2025-12",
+  "h_max": 24,
+  "features": [
+    "horizon",
+    "origin_month",
+    "target_month",
+    "crop_code",
+    "city_code",
+    "mom_1",
+    "mom_3",
+    "level_vs_3m",
+    "level_vs_12m",
+    "volatility_6",
+    "arrivals_vs_12m",
+    "city_premium",
+    "seasonal_prior",
+    "seasonal_supply_prior"
+  ],
+  "cities": [
+    "Ahilyanagar",
+    "Amravati",
+    "Chhatrapati Sambhajinagar",
+    "Jalgaon",
+    "Kolhapur",
+    "Mumbai",
+    "Nagpur",
+    "Nashik",
+    "Pune",
+    "Satara",
+    "Solapur"
+  ],
+  "crops": [
+    "Brinjal",
+    "Cabbage",
+    "Cauliflower",
+    "Onion",
+    "Potato",
+    "Tomato",
+    "Wheat"
+  ],
+  "series_codes": {
+    "Ahilyanagar": 0,
+    "Amravati": 1,
+    "Chhatrapati Sambhajinagar": 2,
+    "Jalgaon": 3,
+    "Kolhapur": 4,
+    "Mumbai": 5,
+    "Nagpur": 6,
+    "Nashik": 7,
+    "Pune": 8,
+    "Satara": 9,
+    "Solapur": 10,
+    "Maharashtra (all markets)": 11
+  },
+  "crop_codes": {
+    "Brinjal": 0,
+    "Cabbage": 1,
+    "Cauliflower": 2,
+    "Onion": 3,
+    "Potato": 4,
+    "Tomato": 5,
+    "Wheat": 6
+  },
+  "historical_real_trend_pct_per_year": {
+    "Brinjal": 10.16,
+    "Cabbage": 12.88,
+    "Cauliflower": 7.52,
+    "Onion": 6.41,
+    "Potato": 4.93,
+    "Tomato": 4.0,
+    "Wheat": -1.65
+  },
+  "trend_note": "Historical real trend per crop (2023-2025), removed from the target and NOT projected forward.",
+  "min_months": 24,
+  "coverage": [
+    {
+      "series": "Ahilyanagar",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Amravati",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Chhatrapati Sambhajinagar",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Jalgaon",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Kolhapur",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Mumbai",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nagpur",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nashik",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Pune",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Satara",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Solapur",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Maharashtra (all markets)",
+      "crop": "Brinjal",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Ahilyanagar",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Amravati",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Chhatrapati Sambhajinagar",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Jalgaon",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Kolhapur",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Mumbai",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nagpur",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nashik",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Pune",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Satara",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Solapur",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Maharashtra (all markets)",
+      "crop": "Cabbage",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Ahilyanagar",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Amravati",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Chhatrapati Sambhajinagar",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Jalgaon",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Kolhapur",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Mumbai",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nagpur",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nashik",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Pune",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Satara",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Solapur",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Maharashtra (all markets)",
+      "crop": "Cauliflower",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Ahilyanagar",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Amravati",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Chhatrapati Sambhajinagar",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Jalgaon",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Kolhapur",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Mumbai",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nagpur",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nashik",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Pune",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Satara",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Solapur",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Maharashtra (all markets)",
+      "crop": "Onion",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Ahilyanagar",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Amravati",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Chhatrapati Sambhajinagar",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Jalgaon",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Kolhapur",
+      "crop": "Potato",
+      "observed_months": 5,
+      "modelled": false
+    },
+    {
+      "series": "Mumbai",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nagpur",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nashik",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Pune",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Satara",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Solapur",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Maharashtra (all markets)",
+      "crop": "Potato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Ahilyanagar",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Amravati",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Chhatrapati Sambhajinagar",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Jalgaon",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Kolhapur",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Mumbai",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nagpur",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nashik",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Pune",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Satara",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Solapur",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Maharashtra (all markets)",
+      "crop": "Tomato",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Ahilyanagar",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Amravati",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Chhatrapati Sambhajinagar",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Jalgaon",
+      "crop": "Wheat",
+      "observed_months": 35,
+      "modelled": true
+    },
+    {
+      "series": "Kolhapur",
+      "crop": "Wheat",
+      "observed_months": 0,
+      "modelled": false
+    },
+    {
+      "series": "Mumbai",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nagpur",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Nashik",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Pune",
+      "crop": "Wheat",
+      "observed_months": 20,
+      "modelled": false
+    },
+    {
+      "series": "Satara",
+      "crop": "Wheat",
+      "observed_months": 3,
+      "modelled": false
+    },
+    {
+      "series": "Solapur",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    },
+    {
+      "series": "Maharashtra (all markets)",
+      "crop": "Wheat",
+      "observed_months": 36,
+      "modelled": true
+    }
+  ],
+  "validation": "2 time-ordered cut-offs (2024-12, 2025-06), 6-month test windows",
+  "cv_summary": {
+    "all": {
+      "model": {
+        "n": 20621,
+        "MAE": 615.5252710138692,
+        "MAPE_pct": 45.35234411871793,
+        "direction_accuracy_pct": 64.9580524707822
+      },
+      "naive": {
+        "n": 20621,
+        "MAE": 750.4276961281411,
+        "MAPE_pct": 56.88413992009035,
+        "direction_accuracy_pct": 0.009698850686193687
+      },
+      "seasonal_naive": {
+        "n": 20621,
+        "MAE": 629.6876873090539,
+        "MAPE_pct": 43.19887970298236,
+        "direction_accuracy_pct": 65.59817661607099
+      }
+    },
+    "1-3": {
+      "model": {
+        "n": 960,
+        "MAE": 664.8252747825003,
+        "MAPE_pct": 58.36387990934184,
+        "direction_accuracy_pct": 60.20833333333333
+      },
+      "naive": {
+        "n": 960,
+        "MAE": 672.8371614157824,
+        "MAPE_pct": 55.9974441918612,
+        "direction_accuracy_pct": 0.0
+      },
+      "seasonal_naive": {
+        "n": 960,
+        "MAE": 793.5588020833333,
+        "MAPE_pct": 62.58161228668714,
+        "direction_accuracy_pct": 67.1875
+      }
+    },
+    "13-24": {
+      "model": {
+        "n": 11508,
+        "MAE": 537.9577011441698,
+        "MAPE_pct": 36.751909959802774,
+        "direction_accuracy_pct": 64.05978449774071
+      },
+      "naive": {
+        "n": 11508,
+        "MAE": 674.7280345139471,
+        "MAPE_pct": 49.2551488380415,
+        "direction_accuracy_pct": 0.0
+      },
+      "seasonal_naive": {
+        "n": 11508,
+        "MAE": 537.1204470802919,
+        "MAPE_pct": 32.507329728301464,
+        "direction_accuracy_pct": 67.4052832811957
+      }
+    },
+    "4-6": {
+      "model": {
+        "n": 2399,
+        "MAE": 676.3296188384123,
+        "MAPE_pct": 55.84799017022819,
+        "direction_accuracy_pct": 71.11296373488953
+      },
+      "naive": {
+        "n": 2399,
+        "MAE": 857.2106467877197,
+        "MAPE_pct": 70.43206880704794,
+        "direction_accuracy_pct": 0.0
+      },
+      "seasonal_naive": {
+        "n": 2399,
+        "MAE": 735.392457273864,
+        "MAPE_pct": 57.37235192617428,
+        "direction_accuracy_pct": 75.07294706127553
+      }
+    },
+    "7-12": {
+      "model": {
+        "n": 5754,
+        "MAE": 737.0841796012057,
+        "MAPE_pct": 56.00643988935117,
+        "direction_accuracy_pct": 64.98088286409455
+      },
+      "naive": {
+        "n": 5754,
+        "MAE": 870.2515266021902,
+        "MAPE_pct": 66.64155665132202,
+        "direction_accuracy_pct": 0.03475842891901286
+      },
+      "seasonal_naive": {
+        "n": 5754,
+        "MAE": 743.4106256517206,
+        "MAPE_pct": 55.43884737153185,
+        "direction_accuracy_pct": 57.76850886339937
+      }
+    }
+  },
+  "intervals": {
+    "1-3": {
+      "q10": -0.8573597199169428,
+      "q90": 0.07634036601960405,
+      "median_abs": 0.3781431675939113,
+      "n": 960
+    },
+    "13-24": {
+      "q10": -0.6027629399727209,
+      "q90": 0.3363252021093702,
+      "median_abs": 0.2540876993555625,
+      "n": 11508
+    },
+    "4-6": {
+      "q10": -0.8342893214183702,
+      "q90": 0.2072920122951204,
+      "median_abs": 0.3556795867726912,
+      "n": 2399
+    },
+    "7-12": {
+      "q10": -0.8239271085620326,
+      "q90": 0.27753482981578154,
+      "median_abs": 0.37287465075980375,
+      "n": 5754
+    }
+  },
+  "feature_importance": {
+    "horizon": 0.0375,
+    "origin_month": 0.0311,
+    "target_month": 0.113,
+    "crop_code": 0.0442,
+    "city_code": 0.0085,
+    "mom_1": 0.0182,
+    "mom_3": 0.0757,
+    "level_vs_3m": 0.0599,
+    "level_vs_12m": 0.3683,
+    "volatility_6": 0.0484,
+    "arrivals_vs_12m": 0.0152,
+    "city_premium": 0.0519,
+    "seasonal_prior": 0.0925,
+    "seasonal_supply_prior": 0.0355
+  },
+  "training_pairs": 45096
+}

@@ -1,0 +1,7 @@
+# Normalise text line endings; never touch binary model/data files.
+* text=auto
+*.joblib binary
+*.parquet binary
+*.png binary
+*.jpg binary
+*.ico binary

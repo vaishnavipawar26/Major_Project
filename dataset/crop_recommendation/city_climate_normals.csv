@@ -1,0 +1,133 @@
+city,month,temperature_c,humidity_pct,rainfall_mm
+Pune,1,21.0,55,1
+Pune,2,23.0,45,1
+Pune,3,26.5,38,3
+Pune,4,29.0,40,15
+Pune,5,29.5,52,35
+Pune,6,27.0,72,140
+Pune,7,25.0,82,190
+Pune,8,24.5,84,130
+Pune,9,25.0,78,130
+Pune,10,25.0,65,75
+Pune,11,22.5,55,25
+Pune,12,20.5,55,5
+Mumbai,1,24.0,65,1
+Mumbai,2,25.0,65,1
+Mumbai,3,27.0,68,0
+Mumbai,4,28.5,72,1
+Mumbai,5,30.0,72,15
+Mumbai,6,29.0,80,530
+Mumbai,7,27.5,86,840
+Mumbai,8,27.3,86,580
+Mumbai,9,27.6,82,340
+Mumbai,10,28.5,76,90
+Mumbai,11,27.5,68,15
+Mumbai,12,25.5,65,5
+Nagpur,1,21.0,55,10
+Nagpur,2,24.0,45,15
+Nagpur,3,28.5,33,20
+Nagpur,4,33.0,28,10
+Nagpur,5,35.5,30,15
+Nagpur,6,31.5,58,170
+Nagpur,7,27.5,80,320
+Nagpur,8,27.0,82,290
+Nagpur,9,27.5,78,180
+Nagpur,10,26.0,65,60
+Nagpur,11,22.5,55,15
+Nagpur,12,20.0,55,10
+Nashik,1,21.0,55,1
+Nashik,2,23.0,45,1
+Nashik,3,26.5,35,2
+Nashik,4,29.5,35,5
+Nashik,5,30.0,45,15
+Nashik,6,27.5,68,135
+Nashik,7,25.0,80,220
+Nashik,8,24.5,82,180
+Nashik,9,25.0,76,140
+Nashik,10,25.0,62,60
+Nashik,11,22.0,55,20
+Nashik,12,20.0,55,5
+Chhatrapati Sambhajinagar,1,21.5,52,5
+Chhatrapati Sambhajinagar,2,24.0,42,5
+Chhatrapati Sambhajinagar,3,28.0,32,5
+Chhatrapati Sambhajinagar,4,31.5,30,5
+Chhatrapati Sambhajinagar,5,32.5,38,20
+Chhatrapati Sambhajinagar,6,29.0,64,140
+Chhatrapati Sambhajinagar,7,26.5,78,170
+Chhatrapati Sambhajinagar,8,25.5,80,165
+Chhatrapati Sambhajinagar,9,26.0,75,180
+Chhatrapati Sambhajinagar,10,26.0,60,70
+Chhatrapati Sambhajinagar,11,23.0,52,25
+Chhatrapati Sambhajinagar,12,21.0,52,10
+Kolhapur,1,22.0,55,1
+Kolhapur,2,24.0,50,1
+Kolhapur,3,27.0,50,5
+Kolhapur,4,28.5,58,30
+Kolhapur,5,28.0,65,60
+Kolhapur,6,25.0,82,200
+Kolhapur,7,23.5,88,300
+Kolhapur,8,23.5,88,200
+Kolhapur,9,24.0,84,150
+Kolhapur,10,25.0,72,100
+Kolhapur,11,23.5,62,30
+Kolhapur,12,22.0,58,5
+Solapur,1,23.5,50,3
+Solapur,2,26.0,42,2
+Solapur,3,29.5,35,6
+Solapur,4,32.0,35,15
+Solapur,5,33.0,40,30
+Solapur,6,29.5,60,105
+Solapur,7,27.5,68,90
+Solapur,8,27.0,70,130
+Solapur,9,27.0,72,190
+Solapur,10,26.5,62,90
+Solapur,11,24.5,55,30
+Solapur,12,23.0,52,8
+Satara,1,21.0,55,1
+Satara,2,23.0,47,1
+Satara,3,26.0,42,4
+Satara,4,28.0,46,20
+Satara,5,28.0,56,40
+Satara,6,25.0,78,150
+Satara,7,23.5,86,230
+Satara,8,23.0,86,160
+Satara,9,23.5,80,140
+Satara,10,24.0,68,85
+Satara,11,22.0,58,25
+Satara,12,20.5,56,5
+Jalgaon,1,21.0,50,5
+Jalgaon,2,24.0,40,2
+Jalgaon,3,28.5,30,3
+Jalgaon,4,32.5,26,3
+Jalgaon,5,35.0,30,8
+Jalgaon,6,31.0,58,140
+Jalgaon,7,27.5,78,200
+Jalgaon,8,27.0,80,180
+Jalgaon,9,27.5,74,130
+Jalgaon,10,26.5,58,40
+Jalgaon,11,23.0,50,15
+Jalgaon,12,20.5,50,5
+Amravati,1,21.5,52,10
+Amravati,2,24.0,42,10
+Amravati,3,28.5,32,15
+Amravati,4,32.5,28,8
+Amravati,5,34.5,30,12
+Amravati,6,30.5,60,160
+Amravati,7,27.0,80,250
+Amravati,8,26.5,82,220
+Amravati,9,27.0,76,150
+Amravati,10,26.0,62,55
+Amravati,11,23.0,55,15
+Amravati,12,21.0,54,8
+Ahilyanagar,1,21.5,52,2
+Ahilyanagar,2,24.0,42,1
+Ahilyanagar,3,27.5,34,4
+Ahilyanagar,4,30.5,34,10
+Ahilyanagar,5,31.0,44,25
+Ahilyanagar,6,28.0,66,110
+Ahilyanagar,7,25.5,76,100
+Ahilyanagar,8,25.0,78,90
+Ahilyanagar,9,25.5,74,160
+Ahilyanagar,10,25.5,62,80
+Ahilyanagar,11,22.5,54,25
+Ahilyanagar,12,21.0,54,6

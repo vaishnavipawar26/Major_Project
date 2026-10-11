@@ -1,0 +1,108 @@
+{
+  "rows": 4550,
+  "seed": 42,
+  "class_counts": {
+    "Brinjal": 650,
+    "Onion": 650,
+    "Wheat": 650,
+    "Cauliflower": 650,
+    "Tomato": 650,
+    "Cabbage": 650,
+    "Potato": 650
+  },
+  "per_crop_means": {
+    "Brinjal": {
+      "N": 99.1,
+      "P": 55.3,
+      "K": 59.9,
+      "ph": 6.6,
+      "temperature": 26.1,
+      "humidity": 61.7,
+      "rainfall": 82.6
+    },
+    "Cabbage": {
+      "N": 114.0,
+      "P": 59.7,
+      "K": 77.8,
+      "ph": 6.3,
+      "temperature": 21.7,
+      "humidity": 69.1,
+      "rainfall": 87.5
+    },
+    "Cauliflower": {
+      "N": 119.5,
+      "P": 70.7,
+      "K": 62.7,
+      "ph": 6.4,
+      "temperature": 22.5,
+      "humidity": 69.7,
+      "rainfall": 98.6
+    },
+    "Onion": {
+      "N": 79.1,
+      "P": 44.9,
+      "K": 91.4,
+      "ph": 7.0,
+      "temperature": 23.8,
+      "humidity": 57.4,
+      "rainfall": 64.3
+    },
+    "Potato": {
+      "N": 120.8,
+      "P": 84.7,
+      "K": 141.1,
+      "ph": 5.6,
+      "temperature": 20.9,
+      "humidity": 67.0,
+      "rainfall": 70.1
+    },
+    "Tomato": {
+      "N": 100.0,
+      "P": 75.1,
+      "K": 98.2,
+      "ph": 6.4,
+      "temperature": 24.2,
+      "humidity": 60.9,
+      "rainfall": 74.6
+    },
+    "Wheat": {
+      "N": 89.1,
+      "P": 45.0,
+      "K": 49.7,
+      "ph": 7.5,
+      "temperature": 21.7,
+      "humidity": 48.7,
+      "rainfall": 26.4
+    }
+  },
+  "ranges": {
+    "N": [
+      39.0,
+      140.0
+    ],
+    "P": [
+      11.0,
+      128.0
+    ],
+    "K": [
+      8.0,
+      205.0
+    ],
+    "ph": [
+      3.92,
+      9.22
+    ],
+    "temperature": [
+      15.59,
+      31.6
+    ],
+    "humidity": [
+      28.55,
+      94.94
+    ],
+    "rainfall": [
+      20.0,
+      299.0
+    ]
+  }
+}

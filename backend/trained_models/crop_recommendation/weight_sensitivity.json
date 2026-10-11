@@ -1,0 +1,47 @@
+{
+  "profiles": 300,
+  "default_weights": {
+    "agronomic": 0.4,
+    "timing": 0.2,
+    "profit": 0.4
+  },
+  "label_in_default_top3_pct": 99.3,
+  "alternatives": {
+    "suitability_heavy": {
+      "weights": {
+        "agronomic": 0.6,
+        "timing": 0.2,
+        "profit": 0.2
+      },
+      "same_top1_pct": 99.7,
+      "same_top3_set_pct": 99.3
+    },
+    "profit_heavy": {
+      "weights": {
+        "agronomic": 0.3,
+        "timing": 0.1,
+        "profit": 0.6
+      },
+      "same_top1_pct": 98.3,
+      "same_top3_set_pct": 100.0
+    },
+    "equal_thirds": {
+      "weights": {
+        "agronomic": 0.3333333333333333,
+        "timing": 0.3333333333333333,
+        "profit": 0.3333333333333333
+      },
+      "same_top1_pct": 100.0,
+      "same_top3_set_pct": 100.0
+    },
+    "no_timing": {
+      "weights": {
+        "agronomic": 0.5,
+        "timing": 0.0,
+        "profit": 0.5
+      },
+      "same_top1_pct": 100.0,
+      "same_top3_set_pct": 100.0
+    }
+  }
+}

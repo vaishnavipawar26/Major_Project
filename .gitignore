@@ -1,0 +1,79 @@
+# ---------------------------------------------------------------- secrets / environment
+# Real configuration lives in backend/.env and frontend/.env (copy from the .env.example files).
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+
+# Personal / local notes
+LOCAL_NOTES.md
+
+# ---------------------------------------------------------------- frontend (Node / Vite)
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------------------------------------------------------------- Python backend / ML
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.egg-info/
+
+# Local SQLite files created by tests or experiments (the app itself uses MySQL)
+*.db
+*.sqlite
+*.sqlite3
+
+# ---------------------------------------------------------------- data and model artifacts
+# The API needs these at runtime, so they ARE committed (all files are under 20 MB):
+#   backend/trained_models/**            trained models (.joblib) + metrics/metadata
+#   dataset/processed/*.parquet|*.csv    cleaned price panels read by the forecasters
+# They can be regenerated with the scripts in backend/scripts/ (see README).
+# Archives and scratch outputs are never committed:
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+tmp/
+temp/
+
+# ---------------------------------------------------------------- logs
+*.log
+logs/
+
+# ---------------------------------------------------------------- OS / editors
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.swp
+*.swo
+*~
+.vscode/
+!.vscode/extensions.json
+.idea/
