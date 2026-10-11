@@ -1,0 +1,282 @@
+{
+  "raw_profile": {
+    "rows": 246067,
+    "columns": [
+      "Date",
+      "State",
+      "Market",
+      "Commodity",
+      "Variety",
+      "Arrivals",
+      "Min_Price",
+      "Max_Price",
+      "Modal_Price"
+    ],
+    "missing_values": {
+      "Date": 0,
+      "State": 0,
+      "Market": 0,
+      "Commodity": 0,
+      "Variety": 0,
+      "Arrivals": 0,
+      "Min_Price": 0,
+      "Max_Price": 0,
+      "Modal_Price": 0
+    },
+    "exact_duplicate_rows": 0,
+    "same_day_key_duplicates": 1917,
+    "invalid_dates": 0,
+    "date_min": "2023-01-01",
+    "date_max": "2025-12-31",
+    "distinct_dates": 1091,
+    "states": {
+      "Maharashtra": 246067
+    },
+    "n_markets": 297,
+    "missing_crop_names": 0,
+    "records_per_crop": {
+      "Wheat": 60609,
+      "Onion": 49385,
+      "Tomato": 31832,
+      "Brinjal": 29148,
+      "Cabbage": 27218,
+      "Cauliflower": 26663,
+      "Potato": 21212
+    },
+    "markets_per_crop": {
+      "Brinjal": 56,
+      "Cabbage": 50,
+      "Cauliflower": 50,
+      "Onion": 116,
+      "Potato": 44,
+      "Tomato": 61,
+      "Wheat": 237
+    },
+    "varieties_per_crop": {
+      "Brinjal": {
+        "Other": 29148
+      },
+      "Cabbage": {
+        "Other": 27218
+      },
+      "Cauliflower": {
+        "Other": 26663
+      },
+      "Onion": {
+        "Other": 25124,
+        "Red": 12142,
+        "Local": 9031,
+        "1st Sort": 1000,
+        "White": 929,
+        "Pole": 625,
+        "2nd Sort": 436,
+        "Hybrid": 98
+      },
+      "Potato": {
+        "Other": 13467,
+        "Local": 7745
+      },
+      "Tomato": {
+        "Other": 21262,
+        "Local": 10570
+      },
+      "Wheat": {
+        "Other": 45784,
+        "Maharashtra 2189": 9005,
+        "Sharbati": 3355,
+        "Bansi": 1091,
+        "Kalyan": 752,
+        "147 Average": 603,
+        "Red": 19
+      }
+    },
+    "numeric_summary": {
+      "Arrivals": {
+        "count": 246067.0,
+        "mean": 132.31,
+        "std": 468.17,
+        "min": 0.01,
+        "25%": 2.0,
+        "50%": 8.0,
+        "75%": 48.6,
+        "max": 13564.0
+      },
+      "Min_Price": {
+        "count": 246067.0,
+        "mean": 1484.89,
+        "std": 1016.78,
+        "min": 0.0,
+        "25%": 600.0,
+        "50%": 1200.0,
+        "75%": 2250.0,
+        "max": 40000.0
+      },
+      "Max_Price": {
+        "count": 246067.0,
+        "mean": 2397.08,
+        "std": 1369.16,
+        "min": 6.0,
+        "25%": 1500.0,
+        "50%": 2300.0,
+        "75%": 2950.0,
+        "max": 105000.0
+      },
+      "Modal_Price": {
+        "count": 246067.0,
+        "mean": 1988.52,
+        "std": 1115.44,
+        "min": 6.0,
+        "25%": 1200.0,
+        "50%": 1900.0,
+        "75%": 2575.0,
+        "max": 75000.0
+      }
+    },
+    "invalid_prices": {
+      "modal_le_0": 0,
+      "min_le_0": 1,
+      "max_le_0": 0,
+      "min_gt_max": 0,
+      "modal_outside_min_max": 0
+    },
+    "arrivals_le_0": 0,
+    "extreme_values_3iqr_per_crop": {
+      "Brinjal": 118,
+      "Cabbage": 268,
+      "Cauliflower": 112,
+      "Onion": 81,
+      "Potato": 14,
+      "Tomato": 840,
+      "Wheat": 1217
+    },
+    "top_modal_prices": [
+      {
+        "Date": "2023-02-23",
+        "Market": "Junnar(Alephata)",
+        "Commodity": "Onion",
+        "Variety": "Other",
+        "Modal_Price": 75000.0
+      },
+      {
+        "Date": "2024-10-14",
+        "Market": "APMC Ratnagiri (Nachane)",
+        "Commodity": "Tomato",
+        "Variety": "Other",
+        "Modal_Price": 45000.0
+      },
+      {
+        "Date": "2025-08-19",
+        "Market": "Junnar(Alephata)",
+        "Commodity": "Onion",
+        "Variety": "Other",
+        "Modal_Price": 25000.0
+      },
+      {
+        "Date": "2024-03-01",
+        "Market": "APMC Kalyan",
+        "Commodity": "Onion",
+        "Variety": "1st Sort",
+        "Modal_Price": 21000.0
+      },
+      {
+        "Date": "2024-10-14",
+        "Market": "APMC Ratnagiri (Nachane)",
+        "Commodity": "Cabbage",
+        "Variety": "Other",
+        "Modal_Price": 20000.0
+      },
+      {
+        "Date": "2023-07-26",
+        "Market": "APMC Shrirampur",
+        "Commodity": "Tomato",
+        "Variety": "Other",
+        "Modal_Price": 19000.0
+      },
+      {
+        "Date": "2023-07-23",
+        "Market": "APMC Shrirampur",
+        "Commodity": "Tomato",
+        "Variety": "Other",
+        "Modal_Price": 18000.0
+      },
+      {
+        "Date": "2023-07-21",
+        "Market": "APMC Shrirampur",
+        "Commodity": "Tomato",
+        "Variety": "Other",
+        "Modal_Price": 17500.0
+      },
+      {
+        "Date": "2023-07-27",
+        "Market": "APMC Shrirampur",
+        "Commodity": "Tomato",
+        "Variety": "Other",
+        "Modal_Price": 17500.0
+      },
+      {
+        "Date": "2024-02-18",
+        "Market": "APMC Pune",
+        "Commodity": "Potato",
+        "Variety": "Local",
+        "Modal_Price": 16000.0
+      }
+    ]
+  },
+  "cleaning_steps": [
+    {
+      "step": "load",
+      "rows_affected": 0,
+      "rows_after": 246067,
+      "note": "Rows read from raw price files"
+    },
+    {
+      "step": "invalid_dates",
+      "rows_affected": 0,
+      "rows_after": 246067,
+      "note": "Rows whose Date could not be parsed were removed"
+    },
+    {
+      "step": "missing_key_fields",
+      "rows_affected": 0,
+      "rows_after": 246067,
+      "note": "Rows missing state/market/commodity/variety/modal price were removed"
+    },
+    {
+      "step": "non_positive_modal_price",
+      "rows_affected": 0,
+      "rows_after": 246067,
+      "note": "Rows with Modal_Price <= 0 were removed (a price cannot be zero or negative)"
+    },
+    {
+      "step": "non_positive_min_price",
+      "rows_affected": 1,
+      "rows_after": 246067,
+      "note": "Min_Price <= 0 set to missing; row kept because Modal_Price is valid. Min_Price is not a model input"
+    },
+    {
+      "step": "exact_duplicates",
+      "rows_affected": 0,
+      "rows_after": 246067,
+      "note": "Exact duplicate rows removed"
+    },
+    {
+      "step": "same_day_duplicates",
+      "rows_affected": 3834,
+      "rows_after": 244150,
+      "note": "1917 date/market/commodity/variety groups had several rows with different prices; merged into one row using the median price. Arrivals were averaged, not summed, because within most groups the arrival figure is repeated identically"
+    },
+    {
+      "step": "outlier_capping",
+      "rows_affected": 610,
+      "rows_after": 244150,
+      "note": "Modal prices more than 4x above or below the median of the previous 15 observations of the same series were capped to that bound (rows kept; original value preserved in Modal_Price_raw)"
+    }
+  ],
+  "clean_rows": 244150,
+  "panel_rows": 634609,
+  "series_total": 767,
+  "series_supported": 427,
+  "source_files": [
+    "Maharashtra_Crop_Prices_2023_2025_Cleaned.csv"
+  ]
+}

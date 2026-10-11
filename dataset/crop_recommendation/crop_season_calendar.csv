@@ -1,0 +1,8 @@
+crop,planting_months,growth_months_min,growth_months_max,max_storage_months,storable,source,notes
+Brinjal,6;7;9;10;11;1;2,3,5,0,False,"General Maharashtra vegetable calendar (Kharif, Rabi and summer transplanting)","First picking ~2.5-3 months after transplanting; picking continues ~2 months; perishable"
+Cabbage,6;7;9;10;11;1,3,4,0,False,"General Maharashtra vegetable calendar (main crop Rabi, early Kharif crop)","Head matures 80-110 days after transplanting; perishable"
+Cauliflower,6;7;8;9;10;11,3,4,0,False,"General Maharashtra vegetable calendar (early, mid and late varieties)","Curd matures 80-120 days after transplanting depending on variety; perishable"
+Onion,6;7;9;10;11;12;1,4,5,4,True,"Maharashtra onion seasons: Kharif (Jun-Jul), late Kharif / rangda (Sep-Oct), Rabi (Nov-Jan)","Rabi onion is commonly stored in onion chawls for several months"
+Potato,6;7;10;11;12,3,4,3,True,"Kharif potato (Pune/Satara belt) and Rabi potato","Can be held in cold storage"
+Tomato,6;7;9;10;11;12;1;2,3,5,0,False,"General Maharashtra vegetable calendar (Kharif, Rabi and summer crops)","First harvest ~2.5-3 months after transplanting; harvest continues ~2 months; perishable"
+Wheat,10;11;12,4,5,9,True,"Rabi cereal; sown Oct-Dec, harvested Feb-Apr","Grain stores well when dry"

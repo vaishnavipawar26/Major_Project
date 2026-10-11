@@ -1,0 +1,587 @@
+{
+  "model_type": "crop_recommendation",
+  "selected_model": "xgboost",
+  "version": "202610101448",
+  "trained_at": "2026-10-10T14:48:58+00:00",
+  "dataset": "maharashtra_crop_recommendation.csv",
+  "synthetic_dataset": true,
+  "features": [
+    "N",
+    "P",
+    "K",
+    "temperature",
+    "humidity",
+    "ph",
+    "rainfall",
+    "city_code",
+    "planting_month",
+    "selling_month",
+    "growing_months"
+  ],
+  "cities": [
+    "Ahilyanagar",
+    "Amravati",
+    "Chhatrapati Sambhajinagar",
+    "Jalgaon",
+    "Kolhapur",
+    "Mumbai",
+    "Nagpur",
+    "Nashik",
+    "Pune",
+    "Satara",
+    "Solapur"
+  ],
+  "classes": [
+    "Brinjal",
+    "Cabbage",
+    "Cauliflower",
+    "Onion",
+    "Potato",
+    "Tomato",
+    "Wheat"
+  ],
+  "split": "stratified 80/20 hold-out, 5-fold stratified CV on training part",
+  "shap_output": "log-odds (margin) per class",
+  "cv_comparison": {
+    "logistic_regression_baseline": {
+      "accuracy": {
+        "mean": 0.849175824175824,
+        "std": 0.0031801749732940066
+      },
+      "precision_macro": {
+        "mean": 0.8504186538894214,
+        "std": 0.0031410094740300593
+      },
+      "recall_macro": {
+        "mean": 0.849175824175824,
+        "std": 0.0031801749732940088
+      },
+      "f1_macro": {
+        "mean": 0.8487580246071676,
+        "std": 0.003126865705736506
+      }
+    },
+    "random_forest": {
+      "accuracy": {
+        "mean": 0.8362637362637363,
+        "std": 0.014469444046443614
+      },
+      "precision_macro": {
+        "mean": 0.8357348767581725,
+        "std": 0.01524681780832619
+      },
+      "recall_macro": {
+        "mean": 0.8362637362637363,
+        "std": 0.014469444046443614
+      },
+      "f1_macro": {
+        "mean": 0.8354999563752322,
+        "std": 0.014890152635174729
+      }
+    },
+    "xgboost": {
+      "accuracy": {
+        "mean": 0.8464285714285715,
+        "std": 0.011172911762452076
+      },
+      "precision_macro": {
+        "mean": 0.8490411369683791,
+        "std": 0.011252369177097463
+      },
+      "recall_macro": {
+        "mean": 0.8464285714285715,
+        "std": 0.011172911762452052
+      },
+      "f1_macro": {
+        "mean": 0.8468665452505226,
+        "std": 0.011385165390876584
+      }
+    }
+  },
+  "test_metrics": {
+    "accuracy": 0.8505494505494505,
+    "precision_macro": 0.8507230559560721,
+    "recall_macro": 0.8505494505494505,
+    "f1_macro": 0.8504400045863643,
+    "n_test": 910
+  },
+  "data_quality": {
+    "rows": 4550,
+    "columns": [
+      "N",
+      "P",
+      "K",
+      "temperature",
+      "humidity",
+      "ph",
+      "rainfall",
+      "state",
+      "city",
+      "planting_month",
+      "selling_month",
+      "label"
+    ],
+    "synthetic": true,
+    "missing_values": {
+      "N": 0,
+      "P": 0,
+      "K": 0,
+      "temperature": 0,
+      "humidity": 0,
+      "ph": 0,
+      "rainfall": 0,
+      "state": 0,
+      "city": 0,
+      "planting_month": 0,
+      "selling_month": 0,
+      "label": 0
+    },
+    "duplicate_rows": 0,
+    "class_counts": {
+      "Brinjal": 650,
+      "Onion": 650,
+      "Wheat": 650,
+      "Cauliflower": 650,
+      "Tomato": 650,
+      "Cabbage": 650,
+      "Potato": 650
+    },
+    "feature_summary": {
+      "N": {
+        "count": 4550.0,
+        "mean": 103.1,
+        "std": 19.55,
+        "min": 39.0,
+        "25%": 89.0,
+        "50%": 105.0,
+        "75%": 118.0,
+        "max": 140.0
+      },
+      "P": {
+        "count": 4550.0,
+        "mean": 62.2,
+        "std": 18.43,
+        "min": 11.0,
+        "25%": 48.0,
+        "50%": 61.0,
+        "75%": 75.0,
+        "max": 128.0
+      },
+      "K": {
+        "count": 4550.0,
+        "mean": 82.97,
+        "std": 33.81,
+        "min": 8.0,
+        "25%": 58.0,
+        "50%": 77.0,
+        "75%": 101.0,
+        "max": 205.0
+      },
+      "temperature": {
+        "count": 4550.0,
+        "mean": 22.99,
+        "std": 2.65,
+        "min": 15.59,
+        "25%": 21.09,
+        "50%": 22.89,
+        "75%": 24.72,
+        "max": 31.6
+      },
+      "humidity": {
+        "count": 4550.0,
+        "mean": 62.08,
+        "std": 11.59,
+        "min": 28.55,
+        "25%": 53.65,
+        "50%": 61.92,
+        "75%": 70.41,
+        "max": 94.94
+      },
+      "ph": {
+        "count": 4550.0,
+        "mean": 6.54,
+        "std": 0.75,
+        "min": 3.92,
+        "25%": 6.04,
+        "50%": 6.52,
+        "75%": 7.02,
+        "max": 9.22
+      },
+      "rainfall": {
+        "count": 4550.0,
+        "mean": 72.02,
+        "std": 50.9,
+        "min": 20.0,
+        "25%": 35.21,
+        "50%": 55.37,
+        "75%": 99.39,
+        "max": 299.0
+      }
+    }
+  },
+  "feature_ranges_by_crop": {
+    "Brinjal": {
+      "N": {
+        "p05": 74.0,
+        "median": 99.5,
+        "p95": 122.54999999999995
+      },
+      "P": {
+        "p05": 34.0,
+        "median": 55.0,
+        "p95": 75.0
+      },
+      "K": {
+        "p05": 34.0,
+        "median": 61.0,
+        "p95": 85.54999999999995
+      },
+      "temperature": {
+        "p05": 22.4845,
+        "median": 26.07,
+        "p95": 29.741
+      },
+      "humidity": {
+        "p05": 45.587,
+        "median": 61.525000000000006,
+        "p95": 79.0855
+      },
+      "ph": {
+        "p05": 5.74,
+        "median": 6.6,
+        "p95": 7.4555
+      },
+      "rainfall": {
+        "p05": 31.647000000000002,
+        "median": 65.66499999999999,
+        "p95": 180.33549999999994
+      },
+      "_cities": {
+        "Jalgaon": 0.152,
+        "Pune": 0.148,
+        "Kolhapur": 0.123,
+        "Nagpur": 0.122,
+        "Solapur": 0.114,
+        "Amravati": 0.075,
+        "Chhatrapati Sambhajinagar": 0.074,
+        "Mumbai": 0.074,
+        "Satara": 0.057,
+        "Nashik": 0.052,
+        "Ahilyanagar": 0.009
+      }
+    },
+    "Cabbage": {
+      "N": {
+        "p05": 94.0,
+        "median": 114.0,
+        "p95": 133.0
+      },
+      "P": {
+        "p05": 40.0,
+        "median": 60.0,
+        "p95": 80.0
+      },
+      "K": {
+        "p05": 51.0,
+        "median": 77.0,
+        "p95": 106.0
+      },
+      "temperature": {
+        "p05": 18.3645,
+        "median": 21.665,
+        "p95": 25.226499999999998
+      },
+      "humidity": {
+        "p05": 52.885,
+        "median": 69.125,
+        "p95": 86.431
+      },
+      "ph": {
+        "p05": 5.47,
+        "median": 6.3,
+        "p95": 7.06
+      },
+      "rainfall": {
+        "p05": 30.064,
+        "median": 68.44999999999999,
+        "p95": 193.2684999999999
+      },
+      "_cities": {
+        "Pune": 0.205,
+        "Nashik": 0.195,
+        "Satara": 0.137,
+        "Kolhapur": 0.086,
+        "Mumbai": 0.086,
+        "Nagpur": 0.085,
+        "Ahilyanagar": 0.075,
+        "Chhatrapati Sambhajinagar": 0.074,
+        "Amravati": 0.023,
+        "Jalgaon": 0.018,
+        "Solapur": 0.015
+      }
+    },
+    "Cauliflower": {
+      "N": {
+        "p05": 100.0,
+        "median": 120.0,
+        "p95": 136.0
+      },
+      "P": {
+        "p05": 50.0,
+        "median": 70.0,
+        "p95": 91.0
+      },
+      "K": {
+        "p05": 35.45,
+        "median": 63.0,
+        "p95": 88.0
+      },
+      "temperature": {
+        "p05": 19.0635,
+        "median": 22.545,
+        "p95": 25.6455
+      },
+      "humidity": {
+        "p05": 55.9955,
+        "median": 69.49,
+        "p95": 83.97649999999999
+      },
+      "ph": {
+        "p05": 5.67,
+        "median": 6.42,
+        "p95": 7.23
+      },
+      "rainfall": {
+        "p05": 36.227000000000004,
+        "median": 89.96000000000001,
+        "p95": 199.4474999999997
+      },
+      "_cities": {
+        "Nashik": 0.209,
+        "Pune": 0.206,
+        "Satara": 0.137,
+        "Ahilyanagar": 0.089,
+        "Nagpur": 0.082,
+        "Jalgaon": 0.082,
+        "Mumbai": 0.077,
+        "Kolhapur": 0.068,
+        "Solapur": 0.023,
+        "Amravati": 0.015,
+        "Chhatrapati Sambhajinagar": 0.012
+      }
+    },
+    "Onion": {
+      "N": {
+        "p05": 57.0,
+        "median": 79.0,
+        "p95": 103.0
+      },
+      "P": {
+        "p05": 28.0,
+        "median": 45.0,
+        "p95": 62.0
+      },
+      "K": {
+        "p05": 64.0,
+        "median": 92.0,
+        "p95": 120.0
+      },
+      "temperature": {
+        "p05": 20.424500000000002,
+        "median": 23.715,
+        "p95": 27.1655
+      },
+      "humidity": {
+        "p05": 41.92,
+        "median": 57.055,
+        "p95": 73.01149999999998
+      },
+      "ph": {
+        "p05": 6.12,
+        "median": 6.99,
+        "p95": 7.77
+      },
+      "rainfall": {
+        "p05": 22.924000000000003,
+        "median": 51.445,
+        "p95": 136.59049999999996
+      },
+      "_cities": {
+        "Nashik": 0.289,
+        "Ahilyanagar": 0.172,
+        "Chhatrapati Sambhajinagar": 0.12,
+        "Solapur": 0.118,
+        "Pune": 0.117,
+        "Satara": 0.069,
+        "Jalgaon": 0.055,
+        "Mumbai": 0.017,
+        "Kolhapur": 0.017,
+        "Nagpur": 0.015,
+        "Amravati": 0.009
+      }
+    },
+    "Potato": {
+      "N": {
+        "p05": 104.0,
+        "median": 121.0,
+        "p95": 137.0
+      },
+      "P": {
+        "p05": 62.0,
+        "median": 85.0,
+        "p95": 107.0
+      },
+      "K": {
+        "p05": 98.0,
+        "median": 142.0,
+        "p95": 184.0
+      },
+      "temperature": {
+        "p05": 17.6045,
+        "median": 20.785,
+        "p95": 23.9965
+      },
+      "humidity": {
+        "p05": 50.9315,
+        "median": 66.64500000000001,
+        "p95": 83.8775
+      },
+      "ph": {
+        "p05": 4.8445,
+        "median": 5.6,
+        "p95": 6.34
+      },
+      "rainfall": {
+        "p05": 20.0,
+        "median": 48.475,
+        "p95": 153.42299999999997
+      },
+      "_cities": {
+        "Pune": 0.297,
+        "Satara": 0.249,
+        "Kolhapur": 0.111,
+        "Ahilyanagar": 0.083,
+        "Chhatrapati Sambhajinagar": 0.082,
+        "Nashik": 0.077,
+        "Mumbai": 0.029,
+        "Nagpur": 0.028,
+        "Jalgaon": 0.018,
+        "Amravati": 0.017,
+        "Solapur": 0.009
+      }
+    },
+    "Tomato": {
+      "N": {
+        "p05": 79.0,
+        "median": 100.0,
+        "p95": 123.0
+      },
+      "P": {
+        "p05": 55.0,
+        "median": 75.0,
+        "p95": 95.54999999999995
+      },
+      "K": {
+        "p05": 65.0,
+        "median": 98.0,
+        "p95": 128.0
+      },
+      "temperature": {
+        "p05": 20.6945,
+        "median": 24.165,
+        "p95": 27.7755
+      },
+      "humidity": {
+        "p05": 45.7535,
+        "median": 60.6,
+        "p95": 78.5465
+      },
+      "ph": {
+        "p05": 5.6145000000000005,
+        "median": 6.375,
+        "p95": 7.0455
+      },
+      "rainfall": {
+        "p05": 31.177,
+        "median": 60.125,
+        "p95": 152.2475
+      },
+      "_cities": {
+        "Nashik": 0.249,
+        "Pune": 0.191,
+        "Satara": 0.143,
+        "Ahilyanagar": 0.112,
+        "Nagpur": 0.082,
+        "Kolhapur": 0.082,
+        "Solapur": 0.078,
+        "Mumbai": 0.018,
+        "Amravati": 0.017,
+        "Jalgaon": 0.014,
+        "Chhatrapati Sambhajinagar": 0.014
+      }
+    },
+    "Wheat": {
+      "N": {
+        "p05": 65.0,
+        "median": 90.0,
+        "p95": 110.0
+      },
+      "P": {
+        "p05": 29.0,
+        "median": 45.0,
+        "p95": 62.0
+      },
+      "K": {
+        "p05": 31.0,
+        "median": 50.5,
+        "p95": 68.0
+      },
+      "temperature": {
+        "p05": 18.679000000000002,
+        "median": 21.69,
+        "p95": 24.8655
+      },
+      "humidity": {
+        "p05": 37.7235,
+        "median": 48.785,
+        "p95": 59.1155
+      },
+      "ph": {
+        "p05": 6.6445,
+        "median": 7.55,
+        "p95": 8.421
+      },
+      "rainfall": {
+        "p05": 20.0,
+        "median": 24.655,
+        "p95": 41.009499999999996
+      },
+      "_cities": {
+        "Nagpur": 0.169,
+        "Jalgaon": 0.157,
+        "Amravati": 0.154,
+        "Chhatrapati Sambhajinagar": 0.12,
+        "Ahilyanagar": 0.111,
+        "Nashik": 0.108,
+        "Solapur": 0.068,
+        "Pune": 0.063,
+        "Kolhapur": 0.02,
+        "Satara": 0.017,
+        "Mumbai": 0.014
+      }
+    }
+  },
+  "global_shap_importance": {
+    "N": 0.8197199702262878,
+    "P": 0.9891600012779236,
+    "K": 1.573140025138855,
+    "temperature": 0.6072999835014343,
+    "humidity": 0.47960999608039856,
+    "ph": 0.7605400085449219,
+    "rainfall": 0.5426300168037415,
+    "city_code": 0.4030500054359436,
+    "planting_month": 0.3705100119113922,
+    "selling_month": 0.13300999999046326,
+    "growing_months": 0.6093400120735168
+  }
+}

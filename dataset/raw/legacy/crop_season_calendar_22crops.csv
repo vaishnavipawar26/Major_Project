@@ -1,0 +1,23 @@
+crop,seasons,category,source,notes,verification_status
+rice,Kharif,seasonal,"NCERT Contemporary India II (Class 10 Geography) Ch.4 Agriculture - paddy listed as Kharif crop","Also grown as a Rabi/summer crop in some irrigated regions; only the main season is modelled",to_verify_ICAR_DES
+maize,Kharif,seasonal,"NCERT Contemporary India II Ch.4 - maize listed as Kharif crop","NCERT notes maize is also grown in Rabi in some states (e.g. Bihar); only the main season is modelled",to_verify_ICAR_DES
+chickpea,Rabi,seasonal,"NCERT Contemporary India II Ch.4 - gram listed as Rabi crop",,to_verify_ICAR_DES
+kidneybeans,Kharif;Rabi,seasonal,"General agronomic practice (rajma: Kharif in hill regions, Rabi in plains)","Season depends on region; both seasons accepted",to_verify_ICAR_DES
+pigeonpeas,Kharif,seasonal,"NCERT Contemporary India II Ch.4 - arhar (tur) listed as Kharif crop",,to_verify_ICAR_DES
+mothbeans,Kharif,seasonal,"Grouped with Kharif pulses (arid-zone rainfed pulse)",,to_verify_ICAR_DES
+mungbean,Kharif;Zaid,seasonal,"NCERT Contemporary India II Ch.4 - moong listed as Kharif crop; also widely grown as summer (Zaid) pulse","Zaid cultivation needs irrigation",to_verify_ICAR_DES
+blackgram,Kharif,seasonal,"NCERT Contemporary India II Ch.4 - urad listed as Kharif crop","Also a Rabi crop in parts of south India; only the main season is modelled",to_verify_ICAR_DES
+lentil,Rabi,seasonal,"Standard classification of masoor as a Rabi pulse (DES Agricultural Statistics at a Glance)",,to_verify_ICAR_DES
+cotton,Kharif,seasonal,"NCERT Contemporary India II Ch.4 - cotton listed as Kharif crop",,to_verify_ICAR_DES
+jute,Kharif,seasonal,"NCERT Contemporary India II Ch.4 - jute listed as Kharif crop","Sowing typically begins before the monsoon (Mar-May)",to_verify_ICAR_DES
+watermelon,Zaid,seasonal,"NCERT Contemporary India II Ch.4 - watermelon listed as Zaid crop",,to_verify_ICAR_DES
+muskmelon,Zaid,seasonal,"NCERT Contemporary India II Ch.4 - muskmelon listed as Zaid crop",,to_verify_ICAR_DES
+pomegranate,Year-round,perennial,"Perennial fruit crop","Planting window not modelled; seasonal score is neutral",n/a
+banana,Year-round,perennial,"Perennial fruit crop","Planting window not modelled; seasonal score is neutral",n/a
+mango,Year-round,perennial,"Perennial fruit tree","Planting window not modelled; seasonal score is neutral",n/a
+grapes,Year-round,perennial,"Perennial fruit crop","Planting window not modelled; seasonal score is neutral",n/a
+apple,Year-round,perennial,"Perennial fruit tree (temperate)","Planting window not modelled; seasonal score is neutral",n/a
+orange,Year-round,perennial,"Perennial fruit tree","Planting window not modelled; seasonal score is neutral",n/a
+papaya,Year-round,perennial,"Perennial fruit crop","Planting window not modelled; seasonal score is neutral",n/a
+coconut,Year-round,perennial,"Perennial plantation crop","Planting window not modelled; seasonal score is neutral",n/a
+coffee,Year-round,perennial,"Perennial plantation crop","Planting window not modelled; seasonal score is neutral",n/a

@@ -1,0 +1,20 @@
+
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Setup, environment variables, database creation and training are described in the root README; architecture, schema and API in ARCHITECTURE.md.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "python -m uvicorn app.main:app --reload --port 8000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}

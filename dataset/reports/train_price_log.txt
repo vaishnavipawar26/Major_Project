@@ -1,0 +1,106 @@
+usable origins: 219,941  (features 21s)
+h= 7 2025-Q1: train=133,602 test=18,757 (94s)
+h= 7 2025-Q2: train=152,548 test=20,451 (184s)
+h= 7 2025-Q3: train=172,587 test=20,087 (402s)
+h= 7 2025-Q4: train=192,864 test=14,230 (499s)
+                            MAE     RMSE  ...  R2_change  direction_accuracy_pct
+model                                     ...                                   
+hist_gradient_boosting  270.493  471.319  ...      0.162                  51.607
+naive                   278.203  506.784  ...     -0.008                  18.738
+random_forest           262.693  461.518  ...      0.196                  52.103
+seasonal_naive          419.070  772.788  ...     -0.934                  38.335
+xgboost                 269.547  469.300  ...      0.164                  51.877
+
+[5 rows x 6 columns]
+h=14 2025-Q1: train=130,244 test=18,654 (633s)
+h=14 2025-Q2: train=149,088 test=20,457 (698s)
+h=14 2025-Q3: train=169,007 test=19,979 (773s)
+h=14 2025-Q4: train=189,342 test=12,893 (845s)
+                            MAE     RMSE  ...  R2_change  direction_accuracy_pct
+model                                     ...                                   
+hist_gradient_boosting  350.239  591.395  ...      0.087                  53.615
+naive                   351.372  618.674  ...     -0.022                  14.806
+random_forest           341.540  581.895  ...      0.120                  53.634
+seasonal_naive          514.136  951.278  ...     -0.943                  40.842
+xgboost                 350.977  590.163  ...      0.082                  53.705
+
+[5 rows x 6 columns]
+h=30 2025-Q1: train=124,410 test=18,346 (956s)
+h=30 2025-Q2: train=143,114 test=20,228 (1010s)
+h=30 2025-Q3: train=162,366 test=19,201 (1072s)
+h=30 2025-Q4: train=182,675 test=10,002 (1158s)
+                            MAE      RMSE  ...  R2_change  direction_accuracy_pct
+model                                      ...                                   
+hist_gradient_boosting  450.359   713.259  ...      0.016                  56.478
+naive                   427.499   721.432  ...     -0.044                  11.444
+random_forest           441.899   713.983  ...      0.036                  55.843
+seasonal_naive          639.600  1174.866  ...     -1.093                  42.803
+xgboost                 452.111   712.712  ...      0.001                  56.745
+
+[5 rows x 6 columns]
+h=7: 10-90% residual band covers 80.0% of out-of-fold errors
+h=14: 10-90% residual band covers 80.0% of out-of-fold errors
+h=30: 10-90% residual band covers 80.0% of out-of-fold errors
+{
+  "7": {
+    "model": "random_forest",
+    "beats_naive_mae": true,
+    "cv_mean": {
+      "MAE": 262.6933,
+      "RMSE": 461.5176,
+      "R2": 0.7887,
+      "MAPE_pct": 15.4387,
+      "R2_change": 0.1955,
+      "direction_accuracy_pct": 52.1028
+    },
+    "naive_cv_mean": {
+      "MAE": 278.2035,
+      "RMSE": 506.7839,
+      "R2": 0.7444,
+      "MAPE_pct": 16.4563,
+      "R2_change": -0.0084,
+      "direction_accuracy_pct": 18.7378
+    }
+  },
+  "14": {
+    "model": "random_forest",
+    "beats_naive_mae": true,
+    "cv_mean": {
+      "MAE": 341.5396,
+      "RMSE": 581.8949,
+      "R2": 0.6629,
+      "MAPE_pct": 20.1057,
+      "R2_change": 0.1195,
+      "direction_accuracy_pct": 53.634
+    },
+    "naive_cv_mean": {
+      "MAE": 351.372,
+      "RMSE": 618.674,
+      "R2": 0.6143,
+      "MAPE_pct": 20.5976,
+      "R2_change": -0.0222,
+      "direction_accuracy_pct": 14.8058
+    }
+  },
+  "30": {
+    "model": "random_forest",
+    "beats_naive_mae": false,
+    "cv_mean": {
+      "MAE": 441.8991,
+      "RMSE": 713.9832,
+      "R2": 0.4992,
+      "MAPE_pct": 26.7408,
+      "R2_change": 0.0356,
+      "direction_accuracy_pct": 55.8434
+    },
+    "naive_cv_mean": {
+      "MAE": 427.4988,
+      "RMSE": 721.4316,
+      "R2": 0.4783,
+      "MAPE_pct": 25.5376,
+      "R2_change": -0.0441,
+      "direction_accuracy_pct": 11.4444
+    }
+  }
+}
+done in 1810s
