@@ -2,12 +2,22 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Alert from "../components/Alert";
 import FormField from "../components/FormField";
+import { startTour } from "../components/GuidedTour";
+import PasswordInput from "../components/PasswordInput";
+import { useToast } from "../components/Toast";
+import SproutSpinner from "../components/SproutSpinner";
 import { useAuth } from "../hooks/useAuth";
+import { useKnownMessage, useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { isEmail, validatePassword } from "../utils/validation";
 
+const ORDER = ["name", "email", "password", "confirm"];
+
 export default function Register() {
+  const t = useT();
+  const known = useKnownMessage();
   const { register } = useAuth();
+  const { notify } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState({});
@@ -19,17 +29,22 @@ export default function Register() {
   const submit = async (e) => {
     e.preventDefault();
     const errs = {};
-    if (form.name.trim().length < 2) errs.name = "Enter your name (at least 2 characters).";
-    if (!isEmail(form.email)) errs.email = "Enter a valid email address.";
-    const pw = validatePassword(form.password);
+    if (form.name.trim().length < 2) errs.name = t("auth.errName");
+    if (!isEmail(form.email)) errs.email = t("auth.errEmail");
+    const pw = validatePassword(form.password, t);
     if (pw) errs.password = pw;
-    if (form.confirm !== form.password) errs.confirm = "Passwords do not match.";
+    if (form.confirm !== form.password) errs.confirm = t("auth.errMismatch");
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (Object.keys(errs).length) { document.getElementById(ORDER.find((k) => errs[k]))?.focus(); return; }
     setSubmitting(true);
     setApiError(null);
     try {
       await register(form.name.trim(), form.email.trim(), form.password);
+      // only reached after the server created the account
+      notify({
+        type: "success", celebrate: "register", title: t("toast.registerTitle"), message: t("toast.registerBody"),
+        action: { label: t("toast.getStarted"), to: "/dashboard", onClick: startTour },
+      });
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setApiError(errorMessage(err));
@@ -39,32 +54,29 @@ export default function Register() {
   };
 
   return (
-    <form className="card stack" onSubmit={submit} noValidate>
+    <form className="card auth-card stack" onSubmit={submit} noValidate aria-busy={submitting}>
       <div>
-        <h2>Create your account</h2>
-        <p className="text-2">Your forecasts and recommendations are saved privately to your account.</p>
+        <h1 className="auth-title">{t("auth.registerTitle")}</h1>
+        <p className="text-2 !mb-0">{t("auth.registerSubtitle")}</p>
       </div>
-      {apiError && <Alert type="error">{apiError}</Alert>}
-      <FormField id="name" label="Full name" error={errors.name}>
+      {apiError && <Alert type="error">{known(apiError)}</Alert>}
+      <FormField id="name" label={t("auth.fullName")} error={errors.name}>
         <input id="name" autoComplete="name" value={form.name} onChange={set("name")} />
       </FormField>
-      <FormField id="email" label="Email" error={errors.email}>
-        <input id="email" type="email" autoComplete="email" value={form.email} onChange={set("email")} />
+      <FormField id="email" label={t("auth.email")} error={errors.email}>
+        <input id="email" type="email" inputMode="email" autoComplete="email" value={form.email} onChange={set("email")} />
       </FormField>
-      <FormField id="password" label="Password" hint="At least 8 characters, with a letter and a number."
-        error={errors.password}>
-        <input id="password" type="password" autoComplete="new-password" value={form.password}
-          onChange={set("password")} />
+      <FormField id="password" label={t("auth.password")} hint={t("auth.passwordRule")} error={errors.password}>
+        <PasswordInput id="password" autoComplete="new-password" value={form.password} onChange={set("password")} />
       </FormField>
-      <FormField id="confirm" label="Confirm password" error={errors.confirm}>
-        <input id="confirm" type="password" autoComplete="new-password" value={form.confirm}
-          onChange={set("confirm")} />
+      <FormField id="confirm" label={t("auth.confirmPassword")} error={errors.confirm}>
+        <PasswordInput id="confirm" autoComplete="new-password" value={form.confirm} onChange={set("confirm")} />
       </FormField>
       <button className="btn btn-primary btn-lg" type="submit" disabled={submitting}>
-        {submitting ? "Creating account…" : "Create account"}
+        {submitting && <SproutSpinner inButton />}{submitting ? t("auth.creating") : t("auth.createButton")}
       </button>
-      <p className="small text-2" style={{ margin: 0 }}>
-        Already registered? <Link to="/login">Log in</Link>
+      <p className="small text-2 auth-switch">
+        {t("auth.haveAccount")} <Link to="/login">{t("auth.loginLink")}</Link>
       </p>
     </form>
   );

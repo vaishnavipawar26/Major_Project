@@ -1,8 +1,13 @@
-export default function Loader({ label = "Loading…" }) {
+import { useKnownMessage, useT } from "../i18n/LanguageContext";
+import SproutSpinner from "./SproutSpinner";
+
+export default function Loader({ label }) {
+  const t = useT();
+  const known = useKnownMessage();
   return (
     <div className="loader" role="status" aria-live="polite">
-      <span className="spinner" aria-hidden="true" />
-      <span>{label}</span>
+      <SproutSpinner size={30} />
+      <span>{label ? known(label) : t("common.loading")}</span>
     </div>
   );
 }

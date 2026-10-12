@@ -6,10 +6,19 @@ export const pct = (v, digits = 1) =>
   v == null ? "—" : `${v > 0 ? "+" : ""}${Number(v).toFixed(digits)}%`;
 export const score = (v) => (v == null ? "—" : Math.round(v).toString());
 
+// Display locale for dates and month names, set by the language provider. Digits stay 0-9 in every
+// language ("-u-nu-latn") so prices and dates read the same as on mandi slips. Numbers always use en-IN.
+let dateLocale = "en-IN";
+let uiLang = "en";
+export function setFormatLanguage(lang) {
+  uiLang = lang;
+  dateLocale = lang === "en" ? "en-IN" : `${lang}-IN-u-nu-latn`;
+}
+
 export function fmtDate(iso, opts = { day: "numeric", month: "short", year: "numeric" }) {
   if (!iso) return "—";
   const d = new Date(iso.length === 10 ? `${iso}T00:00:00` : iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-IN", opts);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(dateLocale, opts);
 }
 export const shortDate = (iso) => fmtDate(iso, { day: "numeric", month: "short" });
 export const fmtDateTime = (iso) =>
@@ -18,11 +27,26 @@ export const fmtDateTime = (iso) =>
 export const titleCase = (s) => (s ? s.replace(/\b\w/g, (c) => c.toUpperCase()) : s);
 
 export const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export const LONG_MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+  "August", "September", "October", "November", "December"];
+const intlMonth = (m, style) => new Intl.DateTimeFormat(dateLocale, { month: style, timeZone: "UTC" }).format(Date.UTC(2020, m - 1, 1));
+/** Month number 1-12 -> short name in the display language ("Mar" in English). */
+export const monthShort = (m) => (uiLang === "en" ? SHORT_MONTHS[m - 1] : intlMonth(m, "short"));
+/** Month number 1-12 -> full name in the display language ("March" in English). */
+export const monthLong = (m) => (uiLang === "en" ? LONG_MONTHS[m - 1] : intlMonth(m, "long"));
 /** "2027-03" -> "Mar 2027" */
 export const monthLabel = (ym) => {
   if (!ym) return "—";
   const [y, m] = ym.split("-").map(Number);
-  return `${SHORT_MONTHS[m - 1]} ${y}`;
+  return `${monthShort(m)} ${y}`;
+};
+
+/** Display name of a crop or city in the chosen language; the original (API) value is never changed. */
+export const cropName = (t, name, kind = "crop") => {
+  if (!name) return name;
+  const key = `name.${kind}.${name}`;
+  const v = t(key);
+  return v === key ? name : v;
 };
 /** Compact rupees: ₹1.2L, ₹45K */
 export const compactRupees = (v) => {

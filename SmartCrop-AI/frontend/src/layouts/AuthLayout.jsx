@@ -1,32 +1,47 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { BrainCircuit, ChartNoAxesCombined, Sprout } from "lucide-react";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import RippleManager from "../components/RippleManager";
+import { LogoMark } from "../components/Logo";
+import heroPhoto from "../assets/photos/hero-farmer.webp";
+import { useT } from "../i18n/LanguageContext";
 
 const POINTS = [
-  { icon: ChartNoAxesCombined, text: "Price forecasts for 7 crops in Maharashtra mandis" },
-  { icon: Sprout, text: "Crop suggestions from your soil, weather and selling month" },
-  { icon: BrainCircuit, text: "Every result explained in simple words" },
+  { icon: ChartNoAxesCombined, text: "auth.point.price" },
+  { icon: Sprout, text: "auth.point.crop" },
+  { icon: BrainCircuit, text: "auth.point.explain" },
 ];
 
 export default function AuthLayout() {
+  const t = useT();
+  const location = useLocation();
   return (
     <div className="auth-page">
-      <section className="auth-side">
+      <RippleManager />
+      <section className="auth-side" style={{ "--auth-photo": `url(${heroPhoto})` }}>
         <div className="brand auth-brand">
-          <span className="brand-mark" aria-hidden="true"><Sprout size={20} /></span>
+          <LogoMark size={44} />
           <span className="brand-text">SmartCrop <span>AI</span></span>
         </div>
-        <p className="auth-lead">
-          Market price forecasts and crop suggestions — with clear reasons you can check.
-        </p>
+        <p className="auth-lead">{t("auth.lead")}</p>
         <ul className="auth-points">
           {POINTS.map(({ icon: Icon, text }) => (
-            <li key={text}><span aria-hidden="true"><Icon size={18} /></span>{text}</li>
+            <li key={text}><span aria-hidden="true"><Icon size={18} /></span>{t(text)}</li>
           ))}
         </ul>
-        <p className="small auth-note">Forecasts are model-based estimates, not guarantees.</p>
+        <p className="small auth-note">{t("auth.note")}</p>
       </section>
       <section className="auth-form">
-        <Outlet />
+        <div className="auth-topbar"><LanguageSwitcher /></div>
+        {/* on phones and tablets the side panel is hidden, so the brand and purpose stay visible here */}
+        <div className="auth-mobile-brand">
+          <div className="brand">
+            <LogoMark size={40} />
+            <span className="brand-text">SmartCrop <span>AI</span></span>
+          </div>
+          <p>{t("auth.leadShort")}</p>
+        </div>
+        <div className="page-enter auth-outlet" key={location.pathname}><Outlet /></div>
       </section>
     </div>
   );

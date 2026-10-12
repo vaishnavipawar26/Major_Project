@@ -1,26 +1,28 @@
 import { Link } from "react-router-dom";
-import { Sprout } from "lucide-react";
+import { LogoMark } from "./Logo";
+import { useT } from "../i18n/LanguageContext";
 
 export default function Footer() {
+  const t = useT();
   return (
     <footer className="app-footer">
       <div className="content footer-inner">
         <div className="footer-brand">
-          <span className="footer-mark" aria-hidden="true"><Sprout size={16} /></span>
+          <LogoMark size={30} />
           <div>
             <strong>SmartCrop AI</strong>
-            <p>AI-powered insights for smarter agricultural decisions.</p>
+            <p>{t("footer.tagline")}</p>
           </div>
         </div>
-        <nav className="footer-links" aria-label="Footer">
-          <Link to="/price-prediction">Price Prediction</Link>
-          <Link to="/crop-recommendation">Crop Recommendation</Link>
-          <Link to="/history">History</Link>
+        <nav className="footer-links" aria-label={t("footer.nav")}>
+          <Link to="/price-prediction">{t("nav.price")}</Link>
+          <Link to="/crop-recommendation">{t("nav.crop")}</Link>
+          <Link to="/history">{t("nav.history")}</Link>
         </nav>
       </div>
       <div className="content footer-meta">
-        <span>&copy; {new Date().getFullYear()} SmartCrop AI. Built for smarter farming.</span>
-        <span>Forecasts are model-based estimates, not guarantees.</span>
+        <span>&copy; {new Date().getFullYear()} SmartCrop AI</span>
+        <span>{t("footer.disclaimer")}</span>
       </div>
     </footer>
   );

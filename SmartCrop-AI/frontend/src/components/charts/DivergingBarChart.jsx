@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import {
   Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip,
   XAxis, YAxis,
 } from "recharts";
+import { useNarrow } from "../../hooks/useNarrow";
 
 /**
  * Horizontal diverging bars for SHAP contributions.
@@ -55,15 +55,4 @@ export default function DivergingBarChart({ items, valueKey, labelKey, format, t
       </div>
     </div>
   );
-}
-
-function useNarrow(breakpoint = 640) {
-  const get = () => typeof window !== "undefined" && window.innerWidth < breakpoint;
-  const [narrow, setNarrow] = useState(get);
-  useEffect(() => {
-    const on = () => setNarrow(get());
-    window.addEventListener("resize", on);
-    return () => window.removeEventListener("resize", on);
-  }, []);
-  return narrow;
 }

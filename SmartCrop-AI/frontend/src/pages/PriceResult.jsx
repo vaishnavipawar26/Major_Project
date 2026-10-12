@@ -1,26 +1,42 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ChartNoAxesCombined, CircleCheck, Minus, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
+import {
+  ArrowLeft, BookOpen, ChartNoAxesCombined, CircleCheck, History, Lightbulb, Minus, TrendingDown, TrendingUp, TriangleAlert,
+} from "lucide-react";
 import Alert from "../components/Alert";
-import DirectionBadge from "../components/DirectionBadge";
+import CropArt from "../components/CropArt";
 import EmptyState from "../components/EmptyState";
 import Loader from "../components/Loader";
+import ResultStep from "../components/ResultStep";
+import ServerText from "../components/ServerText";
+import Tip from "../components/Tip";
+import TechnicalDetails from "../components/TechnicalDetails";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
+import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { historyService } from "../services/historyService";
 import { priceService } from "../services/priceService";
-import { ADVICE_STYLE } from "../utils/constants";
-import { addDays, dayRanges, fmtDate, pct, rupees, signedRupees } from "../utils/format";
+import { ADVICE_STYLE, STATE_MARKET } from "../utils/constants";
+import { addDays, cropName, dayRanges, fmtDate, pct, rupees, signedRupees } from "../utils/format";
 import { LAST_PRICE_REQUEST_KEY } from "./PricePrediction";
 
 const ALGORITHMS = { random_forest: "Random Forest", xgboost: "XGBoost" };
 const algorithmName = (a) => a.replace(/^(random_forest|xgboost)/, (m) => ALGORITHMS[m]);
 const IMPACT = {
-  higher: { cls: "impact-up", icon: TrendingUp, text: "Supports a higher price" },
-  lower: { cls: "impact-down", icon: TrendingDown, text: "Supports a lower price" },
-  small: { cls: "impact-small", icon: Minus, text: "Small influence" },
+  higher: { cls: "impact-up", icon: TrendingUp, text: "price.why.impactHigher" },
+  lower: { cls: "impact-down", icon: TrendingDown, text: "price.why.impactLower" },
+  small: { cls: "impact-small", icon: Minus, text: "price.why.impactSmall" },
 };
-const plural = (n, word) => `${n} ${word}${Math.abs(n) === 1 ? "" : "s"}`;
+// Plain reading of the API's direction field ("Stable" = change smaller than the model's usual error)
+const TREND = {
+  Increasing: { icon: TrendingUp, cls: "trend-up", text: "price.result.trendUp" },
+  Decreasing: { icon: TrendingDown, cls: "trend-down", text: "price.result.trendDown" },
+  Stable: { icon: Minus, cls: "trend-flat", text: "price.result.trendFlat" },
+};
+/** Translated label for a backend key, or the backend's own English label when the dictionary has none. */
+const labelFor = (t, key, fallback) => { const v = t(key); return v === key ? fallback : v; };
+/** "1 day" / "30 days" in the display language */
+const days = (t, n) => t(Math.abs(n) === 1 ? "unit.day" : "unit.days", { n });
 
 /** Resolve the request to display: navigation state → ?id from history → last session result. */
 function useResultSource() {
@@ -52,12 +68,14 @@ function useResultSource() {
 }
 
 function ImpactPill({ impact }) {
+  const t = useT();
   const m = IMPACT[impact] || IMPACT.small;
   const Icon = m.icon;
-  return <span className={`impact ${m.cls}`}><Icon size={13} aria-hidden="true" />{m.text}</span>;
+  return <span className={`impact ${m.cls}`}><Icon size={13} aria-hidden="true" />{t(m.text)}</span>;
 }
 
 function StorageCostCalculator({ advice }) {
+  const t = useT();
   const [cost, setCost] = useState("");
   const perDay = Number(cost);
   const valid = cost !== "" && !Number.isNaN(perDay) && perDay >= 0;
@@ -66,173 +84,275 @@ function StorageCostCalculator({ advice }) {
   return (
     <div className="calc">
       <label htmlFor="storage-cost" className="small" style={{ fontWeight: 600 }}>
-        Your storage cost (₹ per quintal per day, optional)
+        {t("price.advice.storageCostLabel")}
       </label>
       <div className="row" style={{ marginTop: 4 }}>
-        <input id="storage-cost" type="number" min="0" step="any" inputMode="decimal" placeholder="e.g. 5"
+        <input id="storage-cost" type="number" min="0" step="any" inputMode="decimal" placeholder={t("price.advice.storageCostPlaceholder")}
           value={cost} onChange={(e) => setCost(e.target.value)} style={{ maxWidth: 140 }} />
         {valid && (
           <span className="small">
-            {plural(advice.wait_days, "day")} × {rupees(perDay)} = {rupees(total)} storage →
+            {days(t, advice.wait_days)} × {rupees(perDay)} = {rupees(total)} {t("price.advice.storageWord")} →
             {" "}<strong className={net >= 0 ? "text-good" : "text-bad"}>
-              expected net {net >= 0 ? "gain" : "loss"} {rupees(Math.abs(net))} per quintal
+              {t(net >= 0 ? "price.advice.netGain" : "price.advice.netLoss", { amount: rupees(Math.abs(net)) })}
             </strong>
           </span>
         )}
       </div>
-      <p className="muted small" style={{ margin: "4px 0 0" }}>
-        We don't know your storage costs, so enter them to see the expected gain after storage. Transport,
-        commission and quality loss are not included.
-      </p>
+      <p className="muted small" style={{ margin: "4px 0 0" }}>{t("price.advice.storageCostNote")}</p>
     </div>
   );
 }
 
 function AdviceCard({ advice, commodity }) {
+  const t = useT();
   const style = ADVICE_STYLE[advice.code] || ADVICE_STYLE.NO_CLEAR_DIFFERENCE;
   const AdviceIcon = style.icon;
   const moved = advice.recommended_date !== advice.target_date;
   const peak = advice.peak;
   const showPeak = peak.date !== advice.recommended_date && peak.diff_vs_target > 0;
+  // same rule as the backend label: SELL_EARLIER with a suggested date of today reads "selling now"
+  const labelCode = advice.code === "SELL_EARLIER" && advice.recommended_horizon_days === 0 ? "SELL_NOW" : advice.code;
   return (
     <section className={`card suggestion ${style.tone}`} aria-labelledby="advice-title">
-      <span className="stat-label">Best time to sell</span>
-      <div className="suggestion-label" id="advice-title"><AdviceIcon size={22} aria-hidden="true" />{advice.label}</div>
+      <span className="stat-label">{t("price.advice.title")}</span>
+      <div className="suggestion-label" id="advice-title"><AdviceIcon size={22} aria-hidden="true" />{labelFor(t, `price.advice.code.${labelCode}`, advice.label)}</div>
 
       <dl className="advice-grid">
-        <div><dt>Recommended selling date</dt><dd className="big">{fmtDate(advice.recommended_date)}</dd></div>
-        <div><dt>Predicted price then</dt><dd className="big">{rupees(advice.recommended_price)}<span className="unit"> /quintal</span></dd></div>
-        <div><dt>Price on your date ({fmtDate(advice.target_date, { day: "numeric", month: "short" })})</dt><dd>{rupees(advice.target_price)}</dd></div>
-        <div><dt>Expected extra per quintal</dt><dd>{moved ? signedRupees(advice.extra_per_quintal) : "₹0"}</dd></div>
-        <div><dt>Price difference</dt><dd>{moved ? pct(advice.extra_pct) : "0%"}</dd></div>
-        <div><dt>{advice.wait_days < 0 ? "Days earlier than planned" : "Additional days to wait"}</dt>
-          <dd>{plural(Math.abs(advice.wait_days), "day")}</dd></div>
+        <div><dt>{t("price.advice.recDate")}</dt><dd className="big">{fmtDate(advice.recommended_date)}</dd></div>
+        <div><dt>{t("price.advice.recPrice")}</dt><dd className="big">{rupees(advice.recommended_price)}<span className="unit"> {t("unit.perQuintal")}</span></dd></div>
+        <div><dt>{t("price.advice.yourDatePrice", { date: fmtDate(advice.target_date, { day: "numeric", month: "short" }) })}</dt><dd>{rupees(advice.target_price)}</dd></div>
+        <div><dt>{t("price.advice.extra")}</dt><dd>{moved ? signedRupees(advice.extra_per_quintal) : "₹0"}</dd></div>
+        <div><dt>{t("price.advice.diff")}</dt><dd>{moved ? pct(advice.extra_pct) : "0%"}</dd></div>
+        <div><dt>{advice.wait_days < 0 ? t("price.advice.daysEarlier") : t("price.advice.daysWait")}</dt>
+          <dd>{days(t, Math.abs(advice.wait_days))}</dd></div>
       </dl>
 
-      <p style={{ marginTop: 12 }}>{advice.explanation}</p>
+      <ServerText as="p" className="advice-text">{advice.explanation}</ServerText>
       {showPeak && (
         <p className="small text-2">
-          Highest predicted price in the forecast window: <strong>{rupees(peak.price)}</strong> on {fmtDate(peak.date)}
-          {" "}({signedRupees(peak.diff_vs_target)}, {pct(peak.diff_pct)} vs your date)
-          {peak.date > advice.target_date && advice.code !== "WAIT" ? " — not recommended because the difference is within the model's usual error or beyond safe storage time." : "."}
+          {t("price.advice.peak")} <strong>{rupees(peak.price)}</strong> {t("price.advice.peakOn", { date: fmtDate(peak.date) })}
+          {" "}({signedRupees(peak.diff_vs_target)}, {pct(peak.diff_pct)} {t("price.advice.vsYourDate")})
+          {peak.date > advice.target_date && advice.code !== "WAIT" ? ` — ${t("price.advice.peakNotRecommended")}` : "."}
         </p>
       )}
-      {advice.wait_days > 0 && <StorageCostCalculator advice={advice} />}
-
-      <div className="storage-note">
-        <strong>Storage for {commodity}: {advice.storage.category.toLowerCase()}</strong>
-        <p className="small" style={{ margin: "2px 0 0" }}>{advice.storage.note} We only compare dates up to
-          {" "}{plural(advice.storage.max_hold_days, "day")} after your date for this crop. (General guidance, not from the model.)</p>
-      </div>
-
-      <details style={{ marginTop: 10 }}>
-        <summary>Before you decide, check</summary>
-        <ul className="list small" style={{ marginTop: 6 }}>
-          {advice.considerations.map((c) => <li key={c}>{c}</li>)}
-        </ul>
+      <details className="advice-more">
+        <summary>{t("price.advice.storageMore")}</summary>
+        {advice.wait_days > 0 && <StorageCostCalculator advice={advice} />}
+        <div className="storage-note">
+          <strong>{t("price.advice.storageFor", { crop: cropName(t, commodity), category: labelFor(t, `price.storageCat.${advice.storage.category}`, advice.storage.category.toLowerCase()) })}</strong>
+          <p className="small" style={{ margin: "2px 0 0" }}><ServerText>{advice.storage.note}</ServerText>{" "}
+            {t("price.advice.storageLimit", { days: days(t, advice.storage.max_hold_days) })}</p>
+        </div>
       </details>
-      <p className="muted small" style={{ margin: "10px 0 0" }}>{advice.disclaimer}</p>
+
     </section>
   );
 }
 
-function WhyCard({ explain, error, forecast }) {
-  const [which, setWhich] = useState(0);
+function FactorGlossary({ factors }) {
+  const t = useT();
+  const keys = [...new Set(factors.map((f) => f.factor))].filter((k) => t(`gloss.price.${k}`) !== `gloss.price.${k}`);
+  if (!keys.length) return null;
+  return (
+    <details className="glossary">
+      <summary className="section-title"><BookOpen size={18} aria-hidden="true" />{t("why.glossaryTitle")}</summary>
+      <dl>
+        {keys.map((k) => (
+          <div key={k}><dt>{labelFor(t, `price.factor.${k}`, factors.find((f) => f.factor === k).title)}</dt><dd>{t(`gloss.price.${k}`)}</dd></div>
+        ))}
+      </dl>
+    </details>
+  );
+}
+
+/** Step 6 — the factors the model relied on most, one per row, in plain words (from the API's SHAP explanation). */
+function WhyFactors({ explain, error, forecast, which, setWhich }) {
+  const t = useT();
   const exps = explain?.explanations || [];
   const exp = exps[Math.min(which, exps.length - 1)];
   const point = exp && forecast.path.find((p) => p.horizon_days === exp.horizon_days);
   return (
-    <section className="card">
-      <div className="card-title">
-        <h2>Why is this price predicted?</h2>
-        {exps.length > 1 && (
-          <div className="segmented" role="radiogroup" aria-label="Explain which date">
-            {exps.map((e, i) => (
-              <button key={e.date} type="button" role="radio" aria-checked={which === i}
-                className={which === i ? "active" : ""} onClick={() => setWhich(i)}>
-                {i === 0 ? "Your date" : "Suggested date"}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+    <>
+      {exps.length > 1 && (
+        <div className="segmented mb-3" role="radiogroup" aria-label={t("price.why.whichDate")}>
+          {exps.map((e, i) => (
+            <button key={e.date} type="button" role="radio" aria-checked={which === i}
+              className={which === i ? "active" : ""} onClick={() => setWhich(i)}>
+              {i === 0 ? t("price.chart.yourDate") : t("price.why.suggestedDate")}
+            </button>
+          ))}
+        </div>
+      )}
       {error && <Alert type="error">{error}</Alert>}
-      {!explain && !error && <Loader label="Working out the main reasons…" />}
-      {explain && !exp && <Alert type="info">{explain.message || "No explanation is available for this forecast."}</Alert>}
+      {!explain && !error && <Loader label={t("price.why.loading")} />}
+      {explain && !exp && <Alert type="info">{explain.message ? <ServerText>{explain.message}</ServerText> : t("price.why.none")}</Alert>}
       {exp && (
         <div className="stack">
           <p className="text-2" style={{ margin: 0 }}>
-            For {fmtDate(exp.date)} the model expects {point ? <strong>{rupees(point.predicted_price)}</strong> : "this price"}
-            {" "}({pct(exp.prediction_change_pct)} from the starting price). The factors it relied on most:
+            {t("price.why.introA", { date: fmtDate(exp.date) })}{" "}
+            <strong>{point ? rupees(point.predicted_price) : t("price.why.thisPrice")}</strong>{" "}
+            {t("price.why.introB", { change: pct(exp.prediction_change_pct) })}
           </p>
-          {exp.all_small && (
-            <Alert type="info">No single factor stood out. The forecast stays close to the model's usual expectation for this crop.</Alert>
-          )}
+          {exp.all_small && <Alert type="info">{t("price.why.allSmall")}</Alert>}
           <ul className="factor-list">
             {exp.factors.slice(0, 3).map((f) => (
               <li key={f.factor}>
-                <div className="factor-head"><strong>{f.title}</strong><ImpactPill impact={f.impact} /></div>
+                <div className="factor-head"><strong>{labelFor(t, `price.factor.${f.factor}`, f.title)}</strong><ImpactPill impact={f.impact} /></div>
                 <p className="small" style={{ margin: "4px 0 0" }}>
-                  {f.observation}
-                  {f.impact !== "small" && <> The model links this to a {f.impact} predicted price (about {pct(f.effect_pct)}).</>}
+                  <ServerText>{f.observation}</ServerText>
+                  {f.impact !== "small" && <> {t(f.impact === "higher" ? "price.why.linkHigher" : "price.why.linkLower", { pct: pct(f.effect_pct) })}</>}
                 </p>
               </li>
             ))}
           </ul>
-          {exp.factors.length > 3 && (
-            <details>
-              <summary>Other factors</summary>
-              <ul className="factor-list compact" style={{ marginTop: 8 }}>
-                {exp.factors.slice(3).map((f) => (
-                  <li key={f.factor}><div className="factor-head"><span>{f.title}</span><ImpactPill impact={f.impact} /></div></li>
-                ))}
-              </ul>
-            </details>
-          )}
-          <p className="muted small" style={{ margin: 0 }}>
-            These are patterns the model learned from past mandi prices. They show what the forecast relied on, not
-            proven causes of price changes.
-          </p>
+          <FactorGlossary factors={exp.factors.slice(0, 3)} />
+          <p className="muted small" style={{ margin: 0 }}>{t("price.why.patternsNote")}</p>
         </div>
       )}
-    </section>
+    </>
   );
 }
 
-function ReliabilityCard({ forecast }) {
+/** Step 8 — every factor with its SHAP value, the raw model inputs and the model/validation details (collapsed). */
+function AdvancedDetails({ explain, forecast, which }) {
+  const tr = useT();
+  const exps = explain?.explanations || [];
+  const exp = exps[Math.min(which, exps.length - 1)];
   const t = forecast.target;
+  const crop = cropName(tr, forecast.series.commodity);
   const validated = forecast.path.filter((p) => p.beats_baseline).map((p) => p.horizon_days);
   return (
-    <section className="card">
-      <h2>How reliable is this forecast?</h2>
-      <dl className="kv" style={{ marginTop: 8 }}>
-        <dt>Average error in testing</dt>
-        <dd>{rupees(t.model_mae)} per quintal at {plural(t.horizon_days, "day")} ahead
-          {" "}(assuming no change: {rupees(t.baseline_mae)})</dd>
-        <dt>Your date</dt>
-        <dd className="inline-icon">{t.beats_baseline
-          ? <><CircleCheck size={15} className="text-good" aria-hidden="true" />Validated</>
-          : <><TriangleAlert size={15} className="text-warn" aria-hidden="true" />Not validated — rough guide</>}</dd>
-        <dt>Validated days ahead</dt>
-        <dd>{validated.length ? dayRanges(validated) : `None for ${forecast.series.commodity}`}</dd>
-        <dt>Typical error at your date</dt><dd>about ±{t.stable_band_pct.toFixed(0)}%</dd>
-        <dt>Model at your date</dt><dd>{algorithmName(forecast.model.algorithm)}, one direct prediction per day (no recursion)</dd>
-        <dt>Mandi data up to</dt><dd>{fmtDate(forecast.model.data_end)}</dd>
+    <TechnicalDetails title={tr("price.steps.advancedToggle")}>
+      {exp && (
+        <>
+          <h3 className="tech-subtitle">{tr("tech.factorsTitle")}</h3>
+          <p className="small text-2">{tr("price.why.tech.intro")}</p>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>{tr("table.factor")}</th><th>{tr("table.effect")}</th><th className="num">{tr("table.effectPct")}</th><th className="num">SHAP</th></tr></thead>
+              <tbody>
+                {exp.factors.map((f) => (
+                  <tr key={f.factor}>
+                    <td>{labelFor(tr, `price.factor.${f.factor}`, f.title)}</td>
+                    <td><ImpactPill impact={f.impact} /></td>
+                    <td className="num">{pct(f.effect_pct)}</td>
+                    <td className="num">{f.shap_value > 0 ? "+" : ""}{f.shap_value.toFixed(4)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {exp.technical?.length > 0 && (
+            <div className="table-wrap mt-3">
+              <table>
+                <thead><tr><th>{tr("table.feature")}</th><th className="num">{tr("table.value")}</th><th className="num">SHAP</th></tr></thead>
+                <tbody>
+                  {exp.technical.map((r) => (
+                    <tr key={r.feature}><td>{r.label}</td><td className="num">{r.value ?? "—"}</td>
+                      <td className="num">{r.shap_value > 0 ? "+" : ""}{r.shap_value.toFixed(4)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="muted small mt-2">
+            {tr("price.why.tech.method", { method: exp.method, space: exp.output_space, base: exp.base_value, baseChange: pct(exp.base_change_pct) })}
+          </p>
+        </>
+      )}
+      <h3 className="tech-subtitle mt-4">{tr("price.rel.title")}</h3>
+      <dl className="kv">
+        <dt>{tr("price.rel.yourDate")}</dt>
+        <dd>{t.beats_baseline ? tr("price.rel.validatedShort") : tr("price.rel.notValidatedShort")}</dd>
+        <dt>{tr("price.rel.validatedDays")}</dt>
+        <dd>{validated.length ? dayRanges(validated) : tr("price.rel.noneFor", { crop })}</dd>
+        <dt>{tr("price.rel.model")}</dt><dd>{tr("price.rel.modelValue", { algorithm: algorithmName(forecast.model.algorithm) })}</dd>
       </dl>
-      <p className="muted small" style={{ margin: "10px 0 0" }}>
-        "Validated" means that, when tested on 2025 data, the model's forecasts for {forecast.series.commodity} were
-        closer to the real price than simply assuming the price stays the same.
+      <p className="muted small" style={{ margin: "10px 0 0" }}>{tr("price.rel.validatedMeaning", { crop })}</p>
+    </TechnicalDetails>
+  );
+}
+
+/**
+ * Step 3 — a neutral reading built only from fields the API returns (direction and size of the change,
+ * the model's usual error, whether this horizon was validated, whether it is a seasonal projection),
+ * followed by the plain reliability figures.
+ */
+function MeaningContent({ forecast }) {
+  const tr = useT();
+  const t = forecast.target;
+  const crop = cropName(tr, forecast.series.commodity);
+  const vars = {
+    date: fmtDate(t.date), size: `${Math.abs(t.change_pct).toFixed(1)}%`, start: rupees(forecast.current_price),
+    change: pct(t.change_pct), band: t.stable_band_pct.toFixed(0),
+  };
+  const lines = [
+    t.direction === "Increasing" ? tr("price.understand.up", vars)
+      : t.direction === "Decreasing" ? tr("price.understand.down", vars) : tr("price.understand.stable", vars),
+    ...(forecast.projection ? [tr("price.understand.projection")] : []),
+    tr("price.understand.estimate"),
+  ];
+  return (
+    <div className="meaning-grid">
+      <ul className="list meaning-list">{lines.map((l) => <li key={l}>{l}</li>)}</ul>
+      <div className={`meaning-sure ${t.beats_baseline ? "is-ok" : "is-caution"}`}>
+        <p className="meaning-sure-title">
+          {t.beats_baseline ? <CircleCheck size={18} aria-hidden="true" /> : <TriangleAlert size={18} aria-hidden="true" />}
+          <strong>{tr("price.rel.title")}</strong>
+        </p>
+        <p className="small !mb-2">{t.beats_baseline
+          ? tr("price.rel.validated", { days: days(tr, t.horizon_days), crop })
+          : tr("price.rel.notValidated", { days: days(tr, t.horizon_days), crop })}</p>
+        <dl className="kv small">
+          <dt>{tr("price.rel.typicalError")}</dt><dd>{tr("price.rel.typicalErrorValue", { pct: t.stable_band_pct.toFixed(0) })}</dd>
+          <dt>{tr("price.rel.avgError")}</dt>
+          <dd>{tr("price.rel.avgErrorValue", { model: rupees(t.model_mae), days: days(tr, t.horizon_days), baseline: rupees(t.baseline_mae) })}</dd>
+          <dt>{tr("price.rel.dataUpTo")}</dt><dd>{fmtDate(forecast.model.data_end)}</dd>
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+/** Step 4 — rising / no clear change / falling, highlighting the direction the API returned (text label + icon, not colour alone). */
+function MovementContent({ forecast }) {
+  const tr = useT();
+  const t = forecast.target;
+  const trend = TREND[t.direction] || TREND.Stable;
+  const scale = [["Increasing", TREND.Increasing], ["Stable", TREND.Stable], ["Decreasing", TREND.Decreasing]];
+  return (
+    <>
+      <ul className="move-scale" aria-label={tr("price.steps.movementScale")}>
+        {scale.map(([key, m]) => {
+          const on = (TREND[t.direction] ? t.direction : "Stable") === key;
+          return (
+            <li key={key} className={`move-chip ${m.cls}${on ? " is-on" : ""}`} aria-current={on ? "true" : undefined}>
+              <m.icon size={18} aria-hidden="true" /><span>{tr(m.text)}</span>
+              {on && <span className="sr-only">{tr("price.steps.thisForecast")}</span>}
+            </li>
+          );
+        })}
+      </ul>
+      <p className={`trend-line ${trend.cls}`}>
+        <trend.icon size={18} aria-hidden="true" />
+        <span><strong>{tr(trend.text)}</strong>{" "}
+          <span className="text-2">{tr("price.result.vsStart", { change: pct(t.change_pct), start: rupees(forecast.current_price) })}</span></span>
       </p>
-    </section>
+      {t.direction === "Stable" && <p className="small text-2 !mb-0">{tr("price.result.stableNote", { band: t.stable_band_pct.toFixed(0) })}</p>}
+    </>
   );
 }
 
 export default function PriceResult() {
+  const tr = useT();
+  const [params] = useSearchParams();
+  const historyId = params.get("id");
   const { source, error: sourceError, missing } = useResultSource();
   const [forecast, setForecast] = useState(source?.forecast || null);
   const [explain, setExplain] = useState(null);
   const [error, setError] = useState(null);
   const [explainError, setExplainError] = useState(null);
+  const [which, setWhich] = useState(0); // which date the explanation shows (your date / suggested date)
 
   useEffect(() => {
     if (!source) return;
@@ -241,92 +361,106 @@ export default function PriceResult() {
     priceService.explain(source.req).then(setExplain).catch((e) => setExplainError(errorMessage(e)));
   }, [source]);
 
+  const backLinks = (
+    <div className="row">
+      {historyId && <Link to="/history" className="btn btn-secondary"><History size={16} aria-hidden="true" />{tr("common.backToHistory")}</Link>}
+      <Link to="/price-prediction" className="btn btn-secondary"><ArrowLeft size={16} aria-hidden="true" />{tr("price.result.newPrediction")}</Link>
+    </div>
+  );
+
   if (missing) {
-    return <EmptyState icon={ChartNoAxesCombined} title="No prediction to show"
-      action={<Link className="btn btn-primary" to="/price-prediction">Make a prediction</Link>}>
-      Start a new price prediction first.</EmptyState>;
+    return <EmptyState icon={ChartNoAxesCombined} title={tr("price.result.emptyTitle")}
+      action={<Link className="btn btn-primary" to="/price-prediction">{tr("price.result.emptyAction")}</Link>}>
+      {tr("price.result.emptyBody")}</EmptyState>;
   }
-  if (sourceError || error) return <Alert type="error">{sourceError || error}</Alert>;
-  if (!forecast) return <Loader label="Preparing your forecast…" />;
+  if (sourceError || error) return <Alert type="error" action={backLinks}>{sourceError || error}</Alert>;
+  if (!forecast) return <Loader label={tr("price.result.loading")} />;
 
   const { series, target: t, advice } = forecast;
   const validated = t.beats_baseline;
+  const marketName = series.market === STATE_MARKET ? tr("price.form.allMarkets") : series.market;
+  const notes = [
+    source.fromHistory && tr("price.result.noteHistory", { price: rupees(source.saved.predicted_price) }),
+    forecast.projection && tr("price.result.noteProjection", {
+      end: fmtDate(forecast.model.data_end), ref: fmtDate(forecast.projection.reference_origin_date),
+      inflation: forecast.projection.inflation_annual_pct,
+    }),
+    !forecast.projection && forecast.forecast_origin_date !== forecast.input_date
+      && tr("price.result.noteOrigin", { date: fmtDate(forecast.input_date), origin: fmtDate(forecast.forecast_origin_date) }),
+  ].filter(Boolean);
 
   return (
     <>
       <div className="page-header">
         <div>
-          <h1>Crop Price Forecast</h1>
-          <p><strong>{series.commodity}</strong> · {series.market} · {series.state}</p>
-          <div className="chips">
-            <span className="chip">Forecast generated {fmtDate(forecast.input_date)}</span>
-            <span className="chip chip-brand">Your date {fmtDate(forecast.target_date)}</span>
-          </div>
+          <h1>{tr("price.result.title")}</h1>
+          <p><strong>{cropName(tr, series.commodity)}</strong> · {marketName} · {cropName(tr, series.state, "state")}</p>
         </div>
-        <Link to="/price-prediction" className="btn btn-secondary"><ArrowLeft size={16} aria-hidden="true" />New prediction</Link>
+        {backLinks}
       </div>
 
-      {source.fromHistory && (
-        <div className="mb-1">
-          <Alert type="info">Opened from your history and recalculated with the current model. The saved prediction
-            was {rupees(source.saved.predicted_price)} per quintal.</Alert>
-        </div>
-      )}
-      {forecast.projection && (
-        <div className="mb-1">
-          <Alert type="warn" title="Seasonal projection">
-            Mandi prices in this app end on {fmtDate(forecast.model.data_end)}, so there are no real prices for the last few
-            weeks. This forecast uses the price pattern from the same time last year
-            ({fmtDate(forecast.projection.reference_origin_date)}), raised by about {forecast.projection.inflation_annual_pct}%
-            {" "}per year for inflation. Please compare with today's mandi prices.
-          </Alert>
-        </div>
-      )}
-      {!forecast.projection && forecast.forecast_origin_date !== forecast.input_date && (
-        <div className="mb-1">
-          <Alert type="info">No price was reported on {fmtDate(forecast.input_date)}, so the forecast starts from the
-            last reported day, {fmtDate(forecast.forecast_origin_date)}.</Alert>
-        </div>
+      {!source.fromHistory && (
+        <Tip id="price-result" className="mb-4">{tr("tip.priceResult")} <Link to="/history">{tr("tip.openHistory")}</Link></Tip>
       )}
 
-      <div className="result-top">
-        <section className="card hero-card" aria-labelledby="hero-label">
-          <span className="stat-label" id="hero-label">Predicted price on {fmtDate(t.date)}</span>
-          <div className="hero-price">{rupees(t.predicted_price)}<span className="unit"> per quintal</span></div>
-          <div className="stat-sub">Likely range {rupees(t.lower)} – {rupees(t.upper)}</div>
-          <div className="row" style={{ marginTop: 10 }}>
-            <DirectionBadge direction={t.direction} />
-            <span className="small text-2">{pct(t.change_pct)} vs starting price {rupees(forecast.current_price)}</span>
+      <div className="result-top steps-top">
+        <ResultStep n={1} id="step-price" title={tr("price.steps.price")} className="hero-card">
+          <div className="hero-card-head">
+            <span className="stat-label">{tr("price.result.expectedOn", { date: fmtDate(t.date) })}</span>
           </div>
+          <div className="hero-price">{rupees(t.predicted_price)}<span className="unit"> {tr("unit.perQuintal")}</span></div>
+          <div className="stat-sub">{tr("price.result.likelyRange", { low: rupees(t.lower), high: rupees(t.upper) })}</div>
           <div className="hero-meta">
-            <div><span className="stat-label">Starting price</span><strong>{rupees(forecast.current_price)}</strong>
-              <span className="muted small">{forecast.projection ? "projected" : "reported"} {fmtDate(forecast.forecast_origin_date)}</span></div>
-            <div><span className="stat-label">Days ahead</span><strong>{t.horizon_days}</strong></div>
+            <div><span className="stat-label">{tr("price.result.startingPrice")}</span><strong>{rupees(forecast.current_price)}</strong>
+              <span className="muted small">{tr(forecast.projection ? "price.result.projectedOn" : "price.result.reportedOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
+            <div><span className="stat-label">{tr("price.result.daysAhead")}</span><strong>{t.horizon_days}</strong></div>
           </div>
           <span className={`reliability ${validated ? "ok" : "weak"}`}>
             {validated
-              ? <><CircleCheck size={15} aria-hidden="true" />Validated forecast horizon</>
-              : <><TriangleAlert size={15} aria-hidden="true" />Less reliable — use as a rough guide</>}
+              ? <><CircleCheck size={15} aria-hidden="true" />{tr("price.result.validated")}</>
+              : <><TriangleAlert size={15} aria-hidden="true" />{tr("price.result.roughGuide")}</>}
           </span>
           {t.actual_price != null && (
             <p className="small" style={{ margin: "8px 0 0" }}>
-              Actual price on that day: <strong>{rupees(t.actual_price)}</strong>
+              {tr("price.result.actualThatDay")} <strong>{rupees(t.actual_price)}</strong>
             </p>
           )}
-        </section>
-        <AdviceCard advice={advice} commodity={series.commodity} />
+        </ResultStep>
+
+        <ResultStep n={2} id="step-market" title={tr("price.steps.market")}>
+          <div className="market-card">
+            <CropArt crop={series.commodity} size={84} decorative className="hero-crop-art" />
+            <dl className="kv">
+              <dt>{tr("hist.col.crop")}</dt><dd><strong>{cropName(tr, series.commodity)}</strong>{series.variety && <span className="muted small"> · {series.variety}</span>}</dd>
+              <dt>{tr("hist.col.market")}</dt><dd>{marketName}</dd>
+              <dt>{tr("price.form.state")}</dt><dd>{cropName(tr, series.state, "state")}</dd>
+              <dt>{tr("price.steps.madeOn")}</dt><dd>{fmtDate(forecast.input_date)}</dd>
+              <dt>{tr("price.form.date")}</dt><dd><strong>{fmtDate(forecast.target_date)}</strong></dd>
+            </dl>
+          </div>
+        </ResultStep>
       </div>
 
-      <section className="card">
-        <div className="card-title">
-          <div>
-            <h2>Price forecast</h2>
-            <p className="muted small" style={{ margin: 0 }}>
-              Daily predictions from {fmtDate(forecast.forecast_origin_date)}
-              {forecast.path.length > t.horizon_days ? ` to ${fmtDate(forecast.path[forecast.path.length - 1].date)} so you can compare later dates.` : "."}
-            </p>
-          </div>
-        </div>
+      {notes.length > 0 && (
+        <details className={`notes-box mb-1 ${forecast.projection ? "is-warn" : ""}`}>
+          <summary><TriangleAlert size={17} aria-hidden="true" />{tr("price.result.notesTitle")}<span className="notes-count">{notes.length}</span></summary>
+          {notes.length === 1 ? <p>{notes[0]}</p> : <ul className="list">{notes.map((n) => <li key={n}>{n}</li>)}</ul>}
+        </details>
+      )}
+
+      <ResultStep n={3} id="step-meaning" title={tr("price.steps.meaning")} icon={Lightbulb} className="understand">
+        <MeaningContent forecast={forecast} />
+      </ResultStep>
+
+      <ResultStep n={4} id="step-movement" title={tr("price.steps.movement")}>
+        <MovementContent forecast={forecast} />
+      </ResultStep>
+
+      <ResultStep n={5} id="step-chart" title={tr("price.chart.title", { crop: cropName(tr, series.commodity) })} className="reveal">
+        <p className="chart-desc mb-3">
+          {tr("price.chart.desc", { from: fmtDate(forecast.forecast_origin_date), to: fmtDate(forecast.path[forecast.path.length - 1].date) })}
+          {forecast.path.length > t.horizon_days && ` ${tr("price.chart.descLater")}`}
+        </p>
         <PriceTrendChart history={forecast.history} historyIsReference={forecast.history_is_reference}
           actualAfter={forecast.actual_after_origin} path={forecast.path}
           originDate={forecast.forecast_origin_date} currentPrice={forecast.current_price}
@@ -334,22 +468,33 @@ export default function PriceResult() {
         {forecast.path.some((p) => !p.beats_baseline) && (
           <p className="small text-2" style={{ marginTop: 8 }}>
             {forecast.validated_days > 0
-              ? <>Grey dotted parts are days where, in testing, the model was not more accurate than assuming today's
-                price stays the same for {series.commodity}. They are not used for the selling advice.</>
-              : <>For {series.commodity} the model was not more accurate than assuming no price change at any horizon, so the
-                whole forecast is a rough guide.</>}
+              ? tr("price.chart.weakSome", { crop: cropName(tr, series.commodity) })
+              : tr("price.chart.weakAll", { crop: cropName(tr, series.commodity) })}
             {forecast.last_validated_days < forecast.max_horizon_days && forecast.path.length < forecast.max_horizon_days &&
-              <> The chart stops at {fmtDate(forecast.path[forecast.path.length - 1].date)} because later dates are not validated.</>}
+              <> {tr("price.chart.stops", { date: fmtDate(forecast.path[forecast.path.length - 1].date) })}</>}
           </p>
         )}
-      </section>
+      </ResultStep>
 
-      <div className="grid result-bottom">
-        <WhyCard explain={explain} error={explainError} forecast={forecast} />
-        <ReliabilityCard forecast={forecast} />
-      </div>
+      <ResultStep n={6} id="step-why" title={tr("price.why.title")} className="reveal">
+        <WhyFactors explain={explain} error={explainError} forecast={forecast} which={which} setWhich={setWhich} />
+      </ResultStep>
 
-      <p className="muted small" style={{ marginTop: "1rem" }}>{forecast.disclaimer}</p>
+      <ResultStep n={7} id="step-check" title={tr("price.steps.check")}>
+        <AdviceCard advice={advice} commodity={series.commodity} />
+        <h3 className="tech-subtitle mt-4">{tr("price.advice.checkFirst")}</h3>
+        <ul className="check-list">
+          {advice.considerations.map((c) => <li key={c}><CircleCheck size={17} aria-hidden="true" /><ServerText>{c}</ServerText></li>)}
+        </ul>
+        <ServerText as="p" className="muted small advice-disclaimer">{advice.disclaimer}</ServerText>
+      </ResultStep>
+
+      <ResultStep n={8} id="step-advanced" title={tr("price.steps.advanced")}>
+        <p className="small text-2 !mb-0">{tr("price.steps.advancedHint")}</p>
+        <AdvancedDetails explain={explain} forecast={forecast} which={which} />
+      </ResultStep>
+
+      <ServerText as="p" className="muted small mt-4">{forecast.disclaimer}</ServerText>
     </>
   );
 }

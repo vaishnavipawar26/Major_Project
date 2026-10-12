@@ -1,79 +1,100 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ChartNoAxesCombined, Sprout } from "lucide-react";
+import { ChartNoAxesCombined, ExternalLink, Sprout, Trash2 } from "lucide-react";
 import Alert from "../components/Alert";
+import CropArt from "../components/CropArt";
 import DirectionBadge from "../components/DirectionBadge";
 import EmptyState from "../components/EmptyState";
 import Loader from "../components/Loader";
-import StatCard from "../components/StatCard";
+import ServerText from "../components/ServerText";
+import Tip from "../components/Tip";
 import { useAsync } from "../hooks/useAsync";
+import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { historyService } from "../services/historyService";
-import { MONTHS } from "../utils/constants";
-import { addDays, compactRupees, fmtDate, fmtDateTime, rupees, titleCase, topCrops } from "../utils/format";
+import { addDays, compactRupees, cropName, fmtDate, fmtDateTime, monthShort, rupees, titleCase, topCrops } from "../utils/format";
 
 const PAGE = 10;
 
 function Pager({ total, offset, onChange }) {
+  const t = useT();
   if (total <= PAGE) return null;
   return (
     <div className="row" style={{ justifyContent: "space-between", marginTop: "0.75rem" }}>
-      <span className="muted small">Showing {offset + 1}–{Math.min(offset + PAGE, total)} of {total}</span>
+      <span className="muted small">{t("hist.showing", { from: offset + 1, to: Math.min(offset + PAGE, total), total })}</span>
       <div className="row">
-        <button className="btn btn-secondary" disabled={offset === 0} onClick={() => onChange(offset - PAGE)}>Previous</button>
-        <button className="btn btn-secondary" disabled={offset + PAGE >= total} onClick={() => onChange(offset + PAGE)}>Next</button>
+        <button className="btn btn-secondary" disabled={offset === 0} onClick={() => onChange(offset - PAGE)}>{t("hist.previous")}</button>
+        <button className="btn btn-secondary" disabled={offset + PAGE >= total} onClick={() => onChange(offset + PAGE)}>{t("hist.next")}</button>
       </div>
     </div>
   );
 }
 
 function DeleteButton({ onDelete }) {
+  const t = useT();
   const [confirming, setConfirming] = useState(false);
-  if (!confirming) return <button className="btn-link small" onClick={() => setConfirming(true)}>Delete</button>;
+  if (!confirming) {
+    return <button className="btn btn-ghost-danger" onClick={() => setConfirming(true)}><Trash2 size={15} aria-hidden="true" />{t("hist.delete")}</button>;
+  }
   return (
-    <span className="row" style={{ gap: 4 }}>
-      <button className="btn btn-danger small" style={{ padding: "0.2rem 0.5rem" }} onClick={onDelete}>Confirm</button>
-      <button className="btn-link small" onClick={() => setConfirming(false)}>Cancel</button>
+    <span className="row" style={{ gap: 6 }}>
+      <button className="btn btn-danger" onClick={onDelete}>{t("hist.confirmDelete")}</button>
+      <button className="btn btn-secondary" onClick={() => setConfirming(false)}>{t("hist.cancel")}</button>
     </span>
   );
 }
 
 function PriceHistory({ onChanged }) {
+  const t = useT();
   const [offset, setOffset] = useState(0);
   const [actionError, setActionError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const { data, loading, error, reload } = useAsync(() => historyService.price(PAGE, offset), [offset]);
   const remove = async (id) => {
-    try { await historyService.deletePrice(id); reload(); onChanged(); } catch (e) { setActionError(errorMessage(e)); }
+    setNotice(null);
+    try { await historyService.deletePrice(id); reload(); onChanged(); setNotice(t("hist.deleted")); } catch (e) { setActionError(errorMessage(e)); }
   };
   if (loading && !data) return <Loader />;
-  if (error) return <Alert type="error">{error}</Alert>;
+  if (error) return <Alert type="error" action={<button className="btn btn-secondary" onClick={reload}>{t("common.retry")}</button>}>{error}</Alert>;
   if (!data.total) {
-    return <EmptyState icon={ChartNoAxesCombined} title="No price predictions yet"
-      action={<Link className="btn btn-primary" to="/price-prediction">Predict a price</Link>}>
-      Forecasts you make are saved here automatically.</EmptyState>;
+    return (
+      <>
+        {notice && <Alert type="success">{notice}</Alert>}
+        <EmptyState icon={ChartNoAxesCombined} title={t("hist.emptyPriceTitle")}
+          action={<Link className="btn btn-primary" to="/price-prediction">{t("hist.emptyPriceAction")}</Link>}>
+          {t("hist.emptyPriceBody")}</EmptyState>
+      </>
+    );
   }
   return (
     <>
-      {actionError && <Alert type="error">{actionError}</Alert>}
+      {notice && <div className="mb-3"><Alert type="success">{notice}</Alert></div>}
+      {actionError && <div className="mb-3"><Alert type="error">{actionError}</Alert></div>}
       <div className="table-wrap">
-        <table>
+        <table className="resp-table">
           <thead>
-            <tr><th>Saved</th><th>Crop</th><th>Market</th><th>As of</th><th className="num">Price then</th>
-              <th className="num">Forecast</th><th>Trend</th><th>Suggestion</th><th /></tr>
+            <tr><th>{t("hist.col.saved")}</th><th>{t("hist.col.crop")}</th><th>{t("hist.col.market")}</th><th>{t("hist.col.from")}</th>
+              <th className="num">{t("hist.col.start")}</th><th className="num">{t("hist.col.expected")}</th><th>{t("hist.col.trend")}</th>
+              <th>{t("hist.col.advice")}</th><th><span className="sr-only">{t("hist.col.actions")}</span></th></tr>
           </thead>
           <tbody>
             {data.items.map((p) => (
               <tr key={p.id}>
-                <td className="muted small">{fmtDateTime(p.created_at)}</td>
-                <td><Link to={`/price-prediction/result?id=${p.id}`}>{p.commodity}</Link>
-                  <div className="muted small">{p.variety}</div></td>
-                <td>{p.market}</td>
-                <td>{fmtDate(p.forecast_origin_date)}</td>
-                <td className="num">{rupees(p.current_price)}</td>
-                <td className="num">{rupees(p.predicted_price)}<div className="muted small">for {fmtDate(addDays(p.input_date, p.horizon_days))}</div></td>
-                <td><DirectionBadge direction={p.predicted_direction} /></td>
-                <td className="small">{p.sell_hold_suggestion}</td>
-                <td><DeleteButton onDelete={() => remove(p.id)} /></td>
+                <td data-label={t("hist.col.saved")} className="muted small">{fmtDateTime(p.created_at)}</td>
+                <td data-label={t("hist.col.crop")} className="resp-title"><div>
+                  <Link to={`/price-prediction/result?id=${p.id}`} className="inline-icon font-semibold"><CropArt crop={p.commodity} size={28} decorative />{cropName(t, p.commodity)}</Link>
+                  <div className="muted small">{p.variety}</div></div></td>
+                <td data-label={t("hist.col.market")}>{p.market === "All markets (state median)" ? t("price.form.allMarkets") : p.market}</td>
+                <td data-label={t("hist.col.from")}>{fmtDate(p.forecast_origin_date)}</td>
+                <td data-label={t("hist.col.start")} className="num">{rupees(p.current_price)}</td>
+                <td data-label={t("hist.col.expected")} className="num"><div><strong>{rupees(p.predicted_price)}</strong>
+                  <div className="muted small">{t("hist.forDate", { date: fmtDate(addDays(p.input_date, p.horizon_days)) })}</div></div></td>
+                <td data-label={t("hist.col.trend")}><DirectionBadge direction={p.predicted_direction} /></td>
+                <td data-label={t("hist.col.advice")} className="small wrap"><ServerText>{p.sell_hold_suggestion}</ServerText></td>
+                <td className="resp-actions">
+                  <Link className="btn btn-secondary" to={`/price-prediction/result?id=${p.id}`}><ExternalLink size={15} aria-hidden="true" />{t("hist.open")}</Link>
+                  <DeleteButton onDelete={() => remove(p.id)} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -85,40 +106,52 @@ function PriceHistory({ onChanged }) {
 }
 
 function RecommendationHistory({ onChanged }) {
+  const t = useT();
   const [offset, setOffset] = useState(0);
   const [actionError, setActionError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const { data, loading, error, reload } = useAsync(() => historyService.recommendations(PAGE, offset), [offset]);
   const remove = async (id) => {
-    try { await historyService.deleteRecommendation(id); reload(); onChanged(); } catch (e) { setActionError(errorMessage(e)); }
+    setNotice(null);
+    try { await historyService.deleteRecommendation(id); reload(); onChanged(); setNotice(t("hist.deleted")); } catch (e) { setActionError(errorMessage(e)); }
   };
   if (loading && !data) return <Loader />;
-  if (error) return <Alert type="error">{error}</Alert>;
+  if (error) return <Alert type="error" action={<button className="btn btn-secondary" onClick={reload}>{t("common.retry")}</button>}>{error}</Alert>;
   if (!data.total) {
-    return <EmptyState icon={Sprout} title="No recommendations yet"
-      action={<Link className="btn btn-primary" to="/crop-recommendation">Find a crop</Link>}>
-      Crop recommendations you request are saved here automatically.</EmptyState>;
+    return (
+      <>
+        {notice && <Alert type="success">{notice}</Alert>}
+        <EmptyState icon={Sprout} title={t("hist.emptyRecTitle")}
+          action={<Link className="btn btn-primary" to="/crop-recommendation">{t("hist.emptyRecAction")}</Link>}>
+          {t("hist.emptyRecBody")}</EmptyState>
+      </>
+    );
   }
   return (
     <>
-      {actionError && <Alert type="error">{actionError}</Alert>}
+      {notice && <div className="mb-3"><Alert type="success">{notice}</Alert></div>}
+      {actionError && <div className="mb-3"><Alert type="error">{actionError}</Alert></div>}
       <div className="table-wrap">
-        <table>
+        <table className="resp-table">
           <thead>
-            <tr><th>Saved</th><th>Soil (N-P-K, pH)</th><th>Weather</th><th>City · plant → sell</th>
-              <th>Recommended crops (profit)</th><th /></tr>
+            <tr><th>{t("hist.col.saved")}</th><th>{t("hist.col.place")}</th><th>{t("hist.col.soil")}</th><th>{t("hist.col.weather")}</th>
+              <th>{t("hist.col.crops")}</th><th><span className="sr-only">{t("hist.col.actions")}</span></th></tr>
           </thead>
           <tbody>
             {data.items.map((r) => (
               <tr key={r.id}>
-                <td className="muted small">{fmtDateTime(r.created_at)}</td>
-                <td>{r.nitrogen}-{r.phosphorus}-{r.potassium}, pH {r.ph}</td>
-                <td className="small">{r.temperature} °C, {r.humidity}%, {r.rainfall} mm</td>
-                <td>{r.city ? `${r.city} · ` : ""}{MONTHS[r.month - 1].slice(0, 3)}
-                  {r.selling_month ? ` → ${MONTHS[r.selling_month - 1].slice(0, 3)}` : ` · ${r.season}`}</td>
-                <td><Link to={`/crop-recommendation/result?id=${r.id}`}>
-                  {topCrops(r.results).map((x) => `${titleCase(x.crop_name)}${x.expected_profit != null ? ` (${compactRupees(x.expected_profit)})` : ""}`).join(", ") || "None suitable"}
+                <td data-label={t("hist.col.saved")} className="muted small">{fmtDateTime(r.created_at)}</td>
+                <td data-label={t("hist.col.place")} className="resp-title">{r.city ? `${cropName(t, r.city, "city")} · ` : ""}{monthShort(r.month)}
+                  {r.selling_month ? ` → ${monthShort(r.selling_month)}` : ` · ${r.season}`}</td>
+                <td data-label={t("hist.col.soil")}>{r.nitrogen}-{r.phosphorus}-{r.potassium}, pH {r.ph}</td>
+                <td data-label={t("hist.col.weather")} className="small">{r.temperature} °C, {r.humidity}%, {r.rainfall} mm</td>
+                <td data-label={t("hist.col.crops")} className="wrap"><Link to={`/crop-recommendation/result?id=${r.id}`} className="font-semibold">
+                  {topCrops(r.results).map((x) => `${cropName(t, titleCase(x.crop_name))}${x.expected_profit != null ? ` (${compactRupees(x.expected_profit)})` : ""}`).join(", ") || t("hist.noneSuitable")}
                 </Link></td>
-                <td><DeleteButton onDelete={() => remove(r.id)} /></td>
+                <td className="resp-actions">
+                  <Link className="btn btn-secondary" to={`/crop-recommendation/result?id=${r.id}`}><ExternalLink size={15} aria-hidden="true" />{t("hist.open")}</Link>
+                  <DeleteButton onDelete={() => remove(r.id)} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -130,38 +163,36 @@ function RecommendationHistory({ onChanged }) {
 }
 
 export default function History() {
+  const t = useT();
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") === "recommendations" ? "recommendations" : "price";
   // One request for both totals; refreshed after a delete so the counts always match the tables.
   const summary = useAsync(() => historyService.summary(), []);
   const totals = summary.data;
-  const countsLoading = summary.loading && !totals;
+  const count = (n) => (summary.loading && !totals ? "…" : n ?? "—");
   return (
     <>
       <div className="page-header">
-        <div><h1>History</h1><p>Your saved predictions and recommendations. Only you can see them.</p></div>
+        <div><h1>{t("hist.title")}</h1><p>{t("hist.subtitle")}</p></div>
       </div>
+      <Tip id="history">{t("hist.savedNote")}</Tip>
 
-      {summary.error ? (
+      {summary.error && (
         <div className="mb-4">
-          <Alert type="error" title="Could not load your totals"
-            action={<button className="btn btn-secondary" onClick={summary.reload}>Retry</button>}>{summary.error}</Alert>
-        </div>
-      ) : (
-        <div className="grid grid-2 mb-4" aria-live="polite">
-          <StatCard icon={ChartNoAxesCombined} label="Total Price Predictions" loading={countsLoading}
-            value={totals?.total_price_predictions} sub="Saved price forecasts" />
-          <StatCard icon={Sprout} label="Total Crop Recommendations" loading={countsLoading}
-            value={totals?.total_crop_recommendations} sub="Saved crop recommendations" />
+          <Alert type="error" title={t("hist.totalsError")}
+            action={<button className="btn btn-secondary" onClick={summary.reload}>{t("common.retry")}</button>}>{summary.error}</Alert>
         </div>
       )}
 
-      <div className="card">
-        <div className="tabs" role="tablist">
-          <button role="tab" aria-selected={tab === "price"} className={tab === "price" ? "active" : ""}
-            onClick={() => setParams({})}>Price predictions</button>
+      <div className="card reveal">
+        <div className="tabs tabs-lg" role="tablist" aria-live="polite">
+          <button role="tab" aria-selected={tab === "price"} className={tab === "price" ? "active" : ""} onClick={() => setParams({})}>
+            <ChartNoAxesCombined size={17} aria-hidden="true" />{t("hist.tabPrice")}<span className="tab-count">{count(totals?.total_price_predictions)}</span>
+          </button>
           <button role="tab" aria-selected={tab === "recommendations"} className={tab === "recommendations" ? "active" : ""}
-            onClick={() => setParams({ tab: "recommendations" })}>Crop recommendations</button>
+            onClick={() => setParams({ tab: "recommendations" })}>
+            <Sprout size={17} aria-hidden="true" />{t("hist.tabCrop")}<span className="tab-count">{count(totals?.total_crop_recommendations)}</span>
+          </button>
         </div>
         {tab === "price" ? <PriceHistory onChanged={summary.reload} /> : <RecommendationHistory onChanged={summary.reload} />}
       </div>

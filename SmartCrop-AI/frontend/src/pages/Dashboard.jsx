@@ -1,136 +1,200 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowRight, CalendarDays, CalendarRange, ChartNoAxesCombined, History, Leaf, Sprout, TrendingUp,
+  ArrowRight, BookOpenCheck, CalendarDays, ChartNoAxesCombined, ChevronRight, CircleCheckBig, Compass, History, Info, Sprout,
 } from "lucide-react";
+import Alert from "../components/Alert";
+import CropArt from "../components/CropArt";
+import DirectionBadge from "../components/DirectionBadge";
+import { startTour } from "../components/GuidedTour";
+import Tip from "../components/Tip";
+import { useAsync } from "../hooks/useAsync";
 import { useAuth } from "../hooks/useAuth";
+import { useT } from "../i18n/LanguageContext";
+import { historyService } from "../services/historyService";
+import { addDays, compactRupees, cropName, fmtDate, monthShort, rupees, titleCase, topCrops } from "../utils/format";
+import heroPhoto from "../assets/photos/hero-farmer.webp";
 
-const FEATURES = [
-  {
-    to: "/price-prediction", icon: ChartNoAxesCombined, title: "Crop Price Prediction",
-    text: "Forecast future mandi prices and explore potential selling opportunities.", cta: "Predict Crop Price",
-  },
-  {
-    to: "/crop-recommendation", icon: Sprout, title: "Profitable Crop Recommendation",
-    text: "Discover suitable crops using available agricultural and environmental data.", cta: "Find Best Crop",
-  },
-  {
-    to: "/history", icon: History, title: "Prediction History",
-    text: "Access your saved price forecasts and crop recommendations.", cta: "View History",
-  },
-];
+const RECENT = 3;
+const HERO_SEEN_KEY = "smartcrop_hero_seen"; // the hero intro animation plays once per browser session
 
-// Each tile opens the existing page that provides it: selling-date comparison is part of the
-// price forecast result (best time to sell + daily forecast chart), suitability is part of the
-// crop recommendation.
-const TOOLKIT = [
-  { to: "/price-prediction", icon: TrendingUp, label: "Forecast Crop Prices", hint: "Daily mandi forecasts up to 60 days" },
-  { to: "/price-prediction", icon: CalendarRange, label: "Compare Selling Dates", hint: "Best time to sell, with storage limits" },
-  { to: "/crop-recommendation", icon: Leaf, label: "Explore Crop Suitability", hint: "Soil, weather and timing fit" },
-];
-
-function greeting(hour) {
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
+function greetingKey(hour) {
+  if (hour < 12) return "dash.morning";
+  if (hour < 17) return "dash.afternoon";
+  return "dash.evening";
 }
 
-/** Decorative field-and-growth illustration for the hero (pure SVG, no external assets, no data). */
-function FieldIllustration() {
-  const sprouts = [[70, 168, 1], [118, 176, 1.15], [170, 170, 0.95], [222, 178, 1.1], [272, 171, 1]];
+/** Tiny line of a saved forecast: starting price followed by the saved daily predictions (decorative; numbers are shown as text). */
+function Sparkline({ start, path }) {
+  const values = [start, ...path.map((p) => p.predicted_price)].filter((v) => v != null);
+  if (values.length < 2) return null;
+  const w = 96, h = 30, lo = Math.min(...values), hi = Math.max(...values), span = hi - lo || 1;
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - 3 - ((v - lo) / span) * (h - 6)}`).join(" ");
   return (
-    <svg className="hero-art" viewBox="0 0 340 220" aria-hidden="true" focusable="false">
-      <defs>
-        <radialGradient id="hero-sun" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#ffe8a3" stopOpacity="0.95" />
-          <stop offset="1" stopColor="#ffe8a3" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="hero-field" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#5fb67c" />
-          <stop offset="1" stopColor="#2f7d4a" />
-        </linearGradient>
-      </defs>
-      <circle cx="262" cy="58" r="52" fill="url(#hero-sun)" />
-      <circle cx="262" cy="58" r="20" fill="#ffe08a" />
-      {/* rising growth line — decorative, not data */}
-      <path d="M24 112 C 70 104, 92 84, 132 88 S 196 58, 232 62 S 286 30, 316 26" fill="none"
-        stroke="#d9f2e1" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="1 7" />
-      {[[132, 88], [232, 62], [316, 26]].map(([x, y]) => (
-        <circle key={x} cx={x} cy={y} r="4.5" fill="#123d24" stroke="#d9f2e1" strokeWidth="2" />
-      ))}
-      <path d="M0 150 C 70 118, 150 122, 210 134 S 300 128, 340 116 L340 220 L0 220 Z" fill="#3c8d5a" opacity="0.55" />
-      <path d="M0 168 C 80 146, 180 146, 340 160 L340 220 L0 220 Z" fill="url(#hero-field)" />
-      {/* crop rows */}
-      {[0, 1, 2, 3].map((i) => (
-        <path key={i} d={`M-10 ${186 + i * 11} C 90 ${172 + i * 11}, 220 ${172 + i * 11}, 350 ${182 + i * 11}`}
-          fill="none" stroke="#24683d" strokeWidth="2" opacity={0.55 - i * 0.08} />
-      ))}
-      {sprouts.map(([x, y, s]) => (
-        <g key={x} transform={`translate(${x} ${y}) scale(${s})`}>
-          <path d="M0 0 V-22" stroke="#cdeed7" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M0 -12 C -12 -14, -16 -24, -14 -30 C -6 -28, 0 -20, 0 -12 Z" fill="#a8e2bb" />
-          <path d="M0 -16 C 10 -18, 16 -28, 15 -34 C 6 -32, 0 -24, 0 -16 Z" fill="#cdeed7" />
-        </g>
-      ))}
+    <svg className="sparkline" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" focusable="false">
+      <polyline points={pts} fill="none" stroke="var(--series-forecast)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
 
-function FeatureCard({ to, icon: Icon, title, text, cta }) {
+function RecentPrices({ items, total }) {
+  const t = useT();
   return (
-    <Link to={to} className="feature-card">
-      <span className="feature-icon" aria-hidden="true"><Icon size={26} /></span>
-      <h3>{title}</h3>
-      <p>{text}</p>
-      <span className="feature-cta">
-        {cta}
-        <span className="feature-arrow" aria-hidden="true"><ArrowRight size={16} /></span>
-      </span>
-    </Link>
+    <section className="card recent-card reveal" aria-labelledby="recent-prices">
+      <div className="recent-head">
+        <h3 id="recent-prices" className="section-title"><ChartNoAxesCombined size={18} aria-hidden="true" />{t("dash.recentPrices")}</h3>
+        <span className="count-chip">{total}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="muted !mb-0">{t("dash.noPrices")} <Link to="/price-prediction">{t("dash.checkPrice")}</Link></p>
+      ) : (
+        <ul className="recent-list">
+          {items.slice(0, RECENT).map((p) => (
+            <li key={p.id}>
+              <Link to={`/price-prediction/result?id=${p.id}`} className="recent-item">
+                <CropArt crop={p.commodity} size={56} className="recent-art" decorative />
+                <span className="recent-main">
+                  <strong>{cropName(t, p.commodity)}</strong>
+                  <span className="muted small">{p.market === "All markets (state median)" ? t("price.form.allMarkets") : p.market} · {t("dash.savedOn", { date: fmtDate(p.created_at) })}</span>
+                  <span className="recent-value">{t("dash.expectedOn", { price: rupees(p.predicted_price), date: fmtDate(addDays(p.input_date, p.horizon_days)) })}</span>
+                </span>
+                <span className="recent-side">
+                  <Sparkline start={p.current_price} path={p.future_trend || []} />
+                  <DirectionBadge direction={p.predicted_direction} />
+                </span>
+                <span className="recent-open">{t("dash.open")}<ChevronRight size={16} aria-hidden="true" /></span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
+function RecentCrops({ items, total }) {
+  const t = useT();
+  return (
+    <section className="card recent-card reveal" style={{ "--i": 1 }} aria-labelledby="recent-crops">
+      <div className="recent-head">
+        <h3 id="recent-crops" className="section-title"><Sprout size={18} aria-hidden="true" />{t("dash.recentCrops")}</h3>
+        <span className="count-chip">{total}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="muted !mb-0">{t("dash.noCrops")} <Link to="/crop-recommendation">{t("dash.findCrop")}</Link></p>
+      ) : (
+        <ul className="recent-list">
+          {items.slice(0, RECENT).map((r) => {
+            const best = topCrops(r.results);
+            return (
+              <li key={r.id}>
+                <Link to={`/crop-recommendation/result?id=${r.id}`} className="recent-item">
+                  <CropArt crop={best[0] ? titleCase(best[0].crop_name) : null} size={56} className="recent-art" decorative />
+                  <span className="recent-main">
+                    <strong>{best.length ? best.map((x) => cropName(t, titleCase(x.crop_name))).join(", ") : t("hist.noneSuitable")}</strong>
+                    <span className="muted small">
+                      {r.city ? `${cropName(t, r.city, "city")} · ` : ""}{monthShort(r.month)}{r.selling_month ? ` → ${monthShort(r.selling_month)}` : ""}
+                      {" · "}{t("dash.savedOn", { date: fmtDate(r.created_at) })}
+                    </span>
+                    {best[0] && (
+                      <span className="recent-value">
+                        {best[0].recommendation_score != null && t("dash.score", { score: Math.round(best[0].recommendation_score) })}
+                        {best[0].recommendation_score != null && best[0].expected_profit != null && " · "}
+                        {best[0].expected_profit != null && t("dash.bestProfitShort", { profit: compactRupees(best[0].expected_profit) })}
+                      </span>
+                    )}
+                  </span>
+                  <span className="recent-open">{t("dash.open")}<ChevronRight size={16} aria-hidden="true" /></span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+const BENEFITS = [
+  { icon: ChartNoAxesCombined, title: "dash.benefit1Title", text: "dash.benefit1Text" },
+  { icon: Sprout, title: "dash.benefit2Title", text: "dash.benefit2Text" },
+  { icon: BookOpenCheck, title: "dash.benefit3Title", text: "dash.benefit3Text" },
+  { icon: CircleCheckBig, title: "dash.benefit4Title", text: "dash.benefit4Text" },
+];
+
 export default function Dashboard() {
+  const t = useT();
   const { user } = useAuth();
+  const summary = useAsync(() => historyService.summary(), []);
+  const [intro] = useState(() => { try { return !sessionStorage.getItem(HERO_SEEN_KEY); } catch { return false; } });
+  useEffect(() => { try { sessionStorage.setItem(HERO_SEEN_KEY, "1"); } catch { /* storage unavailable */ } }, []);
   const now = new Date();
   const firstName = user?.name?.trim().split(/\s+/)[0];
-  const hello = firstName ? `${greeting(now.getHours())}, ${firstName}` : greeting(now.getHours());
-  const today = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const greeting = t(greetingKey(now.getHours()));
+  const today = fmtDate(now.toISOString(), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const s = summary.data;
 
   return (
     <>
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-copy">
-          <div className="hero-meta-row">
-            <span className="hero-greeting">{hello}</span>
-            <span className="hero-date">
-              <CalendarDays size={15} aria-hidden="true" />
-              <time dateTime={now.toISOString().slice(0, 10)}>{today}</time>
-            </span>
+      <section className={`home-hero${intro ? " hero-intro" : ""}`} aria-labelledby="dash-title">
+        <div className="home-hero-copy">
+          <p className="home-hero-hello">
+            <span>{firstName ? `${greeting}, ${firstName}` : greeting}</span>
+            <span className="dash-date"><CalendarDays size={15} aria-hidden="true" /><time dateTime={now.toISOString().slice(0, 10)}>{today}</time></span>
+          </p>
+          <p className="home-hero-label">{t("dash.heroLabel")}</p>
+          <h1 id="dash-title">{t("dash.heroTitle")}</h1>
+          <p className="home-hero-text">{t("dash.heroText")}</p>
+          <div className="home-hero-actions">
+            <Link to="/price-prediction" className="btn btn-primary btn-lg"><ChartNoAxesCombined size={19} aria-hidden="true" />{t("dash.heroCtaPrice")}</Link>
+            <Link to="/crop-recommendation" className="btn btn-harvest btn-lg"><Sprout size={19} aria-hidden="true" />{t("dash.heroCtaCrop")}</Link>
           </div>
-          <h1 id="hero-title">Smarter Farming Starts Here</h1>
-          <p>AI-powered crop price forecasting and agricultural insights to support better farming decisions.</p>
-          <div className="hero-actions">
-            <Link to="/price-prediction" className="btn hero-btn-primary">
-              Explore Price Prediction<ArrowRight size={17} aria-hidden="true" />
-            </Link>
-            <Link to="/crop-recommendation" className="btn hero-btn-secondary">
-              <Sprout size={17} aria-hidden="true" />Find the Best Crop
-            </Link>
+          <p className="home-hero-note"><Info size={15} aria-hidden="true" />{t("dash.heroNote")}</p>
+          <button type="button" className="btn-link tour-restart" onClick={startTour}><Compass size={16} aria-hidden="true" />{t("tour.restart")}</button>
+        </div>
+        <div className="home-hero-media">
+          <span className="hero-shape hero-shape-leaf" aria-hidden="true" />
+          <span className="hero-shape hero-shape-sun" aria-hidden="true" />
+          <div className="home-hero-photo">
+            <img src={heroPhoto} alt={t("art.farmerAlt")} width="960" height="1080" decoding="async" />
           </div>
-        </div>
-        <FieldIllustration />
-      </section>
-
-      <section aria-labelledby="tools-title" className="section">
-        <div className="section-head">
-          <h2 id="tools-title">Main tools</h2>
-          <p>Everything you need to plan, price and review your crops.</p>
-        </div>
-        <div className="feature-grid">
-          {FEATURES.map((f) => <FeatureCard key={f.to} {...f} />)}
         </div>
       </section>
 
+      <Tip id="dashboard" className="mt-4">{t("tip.dashboard")}</Tip>
+
+      <section className="section" aria-labelledby="recent-title">
+        <div className="dash-section-head">
+          <h2 id="recent-title" className="section-heading">{t("dash.recentTitle")}</h2>
+          <Link to="/history" className="inline-icon font-semibold"><History size={17} aria-hidden="true" />{t("dash.viewAll")}<ArrowRight size={16} aria-hidden="true" /></Link>
+        </div>
+        <p className="muted small !mt-0 !mb-3">{t("dash.savedNote")}</p>
+        {summary.error ? (
+          <Alert type="error" action={<button className="btn btn-secondary" onClick={summary.reload}>{t("common.retry")}</button>}>{summary.error}</Alert>
+        ) : !s ? (
+          <div className="recent-grid" aria-busy="true" aria-label={t("dash.loading")}>
+            {[0, 1].map((i) => <div key={i} className="card"><span className="skeleton" style={{ height: 18, width: "45%" }} />
+              <span className="skeleton mt-3" style={{ height: 56 }} /><span className="skeleton mt-2" style={{ height: 56 }} /></div>)}
+          </div>
+        ) : (
+          <div className="recent-grid">
+            <RecentPrices items={s.recent_predictions} total={s.total_price_predictions} />
+            <RecentCrops items={s.recent_recommendations} total={s.total_crop_recommendations} />
+          </div>
+        )}
+      </section>
+
+      <section className="section benefits" aria-labelledby="benefits-title">
+        <h2 id="benefits-title" className="section-heading">{t("dash.benefitsTitle")}</h2>
+        <ul className="benefit-list">
+          {BENEFITS.map(({ icon: Icon, title, text }, i) => (
+            <li key={title} className="reveal" style={{ "--i": i }}>
+              <span className="benefit-icon" aria-hidden="true"><Icon size={20} /></span>
+              <span><strong>{t(title)}</strong><span>{t(text)}</span></span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </>
   );
 }

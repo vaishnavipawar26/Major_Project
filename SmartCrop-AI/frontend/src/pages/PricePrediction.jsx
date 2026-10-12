@@ -1,19 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CalendarDays, ShoppingBasket } from "lucide-react";
 import Alert from "../components/Alert";
 import FormField from "../components/FormField";
 import Loader from "../components/Loader";
+import PageHero from "../components/PageHero";
+import SproutSpinner from "../components/SproutSpinner";
+import marketPhoto from "../assets/photos/market.webp";
 import { useAsync } from "../hooks/useAsync";
+import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { priceService } from "../services/priceService";
-import { addDays, dayRanges, daysBetween, fmtDate } from "../utils/format";
+import { addDays, cropName, dayRanges, daysBetween, fmtDate } from "../utils/format";
 
 export const LAST_PRICE_REQUEST_KEY = "smartcrop_last_price_request";
 const DEFAULT_TARGET_DAYS = 10;
+const FIELD_ORDER = ["commodity", "market", "target_date"];
+
+/** Move keyboard focus (and the screen) to the first field with an error. */
+const focusFirstError = (errs) => {
+  const first = FIELD_ORDER.find((k) => errs[k]);
+  const el = first && document.getElementById(first);
+  if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "center", behavior: "smooth" }); }
+};
 
 export default function PricePrediction() {
+  const t = useT();
   const navigate = useNavigate();
-  const { data: opts, loading, error } = useAsync(() => priceService.options(), []);
+  const { data: opts, loading, error, reload } = useAsync(() => priceService.options(), []);
   const [form, setForm] = useState({ commodity: "", market: "", target_date: "" });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState(null);
@@ -40,13 +54,13 @@ export default function PricePrediction() {
   const submit = async (e) => {
     e.preventDefault();
     const errs = {};
-    if (!form.commodity) errs.commodity = "Choose a crop.";
-    if (!form.market) errs.market = "Choose a market.";
-    if (!form.target_date) errs.target_date = "Choose the date you plan to sell.";
+    if (!form.commodity) errs.commodity = t("price.form.errCrop");
+    if (!form.market) errs.market = t("price.form.errMarket");
+    if (!form.target_date) errs.target_date = t("price.form.errDate");
     else if (form.target_date < minTarget || form.target_date > maxTarget)
-      errs.target_date = `Choose a date between ${fmtDate(minTarget)} and ${fmtDate(maxTarget)}.`;
+      errs.target_date = t("price.form.errDateRange", { min: fmtDate(minTarget), max: fmtDate(maxTarget) });
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (Object.keys(errs).length) { focusFirstError(errs); return; }
 
     const req = {
       state: commodity.states[0] || "Maharashtra", market: form.market, commodity: form.commodity,
@@ -67,82 +81,93 @@ export default function PricePrediction() {
     }
   };
 
-  if (loading) return <Loader label="Loading supported crops and markets…" />;
-  if (error) return <Alert type="error">{error}</Alert>;
+  if (loading) return <Loader label={t("price.form.loading")} />;
+  if (error) {
+    return <Alert type="error" action={<button type="button" className="btn btn-secondary" onClick={reload}>{t("common.retry")}</button>}>{error}</Alert>;
+  }
 
   const validated = commodity?.validated_horizons ?? [];
   const days = form.target_date ? daysBetween(opts.today, form.target_date) : null;
+  const errorCount = Object.keys(errors).length;
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1>Crop price prediction</h1>
-          <p>Choose your crop, market and the date you plan to sell. We forecast the mandi price from today.</p>
-        </div>
-      </div>
+      <PageHero image={marketPhoto} alt={t("art.marketAlt")} title={t("price.form.title")}>{t("price.form.subtitle")}</PageHero>
 
-      <form className="card" style={{ marginTop: "1rem" }} onSubmit={submit} noValidate>
+      <form className="card form-card" style={{ marginTop: "1rem" }} onSubmit={submit} noValidate>
         {apiError && <div style={{ marginBottom: "1rem" }}><Alert type="error">{apiError}</Alert></div>}
-        <div className="form-grid">
-          <FormField id="state" label="State" hint="Only Maharashtra is in the dataset.">
-            <select id="state" value={commodity?.states[0] || "Maharashtra"} disabled>
-              <option>{commodity?.states[0] || "Maharashtra"}</option>
-            </select>
-          </FormField>
-          <FormField id="commodity" label="Crop" error={errors.commodity}>
-            <select id="commodity" value={form.commodity} onChange={onCommodity}>
-              {opts.commodities.map((c) => <option key={c.commodity}>{c.commodity}</option>)}
-            </select>
-          </FormField>
-          <FormField id="market" label="Market"
-            hint={market?.is_state_aggregate ? "Median of all reporting markets — the most reliable choice."
-              : `Price data: ${fmtDate(market?.first_date)} – ${fmtDate(market?.last_date)}`}
-            error={errors.market}>
-            <select id="market" value={form.market} onChange={(e) => setForm((f) => ({ ...f, market: e.target.value }))}>
-              {commodity?.markets.map((m) => <option key={m.market} value={m.market}>{m.market}</option>)}
-            </select>
-          </FormField>
-          <FormField id="target_date" label="Date you plan to sell"
-            hint={days != null && days > 0 ? `${days} day${days === 1 ? "" : "s"} from today. You can choose up to ${opts.max_horizon_days} days ahead.`
-              : `You can choose up to ${opts.max_horizon_days} days ahead.`}
-            error={errors.target_date}>
-            <input id="target_date" type="date" min={minTarget} max={maxTarget}
-              value={form.target_date} onChange={(e) => setForm((f) => ({ ...f, target_date: e.target.value }))} />
-          </FormField>
-        </div>
+        {errorCount > 0 && <div style={{ marginBottom: "1rem" }}><Alert type="error">{t("form.fixErrors", { n: errorCount })}</Alert></div>}
+        <p className="required-note">{t("form.requiredNote")}</p>
 
-        <div className="forecast-start">
-          <span className="stat-label">Forecast starts from</span>
-          <strong>Today, {fmtDate(opts.today)}</strong>
-          <span className="muted small">Market arrivals and recent prices are taken from the mandi data automatically.</span>
-        </div>
-
-        {days != null && days > 0 && !validated.includes(days) && (
-          <div style={{ marginTop: "0.75rem" }}>
-            <Alert type="warn">
-              In testing, {form.commodity} forecasts {days} days ahead were not more accurate than simply assuming
-              today's price stays the same. You will still get a forecast, but treat it as a rough guide.
-              {validated.length > 0 && <> Validated days ahead for {form.commodity}: {dayRanges(validated)}.</>}
-            </Alert>
+        <div className="form-section">
+          <h2 className="section-title form-step"><ShoppingBasket size={19} aria-hidden="true" />{t("price.form.stepWhat")}</h2>
+          <div className="form-grid">
+            <FormField id="commodity" label={t("price.form.crop")} required error={errors.commodity}
+              help={t("price.form.cropHelp")}>
+              <select id="commodity" value={form.commodity} onChange={onCommodity}>
+                {opts.commodities.map((c) => <option key={c.commodity} value={c.commodity}>{cropName(t, c.commodity)}</option>)}
+              </select>
+            </FormField>
+            <FormField id="market" label={t("price.form.market")} required error={errors.market}
+              help={t("price.form.marketHelp")}
+              hint={market?.is_state_aggregate ? t("price.form.marketHintAll")
+                : t("price.form.marketHintDates", { from: fmtDate(market?.first_date), to: fmtDate(market?.last_date) })}>
+              <select id="market" value={form.market} onChange={(e) => setForm((f) => ({ ...f, market: e.target.value }))}>
+                {commodity?.markets.map((m) => (
+                  <option key={m.market} value={m.market}>{m.is_state_aggregate ? t("price.form.allMarkets") : m.market}</option>
+                ))}
+              </select>
+            </FormField>
+            <FormField id="state" label={t("price.form.state")} hint={t("price.form.stateHint")}>
+              <select id="state" value={commodity?.states[0] || "Maharashtra"} disabled>
+                <option value={commodity?.states[0] || "Maharashtra"}>{cropName(t, commodity?.states[0] || "Maharashtra", "state")}</option>
+              </select>
+            </FormField>
           </div>
-        )}
-        {projected && (
-          <p className="muted small" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
-            Mandi prices in this app are available up to {fmtDate(opts.data_end)}. Forecasts from today are seasonal
-            projections based on the same time of year, adjusted for about {opts.inflation_annual_pct}% inflation per year.
-          </p>
-        )}
+        </div>
+
+        <div className="form-section">
+          <h2 className="section-title form-step"><CalendarDays size={19} aria-hidden="true" />{t("price.form.stepWhen")}</h2>
+          <div className="form-grid">
+            <FormField id="target_date" label={t("price.form.date")} required error={errors.target_date}
+              help={t("price.form.dateHelp", { n: opts.max_horizon_days })}
+              hint={days != null && days > 0
+                ? t(days === 1 ? "price.form.dateHintDay" : "price.form.dateHintDays", { n: days })
+                : undefined}>
+              <input id="target_date" type="date" min={minTarget} max={maxTarget}
+                value={form.target_date} onChange={(e) => setForm((f) => ({ ...f, target_date: e.target.value }))} />
+            </FormField>
+            <div className="forecast-start">
+              <span className="stat-label">{t("price.form.startsFrom")}</span>
+              <strong>{t("price.form.today", { date: fmtDate(opts.today) })}</strong>
+              <span className="muted small">{t("price.form.autoData")}</span>
+            </div>
+          </div>
+
+          {days != null && days > 0 && !validated.includes(days) && (
+            <div style={{ marginTop: "0.9rem" }}>
+              <Alert type="warn" title={t("price.form.roughTitle")}>
+                {t("price.form.roughBody", { crop: cropName(t, form.commodity), n: days })}
+                {validated.length > 0 && <> {t("price.form.roughValidated", { crop: cropName(t, form.commodity), days: dayRanges(validated) })}</>}
+              </Alert>
+            </div>
+          )}
+          {projected && (
+            <p className="muted small" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+              {t("price.form.projectedNote", { date: fmtDate(opts.data_end), inflation: opts.inflation_annual_pct })}
+            </p>
+          )}
+        </div>
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary btn-lg" disabled={submitting}>
-            {submitting ? "Predicting…" : "Predict price"}
+            {submitting && <SproutSpinner inButton />}{submitting ? t("price.form.submitting") : t("price.form.submit")}
           </button>
         </div>
       </form>
       {opts.unsupported_series > 0 && (
         <p className="muted small" style={{ marginTop: "0.75rem" }}>
-          {opts.unsupported_series} market series are hidden because they have fewer than 180 days of price reports.
+          {t("price.form.hiddenSeries", { n: opts.unsupported_series })}
         </p>
       )}
     </>
