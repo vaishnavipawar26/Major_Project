@@ -60,7 +60,7 @@ function TrendTooltip({ active, payload, originDate, pastLabel, pastColor }) {
  * the date returned by the API on a true time axis.
  */
 export default function PriceTrendChart({
-  history, historyIsReference, actualAfter, path, originDate, currentPrice, targetDate, recommendedDate,
+  history, historyIsReference, actualAfter, path, originDate, currentPrice, targetDate, recommendedDate, peak,
 }) {
   const t = useT();
   const narrow = useNarrow();
@@ -68,7 +68,7 @@ export default function PriceTrendChart({
   const pastLabel = historyIsReference ? t("price.chart.reference") : t("price.chart.actual");
   const pastColor = historyIsReference ? "var(--series-reference)" : "var(--series-actual)";
 
-  const { data, target, recommended, hasWeak, peak } = useMemo(() => {
+  const { data, target, recommended, hasWeak } = useMemo(() => {
     const rows = new Map();
     const put = (iso, patch) => {
       const t = ts(iso);
@@ -96,7 +96,6 @@ export default function PriceTrendChart({
       target: byDate[targetDate],
       recommended: recommendedDate && recommendedDate !== targetDate ? byDate[recommendedDate] : null,
       hasWeak: weak,
-      peak: path.reduce((m, f) => (!m || f.predicted_price > m.predicted_price ? f : m), null),
     };
   }, [history, actualAfter, path, originDate, currentPrice, targetDate, recommendedDate]);
 
@@ -164,7 +163,7 @@ export default function PriceTrendChart({
             start: rupees(currentPrice), date: fmtDate(target.date), price: rupees(target.predicted_price),
             low: rupees(target.lower), high: rupees(target.upper),
           })}
-          {peak && peak.date !== target.date && <> {t("price.chart.summaryPeak", { price: rupees(peak.predicted_price), date: fmtDate(peak.date) })}</>}
+          {peak && peak.date !== target.date && <> {t("price.chart.summaryPeak", { price: rupees(peak.price), date: fmtDate(peak.date) })}</>}
         </ChartSummary>
       )}
       <button type="button" className="btn-link small" onClick={() => setShowTable((s) => !s)} aria-expanded={showTable}>

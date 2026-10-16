@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config.settings import get_settings
 from app.ml.registry import ModelRegistry
-from app.routes import auth, crop_recommendation, history, price_prediction
+from app.routes import auth, crop_recommendation, history, price_prediction, weather
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("smartcrop")
@@ -35,6 +35,7 @@ app.include_router(auth.router)
 app.include_router(price_prediction.router)
 app.include_router(crop_recommendation.router)
 app.include_router(history.router)
+app.include_router(weather.router)
 
 
 @app.exception_handler(Exception)

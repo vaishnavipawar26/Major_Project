@@ -5,7 +5,7 @@
     "timing": 0.2,
     "profit": 0.4
   },
-  "label_in_default_top3_pct": 99.3,
+  "label_in_default_top3_pct": 73.7,
   "alternatives": {
     "suitability_heavy": {
       "weights": {
@@ -13,8 +13,8 @@
         "timing": 0.2,
         "profit": 0.2
       },
-      "same_top1_pct": 99.7,
-      "same_top3_set_pct": 99.3
+      "same_top1_pct": 81.7,
+      "same_top3_set_pct": 95.3
     },
     "profit_heavy": {
       "weights": {
@@ -22,8 +22,8 @@
         "timing": 0.1,
         "profit": 0.6
       },
-      "same_top1_pct": 98.3,
-      "same_top3_set_pct": 100.0
+      "same_top1_pct": 89.7,
+      "same_top3_set_pct": 94.3
     },
     "equal_thirds": {
       "weights": {
@@ -31,8 +31,8 @@
         "timing": 0.3333333333333333,
         "profit": 0.3333333333333333
       },
-      "same_top1_pct": 100.0,
-      "same_top3_set_pct": 100.0
+      "same_top1_pct": 99.3,
+      "same_top3_set_pct": 99.7
     },
     "no_timing": {
       "weights": {
@@ -40,8 +40,8 @@
         "timing": 0.0,
         "profit": 0.5
       },
-      "same_top1_pct": 100.0,
-      "same_top3_set_pct": 100.0
+      "same_top1_pct": 98.7,
+      "same_top3_set_pct": 97.7
     }
   }
 }

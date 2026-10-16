@@ -22,16 +22,44 @@ def test_recommend_ranks_all_seven_crops(client, user):
     assert b["planting_date"] == "2026-11" and b["selling_date"] == "2027-03"
     assert b["growing_months"] == 4 and b["season_used"] == "Rabi"
     top = b["results"][0]
-    assert top["crop_name"] == "Onion" and top["recommended"]
+    assert top["recommended"] and top["crop_name"] == b["best_overall"]
+    onion = next(x for x in b["results"] if x["crop_name"] == "Onion")
+    assert onion["recommended"] and onion["range_fit"]["soil"]["within"] == 4
     assert top["why"] and top["summary"] and top["important_factors"]
     eligible = [x["recommendation_score"] for x in b["results"] if x["eligible"]]
     assert eligible == sorted(eligible, reverse=True)
+    # eligible crops always rank above ineligible ones
+    flags = [x["eligible"] for x in b["results"]]
+    assert flags == sorted(flags, reverse=True)
     assert sum(x["recommended"] for x in b["results"]) <= 3
 
 
 def test_wheat_profile(client, user):
     b = post(client, user, WHEAT_LIKE).json()
     assert b["results"][0]["crop_name"] == "Wheat"
+
+
+def test_agronomic_score_is_the_share_of_values_in_range(client, user):
+    """A = 100 x (soil + weather values inside the crop's typical range) / 7, so a crop that fits
+    every value scores 100 even when another crop fits too (the classifier probability is only
+    relative and is reported separately as model_match_score)."""
+    for body in (ONION_LIKE, WHEAT_LIKE):
+        b = post(client, user, body, "analyze").json()
+        for x in b["results"]:
+            f = x["range_fit"]
+            n = f["soil"]["within"] + f["weather"]["within"]
+            assert abs(x["agronomic_score"] - 100 * n / 7) < 0.01
+            assert 0 <= x["model_match_score"] <= 100
+
+
+def test_equally_suitable_crops_are_ranked_by_profit(client, user):
+    """Onion and Brinjal both fit all 7 values; Brinjal earns far more, so it must rank first."""
+    b = post(client, user, ONION_LIKE, "analyze").json()
+    by = {x["crop_name"]: x for x in b["results"]}
+    assert by["Onion"]["agronomic_score"] == by["Brinjal"]["agronomic_score"] == 100
+    if by["Brinjal"]["eligible"] and by["Brinjal"]["economics"]["net_profit"] > by["Onion"]["economics"]["net_profit"]:
+        assert by["Brinjal"]["rank"] < by["Onion"]["rank"]
+        assert b["best_overall"] == "Brinjal" == b["highest_profit"]
 
 
 def test_score_formula(client, user):
@@ -125,3 +153,73 @@ def test_monthly_price_endpoint(client, user):
     bad = client.post("/api/price-prediction/monthly-forecast", headers=user["headers"],
                       json={"commodity": "rice", "target_month": 11, "target_year": 2026})
     assert bad.status_code == 422
+
+
+def test_loss_making_crop_is_never_recommended(client, user):
+    """Eligibility needs a positive expected profit, whatever the soil match."""
+    for body in (ONION_LIKE, WHEAT_LIKE, {**ONION_LIKE, "area_acres": 3}):
+        b = post(client, user, body, "analyze").json()
+        for x in b["results"]:
+            if x["economics"] and x["economics"]["net_profit"] <= 0:
+                assert not x["eligible"] and not x["recommended"] and not x["profitable"]
+            if x["recommended"]:
+                assert x["profitable"] and x["feasible"] and not x["low_agronomic_suitability"]
+
+
+def test_best_overall_and_highest_profit_are_reported_separately(client, user):
+    b = post(client, user, ONION_LIKE, "analyze").json()
+    rec = [x["crop_name"] for x in b["results"] if x["recommended"]]
+    assert b["best_overall"] == (rec[0] if rec else None) and rec
+    feasible = [x for x in b["results"] if x["feasible"] and x["economics"]]
+    top = max(feasible, key=lambda x: x["economics"]["net_profit"])
+    assert b["highest_profit"] == top["crop_name"]
+    assert top["profit_rank"] == 1
+    assert sorted(x["profit_rank"] for x in feasible) == list(range(1, len(feasible) + 1))
+    # profit of the highest-profit crop is at least that of the best overall crop
+    best = next(x for x in b["results"] if x["crop_name"] == b["best_overall"])
+    assert top["economics"]["net_profit"] >= best["economics"]["net_profit"]
+    assert b["generated_at"]
+
+
+def test_range_fit_matches_inputs(client, user):
+    b = post(client, user, ONION_LIKE, "analyze").json()
+    onion = next(x for x in b["results"] if x["crop_name"] == "Onion")
+    fit = onion["range_fit"]
+    assert fit["soil"]["total"] == 4 and fit["weather"]["total"] == 3
+    assert fit["soil"]["within"] == sum(fit["soil"]["items"].values())
+    assert fit["soil"]["within"] >= 3 and fit["weather"]["within"] >= 2
+
+
+def test_nothing_recommended_when_no_crop_is_ready(client, user):
+    b = post(client, user, {**ONION_LIKE, "selling_month": 12}, "analyze").json()
+    assert b["best_overall"] is None and b["highest_profit"] is None
+    assert not any(x["recommended"] for x in b["results"])
+
+
+def test_seasonal_outlook_is_structured(client, user):
+    b = post(client, user, ONION_LIKE, "analyze").json()
+    onion = next(x for x in b["results"] if x["crop_name"] == "Onion")
+    s = onion["market"]["explanation"]["seasonal"]
+    assert s["month"] == 3 and isinstance(s["price_vs_avg_pct"], float)
+
+
+def test_viability_follows_the_range_fit_not_the_relative_classifier(client, user):
+    """A crop is viable when at least 5 of the 7 values are in its typical range; the relative
+    classifier probability (model_match_score) plays no part in eligibility or the score."""
+    for body in (ONION_LIKE, WHEAT_LIKE):
+        b = post(client, user, body, "analyze").json()
+        for x in b["results"]:
+            f = x["range_fit"]
+            n = f["soil"]["within"] + f["weather"]["within"]
+            assert x["low_agronomic_suitability"] == (n < 5)
+            assert x["eligible"] == (n >= 5 and x["feasible"] and x["profitable"])
+
+
+def test_feature_ranges_come_from_the_data(client, user):
+    b = client.get("/api/crop-recommendation/feature-ranges", headers=user["headers"]).json()
+    assert set(b) == {"N", "P", "K", "temperature", "humidity", "ph", "rainfall"}
+    for f, r in b.items():
+        assert set(r["perCrop"]) == CROPS and r["min"] < r["max"]
+        for low, high in r["perCrop"].values():
+            assert low <= high
+            assert r["min"] <= low and high <= r["max"]

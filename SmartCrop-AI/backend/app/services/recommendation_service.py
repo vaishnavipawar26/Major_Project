@@ -46,8 +46,9 @@ def analyze(rec: CropRecommender, body: CropRequest) -> dict:
         warnings.append("Soil type was saved with your request but is not used by the model "
                         "(the training dataset has no soil-type column).")
     if not any(r["recommended"] for r in out["results"]):
-        warnings.append("No crop is both a good match for your field and sellable in the "
-                        "chosen month. Try a different selling month or check your inputs.")
+        warnings.append("No crop is a good match for your field, sellable in the chosen month "
+                        "and expected to make a profit. Try a different selling month or "
+                        "check your inputs.")
     return {**out, "season_used": season_for_month(body.planting_month), "warnings": warnings}
 
 
@@ -106,3 +107,13 @@ def options(rec: CropRecommender) -> dict:
             "input_ranges": {f: [summary[f]["min"], summary[f]["max"]] for f in summary},
             "price_data_end": rec.forecaster.meta["data_end"],
             "inflation_annual_pct": rec.forecaster.inflation * 100}
+
+
+def feature_ranges(rec: CropRecommender) -> dict:
+    """Single source of truth for the form's ranges, all read from the trained model's metadata:
+    min/max = the dataset's overall minimum/maximum (hard limits), perCrop = each crop's 5th-95th
+    percentile (the same numbers behind "usual range" on the result page)."""
+    summary = rec.meta["data_quality"]["feature_summary"]
+    return {f: {"min": summary[f]["min"], "max": summary[f]["max"],
+                "perCrop": {crop: [r[f]["p05"], r[f]["p95"]] for crop, r in rec.ranges.items()}}
+            for f in summary}

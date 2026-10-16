@@ -129,14 +129,30 @@ class SellingOption(BaseModel):
     status: str
 
 
+class RangeFitPart(BaseModel):
+    within: int
+    total: int
+    items: dict[str, bool]
+
+
+class RangeFit(BaseModel):
+    soil: RangeFitPart
+    weather: RangeFitPart
+
+
 class CropResult(BaseModel):
     rank: int
     crop_name: str
     recommended: bool
     eligible: bool
+    profitable: bool
+    profit_rank: int | None
+    forecast_reliable: bool | None
+    range_fit: RangeFit
     feasible: bool
     low_agronomic_suitability: bool
     probability: float
+    model_match_score: float
     recommendation_score: float
     agronomic_score: float
     timing_score: float
@@ -165,6 +181,9 @@ class CropAnalysis(BaseModel):
     selling_date: str
     growing_months: int
     area_acres: float
+    generated_at: str
+    best_overall: str | None
+    highest_profit: str | None
     season_used: str
     results: list[CropResult]
     weights: dict[str, float]
@@ -199,3 +218,10 @@ class RecommendationOptions(BaseModel):
     input_ranges: dict[str, list[float]]
     price_data_end: str
     inflation_annual_pct: float
+
+
+class FeatureRange(BaseModel):
+    """Allowed limits across the whole dataset and the usual (5th-95th percentile) range per crop."""
+    min: float
+    max: float
+    perCrop: dict[str, list[float]]

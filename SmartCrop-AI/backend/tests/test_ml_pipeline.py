@@ -100,13 +100,9 @@ def _path(prices, band=0.05, reliable=True):
             for h, p in enumerate(prices, start=1)]
 
 
-TODAY = {"horizon_days": 0, "date": "2026-10-10", "predicted_price": 1000.0, "lower": 1000.0,
-         "upper": 1000.0, "beats_baseline": True, "_band": 0.0}
-
-
 def test_advice_waits_for_a_clearly_higher_later_price():
     # target day 3 = 1000; day 6 = 1200 (+18%, well above the 5% typical error)
-    a = best_time_to_sell(_path([1000, 1000, 1000, 1100, 1150, 1200, 1100]), TODAY, 3,
+    a = best_time_to_sell(_path([1000, 1000, 1000, 1100, 1150, 1200, 1100]), 3,
                           "Onion", projected=False)
     assert a["code"] == "WAIT" and a["recommended_date"] == "2026-10-16"
     assert a["wait_days"] == 3 and a["extra_per_quintal"] == 200
@@ -114,26 +110,27 @@ def test_advice_waits_for_a_clearly_higher_later_price():
 
 
 def test_advice_ignores_differences_within_model_error():
-    a = best_time_to_sell(_path([1000, 1010, 1020, 1030]), TODAY, 2, "Onion", projected=False)
+    a = best_time_to_sell(_path([1000, 1010, 1020, 1030]), 2, "Onion", projected=False)
     assert a["code"] == "NO_CLEAR_DIFFERENCE" and a["recommended_date"] == a["target_date"]
     assert a["extra_per_quintal"] == 0 and a["peak"]["date"] == "2026-10-14"
 
 
-def test_advice_sells_earlier_when_prices_are_expected_to_fall():
-    a = best_time_to_sell(_path([1000, 900, 800, 750]), TODAY, 3, "Onion", projected=False)
-    assert a["code"] == "SELL_EARLIER" and a["recommended_horizon_days"] == 0
-    assert a["wait_days"] == -3 and a["falls_after_target"]
+def test_advice_reports_but_never_recommends_a_higher_earlier_price():
+    a = best_time_to_sell(_path([1000, 900, 800, 750]), 3, "Onion", projected=False)
+    assert a["code"] == "SELL_ON_TARGET" and a["recommended_horizon_days"] == 3
+    assert a["best_before"]["date"] == "2026-10-11" and a["wait_days"] == 0
+    assert a["falls_after_target"]
 
 
 def test_advice_respects_storage_limit_of_perishable_crops():
     # tomato: later dates are only considered up to 7 days after the target
     prices = [1000] * 3 + [1000] * 7 + [2000]
-    a = best_time_to_sell(_path(prices), TODAY, 3, "Tomato", projected=False)
+    a = best_time_to_sell(_path(prices), 3, "Tomato", projected=False)
     assert a["code"] != "WAIT"
-    assert best_time_to_sell(_path(prices), TODAY, 3, "Onion", projected=False)["code"] == "WAIT"
+    assert best_time_to_sell(_path(prices), 3, "Onion", projected=False)["code"] == "WAIT"
 
 
-def test_advice_unvalidated_target_is_flagged_uncertain():
-    a = best_time_to_sell(_path([1000, 1500, 2000], reliable=False), TODAY, 2, "Onion",
+def test_advice_unvalidated_target_gives_no_comparison():
+    a = best_time_to_sell(_path([1000, 1500, 2000], reliable=False), 2, "Onion",
                           projected=False)
-    assert a["code"] == "UNCERTAIN" and a["recommended_date"] == a["target_date"]
+    assert a["code"] == "UNAVAILABLE" and a["recommended_date"] == a["target_date"]

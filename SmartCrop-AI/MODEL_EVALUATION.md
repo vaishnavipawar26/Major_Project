@@ -229,12 +229,24 @@ Defined in `backend/app/ml/crop_recommendation/recommender.py`; profit in
 `backend/app/ml/economics/profit.py`.
 
 ```
-Agronomic A = classifier probability × 100
+Agronomic A = 100 × (soil + weather values inside the crop's typical range) / 7
+              (N, P, K, pH, temperature, humidity, rainfall; typical = 5th-95th percentile of that crop's rows)
 Timing    T = 50% planting-window fit + 50% selling fit (fresh 100, −12/month stored, 0 if not ready or spoiled)
 Profit    P = 50 + 50·tanh(ROI), ROI = net profit / (cultivation + storage cost); 0 if infeasible
 Overall     = 0.40·A + 0.20·T + 0.40·P
-Recommended = probability ≥ 5% AND sellable in the chosen month (top 3 of these)
+Recommended = at least 5 of 7 values in range AND sellable in the chosen month AND net profit > 0 (top 3 of these)
+Best overall = first recommended crop; Highest profit = feasible crop with the largest net profit (reported separately)
 ```
+
+**Why A is not the classifier probability (changed).** The XGBoost probability is *relative*: it
+says which of the seven crops the inputs resemble most. For Nashik inputs typical of onion, onion
+scored 99.8 % and brinjal 0.1 % although all 7 values were inside brinjal's range too, so a 40 %
+weight on that number decided the ranking regardless of profit (onion ₹17K vs brinjal ₹1.4 L).
+The share of values in range is an absolute "can it grow here" measure, matches the counts shown
+on the page, and lets profit separate crops that fit equally well. The classifier probability is
+still returned as `model_match_score` and explained by SHAP in the advanced section. The "at
+least 5 of 7" viability rule is a design choice: each range covers 90 % of the crop's training
+rows, so a suitable field normally has about 6 of 7 inside.
 
 Net profit = yield × (1 − losses) × forecast price × (1 − marketing %) − cultivation cost
 (inflated to the planting year) − storage cost. The best selling month (highest projected
@@ -242,13 +254,12 @@ net profit within the crop's harvest + storage window) is reported on the timeli
 
 There is no ground truth for "best crop to plant", so the weights are a documented design
 choice. **Sensitivity** (`scripts/score_sensitivity.py`, 300 dataset profiles): the dataset
-label is in the default top 3 in 99.3 % of cases; with suitability-heavy, profit-heavy
-(0.30/0.10/0.60), equal-thirds or no-timing weights the #1 crop is unchanged in ≥ 98 % and the
-top-3 set in 100 % of cases. Reason: in about two-thirds of profiles only one crop passes the
-5 % suitability gate, because the classifier is confident on clear-cut profiles. Profit
-therefore decides among agronomically plausible crops (e.g. cabbage vs cauliflower vs
-tomato) but never promotes a crop the soil and weather do not suit; all 7 crops' economics
-are still shown in the comparison chart.
+label (the crop a profile was generated for) is in the default top 3 in 73.7 % of cases (it was
+99.3 % when the classifier probability was the agronomic term). That drop is expected: the label
+records which crop the profile resembles, not which crop earns most, and the new rule lets any
+crop that fits (≥ 5 of 7 values) compete on profit. Changing the weights moves the #1 crop in
+1 %–18 % of cases (same #1: 81.7 % suitability-heavy, 89.7 % profit-heavy, 99.3 % equal thirds,
+98.7 % no-timing), so the ranking between several well-fitting crops depends on the chosen weights.
 
 ---
 

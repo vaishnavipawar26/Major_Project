@@ -1,4 +1,4 @@
-import { CircleCheck, HandCoins, Hourglass, Scale, TriangleAlert } from "lucide-react";
+import { CalendarCheck, CircleCheck, CircleHelp, Scale, Warehouse } from "lucide-react";
 
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July",
   "August", "September", "October", "November", "December"];
@@ -11,9 +11,9 @@ export const STATE_MARKET = "All markets (state median)";
 
 // Best-time-to-sell advice codes from the backend (app/ml/price_prediction/selling_advice.py)
 export const ADVICE_STYLE = {
-  WAIT: { tone: "hold", icon: Hourglass },
-  SELL_EARLIER: { tone: "sell", icon: HandCoins },
+  WAIT: { tone: "good", icon: CalendarCheck },
   SELL_ON_TARGET: { tone: "good", icon: CircleCheck },
   NO_CLEAR_DIFFERENCE: { tone: "neutral", icon: Scale },
-  UNCERTAIN: { tone: "soon", icon: TriangleAlert },
+  STORAGE_LIMIT: { tone: "neutral", icon: Warehouse },
+  UNAVAILABLE: { tone: "neutral", icon: CircleHelp },
 };

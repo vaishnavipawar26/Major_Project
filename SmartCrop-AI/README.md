@@ -1,493 +1,1026 @@
 # SmartCrop AI
 
-**Explainable crop price prediction and profit-aware crop recommendation for Maharashtra farmers.**
+**A web application that helps Maharashtra farmers choose which crop to grow and when to sell it, using machine learning, live weather data and explanations they can read.**
 
-SmartCrop AI is a full-stack web application (React + FastAPI + MySQL + scikit-learn/XGBoost) that
-helps a farmer answer two practical questions, with reasons they can check:
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-5.4.11-646CFF?logo=vite&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-3.4.1-EC6B23)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.8.0-F7931E?logo=scikitlearn&logoColor=white)
+![SHAP](https://img.shields.io/badge/SHAP-0.52.0-8A2BE2)
+![Open-Meteo](https://img.shields.io/badge/Weather-Open--Meteo-2E8B57)
 
-1. **"What will my crop sell for on the day I plan to sell — and is there a better day?"**
-2. **"Which crop should I plant to earn the most when I sell?"**
-
-> **Status:** academic major project / working prototype. All forecasts and recommendations are
-> model-based estimates, not guarantees. See [Limitations](#r-limitations).
+> **Status:** academic major project and working prototype. Every forecast and recommendation is a
+> model-based estimate, not a guarantee. See [section 15](#15-limitations-and-future-scope).
 
 ---
 
 ## Table of contents
 
-- [A. Overview](#a-overview)
-- [B. Features](#b-features)
-- [C. Screenshots and demo](#c-screenshots-and-demo)
-- [D. Technologies used](#d-technologies-used)
-- [E. System architecture](#e-system-architecture)
-- [F. Price prediction — how it works](#f-price-prediction--how-it-works)
-- [G. Crop recommendation — how it works](#g-crop-recommendation--how-it-works)
-- [H. Datasets and data sources](#h-datasets-and-data-sources)
-- [I. Project structure](#i-project-structure)
-- [J. Installation and setup (Windows)](#j-installation-and-setup-windows)
-- [K. Running the project](#k-running-the-project)
-- [L. Environment variables](#l-environment-variables)
-- [M. API reference](#m-api-reference)
-- [N. Example workflows](#n-example-workflows)
-- [O. Model training and evaluation](#o-model-training-and-evaluation)
-- [P. Testing and troubleshooting](#p-testing-and-troubleshooting)
-- [Q. Security and privacy](#q-security-and-privacy)
-- [R. Limitations](#r-limitations)
-- [S. Future improvements](#s-future-improvements)
-- [T. Contributors](#t-contributors)
-- [U. Contributing](#u-contributing)
-- [V. License](#v-license)
-- [W. Acknowledgements and references](#w-acknowledgements-and-references)
+1. [Project summary](#1-project-summary)
+2. [Introduction and problem statement](#2-introduction-and-problem-statement)
+3. [Objectives and scope](#3-objectives-and-scope)
+4. [Key features](#4-key-features)
+5. [Technology stack](#5-technology-stack)
+6. [Datasets](#6-datasets)
+7. [How it works](#7-how-it-works)
+8. [Machine learning details](#8-machine-learning-details)
+9. [Diagrams](#9-diagrams)
+10. [API reference](#10-api-reference)
+11. [Project structure](#11-project-structure)
+12. [Installation and setup](#12-installation-and-setup)
+13. [How to use](#13-how-to-use)
+14. [Testing](#14-testing)
+15. [Limitations and future scope](#15-limitations-and-future-scope)
+16. [Black book reference guide](#16-black-book-reference-guide)
+17. [References, data sources and license](#17-references-data-sources-and-license)
+18. [Glossary](#glossary)
 
-Further reading: [ARCHITECTURE.md](ARCHITECTURE.md) (schema, auth, full ML pipeline, SHAP) ·
-[DATASET.md](DATASET.md) (data profiles and preprocessing) ·
+More detail lives in three companion files: [ARCHITECTURE.md](ARCHITECTURE.md) (database schema,
+authentication, full ML pipeline, SHAP), [DATASET.md](DATASET.md) (data profiles and cleaning) and
 [MODEL_EVALUATION.md](MODEL_EVALUATION.md) (validation method and every measured metric).
 
 ---
 
-## A. Overview
+## 1. Project summary
 
-Mandi (APMC market) prices for vegetables and grains move sharply from week to week and across
-seasons. A farmer deciding **when to sell** — or **what to plant** months before selling — usually
-has only today's price to go on. SmartCrop AI combines three years of Maharashtra mandi price
-reports with machine-learning models to give:
-
-- a **day-by-day price forecast** (up to 60 days ahead) for a chosen crop and market, with a
-  likely range, a "best time to sell" suggestion and a plain-language explanation; and
-- a **ranked comparison of 7 crops** for the farmer's soil, weather, city and planting/selling
-  months, including expected profit, timing feasibility and the reasons behind the ranking.
-
-**Coverage:** 7 crops — Brinjal, Cabbage, Cauliflower, Onion, Potato, Tomato, Wheat — in
-Maharashtra. **Intended users:** farmers, farmer-producer organisations and agricultural
-advisers exploring selling and planting decisions; also reviewers of the ML approach.
-
-## B. Features
-
-| Area | What is implemented |
+| Item | Value |
 |---|---|
-| **Accounts** | Register, log in (JWT), edit name, change password, log out. Every page except login/register requires a session. |
-| **Crop price prediction** | Choose crop, market (or the state-wide median) and the date you plan to sell (1–60 days from today). The API forecasts **every day** from today to that date and beyond, up to the crop's last validated day. |
-| **Forecast chart** | Recharts chart of recent/reference prices, the daily forecast, its likely range (10–90 % of past errors), today, your date and the suggested date. Days where the model was not validated are drawn as "less reliable". |
-| **Best time to sell** | Compares your date with earlier and later validated dates (within a per-crop storage limit) and recommends another date only if the price difference is larger than the model's typical error. Includes an optional storage-cost calculator that you fill in. |
-| **Price explanation (SHAP)** | "Why is this price predicted?" — the top factors the model relied on (recent prices, arrivals, season, state-wide prices, …), each with the observed fact and whether it pushes the price up or down. |
-| **Crop recommendation** | Enter soil (N, P, K, pH), weather (temperature, humidity, rainfall), city, planting and selling month and field size. All 7 crops are ranked on soil/weather suitability, timing feasibility and expected profit; up to 3 are marked *recommended*. |
-| **Crop result dashboard** | Profit/revenue comparison chart for all 7 crops, projected monthly price trend for the selling month, profit/loss breakdown, growth/harvest/storage timeline and a "Why this recommendation?" panel with SHAP charts. |
-| **History** | Every prediction and recommendation is saved to the user's account; the History page shows totals, paged tables, re-opens results and deletes records. Users can only see their own records. |
-| **Dashboard** | Landing page with shortcuts to the three main tools. |
+| Name | SmartCrop AI |
+| Type | Full-stack web application (React frontend, FastAPI backend, MySQL database, ML models) |
+| Region | Maharashtra, India |
+| Crops | 7: Brinjal, Cabbage, Cauliflower, Onion, Potato, Tomato, Wheat |
+| Cities supported by the crop model | 11: Ahilyanagar, Amravati, Chhatrapati Sambhajinagar, Jalgaon, Kolhapur, Mumbai, Nagpur, Nashik, Pune, Satara, Solapur |
+| Two main tools | **Compare crops for my field** (crop recommendation) and **Crop price prediction** |
+| Interface languages | English, Marathi, Hindi |
+| Mandi price data | 2023-01-01 to 2025-12-31 (246,067 rows) |
+| Backend tests | 83 (pytest) |
 
-## C. Screenshots and demo
+---
 
-> **Screenshots: to be added.** No screenshots are committed yet. Suggested location:
-> `docs/screenshots/` (e.g. `dashboard.png`, `price-result.png`, `crop-result.png`,
-> `history.png`), then reference them here with relative links such as
-> `![Dashboard](docs/screenshots/dashboard.png)`. Do not include real user names, e-mails or
-> tokens in screenshots.
+## 2. Introduction and problem statement
 
-**Live demo:** none — the project currently runs locally only.
+### The problem
 
-## D. Technologies used
+A farmer has to make two difficult decisions:
 
-| Layer | Technology | Role in this project |
-|---|---|---|
-| Frontend | **React 18**, **Vite 5** | Single-page app and dev server/build (port 5173) |
-| | **React Router 6** | Client-side routes and protected pages |
-| | **Axios** | API calls; interceptor attaches the JWT and handles 401s |
-| | **Recharts** | Price forecast, monthly price, profit comparison and SHAP charts |
-| | **Tailwind CSS 3** + custom CSS | Utility classes on top of the app's own design system (`src/index.css`) |
-| | **lucide-react** | Line icons throughout the UI |
-| Backend | **Python 3.13**, **FastAPI**, **Uvicorn** | REST API with automatic OpenAPI docs |
-| | **Pydantic v2**, **pydantic-settings** | Request/response validation, configuration from `.env` |
-| | **SQLAlchemy 2**, **Alembic**, **PyMySQL** | ORM, schema migrations, MySQL driver |
-| | **PyJWT**, **bcrypt** | Access tokens (HS256) and password hashing |
-| Database | **MySQL 8** | Users, saved predictions and recommendations, model versions |
-| Machine learning | **pandas**, **NumPy**, **PyArrow** | Data cleaning, feature engineering, parquet panels |
-| | **scikit-learn** (Random Forest) | Daily price forecaster (days 13–60) |
-| | **XGBoost** | Daily price forecaster (days 1–12), monthly price model, crop classifier |
-| | **SHAP** (`TreeExplainer`) | Per-prediction explanations |
-| | **joblib**, **matplotlib** | Model persistence; confusion-matrix plot during training |
-| Testing | **pytest**, **httpx** (FastAPI `TestClient`) | 47 backend tests |
+1. **Which crop should I plant?** The best crop depends on the soil (nitrogen, phosphorus, potassium
+   and pH), the weather while the crop grows, the place, and the month the crop can be sold.
+2. **When should I sell?** Mandi (wholesale market) prices change from week to week and from season
+   to season. Most farmers only know today's price. They cannot easily tell whether waiting a month
+   will earn more or less, or whether the crop will even be ready, or will spoil, by then.
 
-Exact versions: [`backend/requirements.txt`](backend/requirements.txt) and
+Advice from a general website is often not specific to the farmer's own field, and it rarely explains
+its reasons.
+
+### What this project does
+
+SmartCrop AI lets the farmer enter their soil test results, choose their place, planting month and
+selling month, and fetch the weather for that place automatically. The system then compares all
+seven supported crops for that field. For each crop it checks how well the soil and weather suit it,
+whether the crop can be harvested and sold in the chosen month, and what profit to expect. It shows
+the best crop first, with the reasons. A second tool forecasts the daily mandi price of a crop and
+suggests a better day to sell. Both tools explain their results in plain language using SHAP, a
+method that shows which inputs pushed a prediction up or down.
+
+---
+
+## 3. Objectives and scope
+
+### Objectives
+
+- Help a farmer compare crops for a specific field, planting month and selling month.
+- Estimate the price a crop may fetch in the selling month and the expected profit.
+- Fetch the growing-period weather automatically, with a manual fallback.
+- Forecast daily mandi prices and suggest a better day to sell.
+- Explain every prediction in simple words.
+- Keep a history of each user's results.
+
+### In scope
+
+- 7 crops, Maharashtra, 11 cities for crop comparison.
+- Soil values entered by the farmer (N, P, K, pH).
+- Weather from Open-Meteo (3-year average for the growing months).
+- Price forecasts based on 2023-2025 mandi prices.
+- User accounts (register, log in, history).
+
+### Out of scope
+
+- It does not give agronomic or financial advice. Results are estimates.
+- It does not measure the soil. The farmer must bring a soil test report.
+- It does not use live news, government policy, pests, disease or real-time market events.
+- It does not cover states other than Maharashtra or crops other than the seven listed.
+- Soil type (Black cotton, Red and so on) is stored with the result but the model does not use it.
+
+---
+
+## 4. Key features
+
+| Feature | What the user sees |
+|---|---|
+| **Soil test results** | Four fields: Nitrogen (N), Phosphorus (P), Potassium (K) and Soil pH. Each shows its unit, the usual range from the data, and a small range bar. A value outside the data limits is blocked; a value few crops grow well at gets an amber hint. |
+| **Place, dates and field** | State (fixed to Maharashtra), a searchable City / nearest mandi list, planting month, selling month, a duration badge ("4 months from planting to selling") with a month timeline, field size in acres (with the acre-to-guntha conversion) and an optional soil type. |
+| **Automatic weather by city** | Once city, planting month and selling month are set, the form loads average temperature, humidity and rainfall for the growing months from Open-Meteo. |
+| **Edit manually fallback** | If the weather cannot be loaded, or the farmer prefers their own numbers, "Edit manually" turns the three weather cards into normal inputs. Nobody is blocked. |
+| **Likely good fits preview** | As soon as the soil and weather values are valid, a small preview lists the crops whose usual ranges match. Final results come after submit. |
+| **Compare crops for my field** | All 7 crops are ranked on soil and weather match, timing and expected profit. Up to 3 are marked recommended. |
+| **Harvest readiness** | Each crop is shown as *ready in time* (green), *sell from storage* (amber) or *not ready / would spoil* (red) for the chosen months. |
+| **Best time to sell** | On the result page, the month with the highest projected price inside the sellable window, compared with the farmer's own month. |
+| **Price prediction** | A separate tool forecasts the daily mandi price (₹ per quintal) for a crop and market up to 60 days ahead, with a likely range and a best-day suggestion. |
+| **"Why did the model predict this price?"** | A plain-language explanation of the main factors behind a price, based on SHAP. |
+| **History and accounts** | Register, log in, view and delete saved predictions and recommendations. Users see only their own records. |
+| **Languages** | English, Marathi and Hindi. |
+
+---
+
+## 5. Technology stack
+
+Versions are copied from [`backend/requirements.txt`](backend/requirements.txt) and
 [`frontend/package.json`](frontend/package.json).
 
-## E. System architecture
+| Layer | Technology | Version | Why it is used |
+|---|---|---|---|
+| Frontend | React | 18.3.1 | Builds the single-page user interface |
+| | Vite | 5.4.11 | Fast development server and production build |
+| | React Router | 6.28.0 | Pages and protected routes |
+| | Axios | 1.7.9 | API calls; attaches the login token |
+| | Recharts | 2.15.0 | Price, profit and SHAP charts |
+| | Tailwind CSS | 3.4.17 | Utility classes next to the app's own CSS (`src/index.css`) |
+| | lucide-react | 0.468.0 | Icons |
+| Backend | Python | 3.13 (used in development) | Language of the API and ML code |
+| | FastAPI | 0.141.1 | REST API with automatic documentation |
+| | Uvicorn | 0.52.4 | Web server for FastAPI |
+| | Pydantic / pydantic-settings | 2.13.5 / 2.15.0 | Checks request data and loads `.env` settings |
+| | httpx | 0.28.1 | Calls the Open-Meteo APIs; also used by the test client |
+| Database | MySQL | 8 | Users, saved results, model versions |
+| | SQLAlchemy | >= 2.0.36, < 2.1 | Object-relational mapper |
+| | Alembic | >= 1.14, < 2 | Database migrations |
+| | PyMySQL | >= 1.1.1, < 2 | MySQL driver |
+| Security | PyJWT | >= 2.10, < 3 | Login tokens (HS256) |
+| | bcrypt | 5.0.0 | Password hashing |
+| Machine learning | pandas / NumPy | 3.0.0 / 2.4.2 | Data cleaning and features |
+| | scikit-learn | 1.8.0 | Random Forest price model and baselines |
+| | XGBoost | 3.4.1 | Crop classifier, monthly price model, short-range daily prices |
+| | joblib | 1.5.3 | Saving and loading trained models |
+| | PyArrow | 21.0.0 | Parquet data panels |
+| | matplotlib | 3.10.8 | Confusion-matrix image during training |
+| Explainability | SHAP (`TreeExplainer`) | 0.52.0 | Shows which inputs raised or lowered a prediction |
+| Weather API | Open-Meteo Geocoding and Historical Archive | no key | Free weather data |
+| Caching | In-memory dictionary in `weather_service.py` | n/a | Keeps weather results for 24 hours |
+| Testing | pytest | >= 8.3, < 9 | 83 backend tests |
+| Tools | Git, VS Code, MySQL Workbench (optional) | any recent | Development |
+
+---
+
+## 6. Datasets
+
+### 6.1 Mandi price data (Agmarknet)
+
+- **What Agmarknet is.** Agmarknet (https://agmarknet.gov.in) is the Government of India's
+  agricultural marketing information portal. It publishes daily arrivals and prices from the
+  country's APMC mandis (regulated wholesale markets).
+- **Source of the price files.** According to the project team, the price data comes from Agmarknet.
+  The raw file in this repository is `dataset/raw/Maharashtra_Crop_Prices_2023_2025_Cleaned.csv`.
+  TODO: confirm the exact download route and licence terms.
+- **What the data contains.** One row per market, crop, variety and day.
+
+  | Column | Meaning |
+  |---|---|
+  | `Date` | Day of the report |
+  | `State` | Always Maharashtra |
+  | `Market` | Name of the mandi, for example `APMC Pune` |
+  | `Commodity` | One of the 7 crops |
+  | `Variety` | Variety name (often `Other`) |
+  | `Arrivals` | Quantity brought to the market |
+  | `Min_Price`, `Max_Price` | Lowest and highest price, ₹ per quintal |
+  | `Modal_Price` | The most common price, ₹ per quintal. This is the value the models predict. |
+
+- **Size and range (read from the file).** 246,067 rows, from 2023-01-01 to 2025-12-31, 7 crops,
+  297 markets.
+- **`supported_series.csv`.** `dataset/crop_price/supported_series.csv` lists every
+  (market, crop, variety) series with its number of observations, first and last date and coverage,
+  and a `supported` flag. It has 767 rows; 427 are `supported = True` (enough history to forecast).
+  The file is produced by `backend/scripts/prepare_price_data.py` from the Agmarknet-based raw file.
+  The app only offers supported series.
+- **Cleaning** (`app/ml/price_prediction/preprocessing.py`, logged in
+  `dataset/reports/price_data_quality.md`):
+  1. Same-day duplicates are merged (median price, average arrivals).
+  2. Isolated outliers are capped using a rule that only looks backwards in time.
+  3. Prices of zero or below are set to missing.
+  4. Each series is placed on a continuous daily calendar and prices are carried forward at most 7 days.
+  5. A state-median series is added for each crop ("All markets (state median)").
+- **Features** (`app/ml/price_prediction/features.py`): recent price changes (1, 3, 7, 14, 30 days),
+  rolling averages and volatility, arrivals, the gap to the state median, calendar features (month,
+  week, weekday, season, day of year) and the number of days ahead. The monthly model uses monthly
+  medians, momentum, level against the 3 and 12 month averages, volatility, arrivals, a city
+  premium and seasonal priors. See [section 8](#8-machine-learning-details).
+
+### 6.2 Soil and crop-weather recommendation dataset (created by the team)
+
+- **Not downloaded.** This dataset was created by the project team, not taken from a public
+  source. The file is `dataset/crop_recommendation/maharashtra_crop_recommendation.csv`.
+- **How it was built.** The team wrote down, for each of the 7 crops, the usual ranges of nitrogen,
+  phosphorus, potassium, pH, temperature, humidity and rainfall, the planting months and the
+  growth period, using agricultural reference values (for example ICAR and state agricultural
+  university guides). The script `backend/scripts/generate_crop_dataset.py` (random seed 42) then
+  generates example rows inside those ranges, using the city climate table and crop calendar.
+  TODO: confirm the exact reference documents used for each crop.
+- **Size.** 4,550 rows, 650 per crop, 7 crops.
+- **Columns.** `N`, `P`, `K`, `temperature`, `humidity`, `ph`, `rainfall`, `state`, `city`,
+  `planting_month`, `selling_month`, `label` (the crop name).
+- **Supporting tables** (hand-written, in the same folder):
+
+  | File | Rows | Columns |
+  |---|---|---|
+  | `crop_season_calendar.csv` | 7 | crop, planting_months, growth_months_min, growth_months_max, max_storage_months, storable, source, notes |
+  | `crop_economics.csv` | 7 | crop, yield_q_per_acre, cost_per_acre_inr, cost_reference_year, post_harvest_loss_pct, storage_loss_pct_per_month, storage_cost_per_q_month, marketing_cost_pct, verification_status |
+  | `city_climate_normals.csv` | 132 | city, month, temperature_c, humidity_pct, rainfall_mm |
+  | `city_market_map.csv` | 64 | city, market |
+  | `city_coordinates.csv` | 13 | state, city, latitude, longitude |
+
+- **Limitations.** The dataset is small, was generated rather than measured on real farms, and is an
+  estimate. The classifier's accuracy (about 85 %) tells how well it separates this generated data,
+  not how well it predicts real fields. Yields, costs and storage limits are approximate.
+
+### 6.3 Weather data (Open-Meteo)
+
+- Fetched live by `backend/app/services/weather_service.py`. No API key is needed.
+- **Geocoding API** (`geocoding-api.open-meteo.com`) finds a place only when its coordinates are not
+  stored in `city_coordinates.csv`.
+- **Historical Archive API** (`archive-api.open-meteo.com/v1/archive`) gives daily mean temperature,
+  mean relative humidity and total precipitation for the last 3 full calendar years.
+- For the months from planting to selling (both included) the service returns the mean temperature,
+  the mean humidity and the rainfall per month (daily rain summed per month, then averaged over
+  months and years).
+
+### 6.4 All datasets at a glance
+
+| Name | Source | How obtained | Used for | File path |
+|---|---|---|---|---|
+| Mandi prices 2023-2025 | Agmarknet (per the team; TODO: confirm exact route) | Downloaded and supplied by the team | Daily and monthly price models | `dataset/raw/Maharashtra_Crop_Prices_2023_2025_Cleaned.csv` |
+| Supported series | Derived from the price file | `prepare_price_data.py` | Which market series can be forecast | `dataset/crop_price/supported_series.csv` |
+| Processed price panels | Derived | `prepare_price_data.py` | Model features | `dataset/processed/` |
+| Crop recommendation dataset | Created by the team | `generate_crop_dataset.py` | Crop classifier | `dataset/crop_recommendation/maharashtra_crop_recommendation.csv` |
+| Crop calendar and economics | Created by the team from references | Written by hand | Timing and profit | `dataset/crop_recommendation/crop_season_calendar.csv`, `crop_economics.csv` |
+| City climate and market tables | Created by the team | Written by hand | Dataset generation, city-to-market mapping | `dataset/crop_recommendation/city_climate_normals.csv`, `city_market_map.csv` |
+| City coordinates | Public map coordinates entered by the team | Written by hand | Weather lookup without geocoding | `dataset/crop_recommendation/city_coordinates.csv` |
+| Weather | Open-Meteo APIs | Live request, cached 24 hours | Temperature, humidity, rainfall | Not stored on disk |
+| 22-crop dataset and legacy tables | Public dataset (source: TODO: confirm) | Earlier version | **Not used**; kept for reference | `dataset/raw/Crop_recommendation.csv`, `dataset/raw/legacy/` |
+
+All datasets and trained models needed to run the app are in the repository. Nothing has to be
+downloaded to run it. Full data profiles: [DATASET.md](DATASET.md).
+
+---
+
+## 7. How it works
+
+**Compare crops for my field**, step by step:
+
+1. The farmer logs in and opens **Compare crops for my field**.
+2. **Step 1, Soil test results:** the farmer types N, P, K and pH from the soil test report.
+3. **Step 2, Place, dates and field:** the farmer picks the city, planting month, selling month and
+   field size.
+4. **Step 3, Weather while the crop grows:** the form waits half a second, then asks the backend
+   (`GET /api/weather`) for the 3-year average temperature, humidity and rainfall of the growing
+   months. If it fails, the farmer can retry or choose **Edit manually**.
+5. When all values are valid, the **Compare crops for my field** button is enabled. The page also
+   shows a "Likely good fits" preview using the crops' usual ranges.
+6. On submit, the frontend sends the values to `POST /api/crop-recommendation/recommend`.
+7. The backend checks the input and the city. The **XGBoost classifier** gives each crop a match
+   probability. The **crop calendar** says whether each crop is ready, sellable from storage, not
+   ready or spoiled at the selling month. The **monthly price model** projects the crop's price in
+   the selling month, and the **profit engine** turns that into revenue, cost, net profit and
+   break-even price.
+8. The three scores are combined: overall score = 0.40 x soil and weather match + 0.20 x timing +
+   0.40 x profit.
+9. **SHAP** explains the ranking. The backend saves the result to MySQL and returns all 7 crops.
+10. The result page shows the best crop, a comparison, the **Best time to sell**, a price chart, the
+    profit summary, the timeline and a "Why this recommendation?" panel.
+
+**Crop price prediction** works the same way, but the farmer picks a crop, a market and a selling
+date, and the daily model predicts the price for every day up to that date.
+
+---
+
+## 8. Machine learning details
+
+### 8.1 Crop recommendation
+
+| Item | Detail |
+|---|---|
+| Task | Classify which of 7 crops best matches the field |
+| Algorithm | XGBoost classifier (`XGBClassifier`, 400 trees, depth 4, learning rate 0.08) |
+| Input features | N, P, K, temperature, humidity, pH, rainfall, city code, planting month, selling month, growing months |
+| Output | A probability for each crop |
+| Training data | 4,550 generated rows (see 6.2) |
+| Training steps | Stratified 80/20 split; 5-fold cross-validation on the training part; compared with logistic regression and random forest; XGBoost deployed |
+| Metrics (hold-out, 910 rows) | accuracy 0.851, macro precision 0.851, macro recall 0.851, macro F1 0.850 |
+| Important note | A logistic-regression baseline reaches a similar cross-validated accuracy (0.849), so the data is easy to separate. The metric is for generated data, not real fields. |
+| Saved files | `backend/trained_models/crop_recommendation/` |
+
+**Final ranking** (`app/ml/crop_recommendation/recommender.py`, `app/ml/economics/profit.py`):
+
+- **Soil and weather match (A):** the classifier probability, also summarised as how many of the 7
+  values lie inside the crop's usual range.
+- **Timing (T):** from `crop_season_calendar.csv`.
+- **Profit (P):** `yield x (1 - losses) x price - cultivation, marketing and storage costs`, turned
+  into a score with `50 + 50 x tanh(ROI)`.
+- **Overall = 0.40 A + 0.20 T + 0.40 P.** These weights are a design choice, not learned.
+- A crop is **recommended** only if its probability is at least 5 % and it can be sold in the chosen
+  month. Up to 3 crops are recommended.
+
+### 8.2 Monthly price model (selling-month price)
+
+| Item | Detail |
+|---|---|
+| Task | Project a crop's price in a city for the selling month, 1 to 24 months ahead |
+| Algorithm | XGBoost regressor on real (inflation-adjusted) log price change |
+| Features | horizon, origin month, target month, crop, city, 1 and 3 month momentum, level against 3 and 12 month averages, 6-month volatility, arrivals against 12-month average, city premium, seasonal price prior, seasonal arrivals prior |
+| Validation | Two time-ordered cut-offs (2024-12 and 2025-06) with 6-month test windows |
+| Result | MAE ₹616 per quintal against ₹750 for "no change" and ₹630 for a seasonal naive guess; MAPE about 45 % |
+| Assumption | 5 % per year inflation is added back to turn real prices into rupee prices |
+| Saved files | `backend/trained_models/monthly_price/` |
+
+The range shown on the result page (likely low and high) comes from the model's out-of-fold errors.
+
+### 8.3 Daily price prediction
+
+| Item | Detail |
+|---|---|
+| Task | Predict the modal price for every day, 1 to 60 days ahead |
+| Target | `log(price at day t+h / price at day t)` |
+| Design | One direct multi-horizon model: the number of days ahead is a feature, and no predicted price is fed back as an input |
+| Algorithms | Days 1-12: XGBoost; days 13-60: Random Forest (scikit-learn), chosen by cross-validation |
+| Validation | 4-fold expanding-window cross-validation over the quarters of 2025 |
+| Result (all horizons) | MAE ₹400 per quintal against ₹406.5 for "no change"; RMSE ₹669 against ₹710; MAPE 24.1 % |
+| Honest note | The model is only about 2 % better than "no change" overall. At 30 days it is not better (₹434 against ₹427). Onion is not validated at any horizon. |
+| Reliability flag | Every forecast day carries `beats_baseline`, which is true only if the model beat "no change" for that crop at that horizon in cross-validation. |
+| Saved files | `backend/trained_models/price_prediction/` |
+
+Full tables and method: [MODEL_EVALUATION.md](MODEL_EVALUATION.md).
+
+### 8.4 How the explanation is produced and how to read it
+
+The explainers are in `backend/app/ml/explainability/`.
+
+1. `shap.TreeExplainer` runs on the deployed tree model for the single prediction being shown.
+2. SHAP gives every input a value: how much it pushed the prediction up or down compared with the
+   model's average.
+3. The code groups technical inputs into a few farmer-friendly factors, and pairs each with an
+   observed fact from the price history.
+
+**How to read "Why did the model predict this price?"**
+
+| Part | Meaning |
+|---|---|
+| **Starting price level** | Where the price is now, compared with its normal level. For example "the price was 10 % above its 12-month average". Prices tend to drift back towards normal (mean reversion). |
+| **Seasonal trend** | What usually happens in the selling month, for example "November prices averaged 35 % above the yearly average". |
+| **Usual pattern** | Market supply (arrivals), recent price movement, volatility, how many months away the selling month is, the city's market and the crop's own behaviour. |
+| **Higher / lower / small influence** | Whether the factor supports a higher price, a lower price, or matters little (under 1 %). |
+
+The text is worded as a pattern the model has learned ("the model links this to a higher price"),
+**not** as a proven cause. For the monthly model: starting level + factors + inflation = forecast.
+
+For the crop ranking, the "Why this recommendation?" panel groups SHAP values into soil, weather,
+timing and location, and lists values outside a crop's usual (5th to 95th percentile) range as
+limitations.
+
+---
+
+## 9. Diagrams
+
+All diagrams use Mermaid and render on GitHub. They are based on the real files and endpoints in
+this repository. Mermaid has no native use case or object diagram, so those two are drawn with
+flowcharts and say so.
+
+### 9.1 System architecture
 
 ```mermaid
 flowchart LR
-    U([User / browser]) --> FE["React frontend<br/>(Vite, port 5173)"]
-    FE -- "JSON + Bearer JWT<br/>(Axios)" --> API["FastAPI backend<br/>(port 8000)"]
-    API --> AUTH["Auth: bcrypt + JWT"]
-    API --> REG["ModelRegistry<br/>(models loaded once at startup)"]
-    REG --> PF["Daily price forecaster<br/>XGBoost + Random Forest"]
-    REG --> MF["Monthly price model<br/>XGBoost"]
-    REG --> CR["Crop classifier XGBoost<br/>+ timing + profit engine"]
-    PF & MF & CR --> SHAP["SHAP explanations"]
-    API <--> DB[("MySQL<br/>users, history,<br/>model versions")]
-    DATA[["dataset/processed/*<br/>trained_models/*"]] --> REG
-    API -- "forecast / ranking<br/>+ explanation" --> FE
+    U(["Farmer in browser"]) --> FE["React frontend<br/>Vite, port 5173"]
+    FE -->|"JSON + Bearer token"| API["FastAPI backend<br/>port 8000"]
+    API --> AUTH["Auth<br/>bcrypt and JWT"]
+    API --> WX["weather_service.py"]
+    WX --> CACHE[("In-memory cache<br/>24 hours")]
+    WX -->|"HTTPS"| OM["Open-Meteo APIs"]
+    WX --> COORD[["city_coordinates.csv"]]
+    API --> REG["ModelRegistry<br/>loaded at startup"]
+    REG --> CLS["Crop classifier<br/>XGBoost"]
+    REG --> MON["Monthly price model<br/>XGBoost"]
+    REG --> DAY["Daily price model<br/>XGBoost + Random Forest"]
+    CLS --> EXP["Explainability<br/>SHAP"]
+    MON --> EXP
+    DAY --> EXP
+    API --> PROFIT["Profit and timing engine"]
+    PROFIT --> TAB[["Crop calendar and economics CSVs"]]
+    MON --> AG[["Agmarknet price data<br/>supported_series"]]
+    DAY --> AG
+    CLS --> MAN[["Manual soil and weather dataset"]]
+    API <--> DB[("MySQL<br/>users, history, model versions")]
+    API -->|"result + explanation"| FE
 ```
 
-- The **frontend** never talks to the models directly; it calls the REST API with the user's token.
-- The **backend** loads every trained model and the processed price panels **once at startup**
-  (`app/ml/registry.py`); requests never train anything. If a model is missing, the related
-  endpoints return **503** and `/api/health` reports which model is not loaded.
-- **Training is offline**, via the scripts in `backend/scripts/` (see [section O](#o-model-training-and-evaluation)).
-- Saved predictions/recommendations reference the `model_versions` row that produced them.
+*Figure 1. The browser talks only to the FastAPI backend. The backend fetches weather, runs the
+models and the explainer, and stores history in MySQL.*
+The models and datasets are loaded once when the server starts. Weather is the only live external
+call during a request, and it is cached for 24 hours.
 
-Details (folder-by-folder, DB schema, auth flow): [ARCHITECTURE.md](ARCHITECTURE.md).
+### 9.2 Use case diagram (drawn as a flowchart)
 
-## F. Price prediction — how it works
-
-Code: `backend/app/ml/price_prediction/` (`preprocessing.py`, `features.py`, `forecaster.py`,
-`selling_advice.py`), explanations in `backend/app/ml/explainability/price_explainer.py`.
-
-### Objective
-Predict the **modal mandi price (₹/quintal)** of a crop in a market for **every day from 1 to 60
-days ahead**, and say whether selling on a different day is likely to be better.
-
-### Data loading and preprocessing
-1. `dataset/raw/Maharashtra_Crop_Prices_2023_2025_Cleaned.csv` is validated and cleaned:
-   same-day duplicates merged (median price, averaged arrivals), isolated outliers capped with a
-   backward-looking rule, `Min_Price ≤ 0` set to missing. Every step is logged to
-   `dataset/reports/price_data_quality.md`.
-2. Each (market, crop, variety) series is placed on a continuous **daily calendar**; prices are
-   carried forward at most 7 days. A **state-median series** per crop is added
-   ("All markets (state median)").
-3. Only series with **≥ 180 reported days** are offered (`dataset/crop_price/supported_series.csv`).
-
-### Model inputs (features)
-Computed by the same function in training and serving (`features.py::compute_features`), using
-only data **up to the forecast start date**:
-
-| Group | Features |
-|---|---|
-| Recent price movement | log price; changes over the last 1/3/7/14/30 days; 7-day % change |
-| Rolling statistics | gap to 7/14/30-day rolling means; 30-day volatility; momentum (7- vs 30-day mean); min–max spread |
-| Supply | arrivals (log) and arrivals vs their 30-day mean |
-| State market | gap to the state-median price; state 7-day change |
-| Calendar | month, week, weekday, season, day-of-year (sin/cos) at the start date **and** at the target date |
-| Identity | crop, market and variety codes |
-| Horizon | number of days ahead, *h* |
-
-Arrivals, lags and rolling averages are taken from the data — the user never types them in.
-
-### Model and how a forecast is generated
-- **Target:** `log(price[t+h] / price[t])` — the relative change over *h* days.
-- **Direct multi-horizon model, no recursion.** Each training row is a (start date, *h*) pair;
-  all 60 days are predicted directly from information known at the start date. A predicted
-  price is **never** fed back as an input for the next day, so future arrivals or prices never
-  have to be guessed and errors do not compound.
-- **Model per horizon**, chosen by cross-validated error (recorded in
-  `backend/trained_models/price_prediction/metadata.json`):
-
-  | Days ahead | Model |
-  |---|---|
-  | 1–12 | XGBoost, "rate" form (predicts the average daily change) |
-  | 13–35 | Random Forest (scikit-learn), "rate" form |
-  | 36–60 | Random Forest, "plain" form (predicts the total change) |
-
-- **Start date = today.** The price data ends on **31 Dec 2025**, so for later dates the
-  forecaster uses the **same calendar day of the last data year** and scales prices by an
-  assumed **5 %/year inflation** (a *seasonal projection*). The result page says so explicitly.
-- **Likely range:** the 10th–90th percentile of the model's out-of-fold cross-validation errors
-  for that crop and horizon — an empirical error band, not a confidence level.
-- **Direction:** *Increasing/Decreasing* only if the predicted change exceeds the typical error;
-  otherwise *Stable*.
-- **Validated days:** each day carries `beats_baseline` — true only if, in cross-validation,
-  the model beat the "price stays the same" baseline for that crop at that horizon (and ±3 days).
-  Unvalidated days are shown as less reliable and never used for the selling advice.
-
-### Chart data
-`POST /api/price-prediction/predict` (or `/trend`) returns the history window, the daily `path`
-(date, predicted price, range, direction, `beats_baseline`), the target day and the advice. The
-frontend (`components/charts/PriceTrendChart.jsx`) draws these values directly — the UI does no
-forecasting of its own.
-
-### Best time to sell (`selling_advice.py`)
-- Candidates: today, earlier **validated** dates, and later **validated** dates up to a
-  per-crop storage limit — **7 days** for tomato, brinjal and cauliflower, **14** for cabbage,
-  **60** for onion, potato and wheat (general post-harvest guidance, not learned from data).
-- Another date is recommended only if its predicted price differs from your date's by more than
-  the model's typical error → `WAIT` or `SELL_EARLIER`; otherwise `SELL_ON_TARGET` or
-  `NO_CLEAR_DIFFERENCE`. If your date itself is not validated → `UNCERTAIN`.
-- **Storage cost is not modelled** (it is unknown). The result page has an optional calculator:
-  the farmer enters a cost per quintal per day to see the expected gain after storage.
-  Transport, commission and quality loss are not included.
-
-### Explanation (SHAP)
-`shap.TreeExplainer` is run on the deployed model for the target date (and the suggested date).
-Technical features are grouped into farmer-facing factors (recent prices, arrivals, seasonal
-pattern, prices across Maharashtra, …). Each factor shows the **observed fact** (e.g. "prices
-fell about 1 % over the past week") and whether the model associates it with a **higher** or
-**lower** predicted price. These are patterns the model learned — **not proven causes**.
-
-### Limitations specific to this feature
-Mandi prices are hard to forecast: over all horizons the model is only about **2 % better on MAE
-than "no change"**. Day 1 is never validated, and **onion is not validated at any horizon**.
-See [section O](#o-model-training-and-evaluation) and MODEL_EVALUATION.md §1.
-
-## G. Crop recommendation — how it works
-
-Code: `backend/app/ml/crop_recommendation/recommender.py`, `app/ml/economics/profit.py`,
-`app/ml/price_prediction/monthly_forecaster.py`, explanations in `app/ml/explainability/`.
-
-### Objective
-Rank the 7 supported crops for a specific field and season by **how well they suit the field,
-whether they can be sold in the chosen month, and how profitable they are expected to be**.
-
-### Inputs
-| Input | Unit / range accepted by the API |
-|---|---|
-| Nitrogen, phosphorus, potassium | kg/ha (0–300, 0–300, 0–400) |
-| Soil pH | 0–14 |
-| Temperature, humidity, rainfall | °C, %, mm/month (growing-period averages) |
-| City | one of 11 Maharashtra cities |
-| Planting month, selling month | 1–12 |
-| Field size | acres |
-| Soil type | optional — stored only, **not used by the model** |
-
-### How the ranking is produced
-1. **Suitability (A)** — an **XGBoost classifier** trained on soil, weather, city, planting month,
-   selling month and growing months gives a probability for each crop (×100).
-2. **Timing (T)** — from `dataset/crop_recommendation/crop_season_calendar.csv`: is the planting
-   month in the crop's window, and at the selling month is the crop harvest-ready, sellable from
-   storage, not ready, or spoiled?
-3. **Profit (P)** — the **XGBoost monthly price model** projects the crop's price in the user's
-   city for the selling month; `profit.py` computes yield × (1 − losses) × price − cultivation,
-   marketing and storage costs → net profit, ROI, break-even price and low/high scenarios.
-   P = 50 + 50·tanh(ROI).
-4. **Overall score = 0.40·A + 0.20·T + 0.40·P.** These weights are a documented design choice,
-   not learned.
-5. A crop is **recommended** only if the classifier gives it **≥ 5 %** probability **and** it can be
-   sold in the chosen month. All 7 crops are returned ranked; **up to the top 3** eligible crops
-   are shown as recommended (it can be fewer).
-
-### What the numbers mean
-- The **probability** is the classifier's class probability on a **synthetic** dataset. It says how
-  closely the inputs match the generated examples for that crop — **not** the chance that the
-  crop will succeed in a real field.
-- **Profit figures** use approximate reference yields and costs (`crop_economics.csv`) and a
-  long-range price projection; they are scenarios, not promises.
-- The "Why this recommendation?" panel shows classifier SHAP contributions grouped into soil,
-  weather, timing and location, plus the price-forecast factors. Inputs outside a crop's typical
-  training range are listed as limitations.
-
-## H. Datasets and data sources
-
-| File | Used for | Origin |
-|---|---|---|
-| `dataset/raw/Maharashtra_Crop_Prices_2023_2025_Cleaned.csv` (246,067 rows, 2023-01-01 → 2025-12-31) | Daily and monthly price models | Provided by the project team. Column layout matches Government of India **AGMARKNET** mandi reports. **Exact source and licence: requires confirmation.** |
-| `dataset/crop_recommendation/maharashtra_crop_recommendation.csv` (4,550 rows) | Crop classifier | **Synthetic**, generated by `backend/scripts/generate_crop_dataset.py` (seed 42) from agronomic reference ranges, city climate normals and crop calendars |
-| `dataset/crop_recommendation/crop_season_calendar.csv`, `crop_economics.csv`, `city_climate_normals.csv`, `city_market_map.csv` | Timing, profit, data generation, city→market mapping | Hand-built reference tables; values are approximate (see DATASET.md §3) |
-| `dataset/processed/*` | Cleaned rows, daily panel, monthly city panel, seasonal index | Generated by the scripts |
-| `dataset/raw/Crop_recommendation.csv`, `dataset/raw/legacy/*` | **Not used** (earlier 22-crop dataset, kept for reference) | Public 22-crop dataset. **Source and licence: requires confirmation.** |
-
-Price CSV columns: `Date, State, Market, Commodity, Variety, Arrivals, Min_Price, Max_Price,
-Modal_Price` (prices in ₹/quintal). To refresh data, add newer files with the same columns to
-`dataset/raw/` and re-run the pipeline ([section O](#o-model-training-and-evaluation)).
-
-All datasets and trained models needed to run the app are **included in the repository**; nothing
-has to be downloaded separately. Full profiles and preprocessing decisions: [DATASET.md](DATASET.md).
-
-## I. Project structure
-
-```text
-SmartCrop-AI/
-├── README.md, ARCHITECTURE.md, DATASET.md, MODEL_EVALUATION.md
-├── .gitignore
-├── backend/
-│   ├── app/
-│   │   ├── main.py                FastAPI app: CORS, routers, model loading at startup, /api/health
-│   │   ├── config/settings.py     settings from environment / backend/.env
-│   │   ├── auth/                  JWT, bcrypt, current-user dependency
-│   │   ├── database/              SQLAlchemy engine/session and Base
-│   │   ├── models/                ORM tables (users, predictions, recommendations, model versions)
-│   │   ├── schemas/               Pydantic request/response models
-│   │   ├── routes/                auth, price_prediction, crop_recommendation, history
-│   │   ├── services/              business logic used by the routes
-│   │   └── ml/
-│   │       ├── price_prediction/  cleaning, features, daily + monthly forecasters, selling advice
-│   │       ├── crop_recommendation/  classifier wrapper and scoring
-│   │       ├── economics/         profit engine
-│   │       ├── explainability/    SHAP → plain-language factors
-│   │       ├── common/            paths, season conventions
-│   │       └── registry.py        loads all models once
-│   ├── alembic/ , alembic.ini     database migrations (0001 initial, 0002 economic recommendation)
-│   ├── scripts/                   data preparation, dataset generation, training, sensitivity
-│   ├── trained_models/            .joblib models + metadata.json + CV metrics
-│   ├── tests/                     pytest suite
-│   ├── requirements.txt
-│   └── .env.example               configuration template (copy to .env)
-├── frontend/
-│   ├── src/
-│   │   ├── pages/                 Dashboard, PricePrediction, PriceResult, CropRecommendation,
-│   │   │                          CropResult, History, Profile, Login, Register, NotFound
-│   │   ├── components/            shared UI (+ charts/ with Recharts)
-│   │   ├── layouts/               sidebar app layout, auth layout
-│   │   ├── services/              Axios instance and API wrappers
-│   │   ├── context/, hooks/, utils/
-│   │   └── index.css              design system
-│   ├── package.json, vite.config.js, tailwind.config.js
-│   └── .env.example
-└── dataset/
-    ├── raw/                       source CSVs (never edited)
-    ├── processed/                 generated panels (parquet/CSV)
-    ├── crop_price/                supported_series.csv
-    ├── crop_recommendation/       synthetic crop dataset + reference tables
-    └── reports/                   data-quality report, dataset summary, training log
+```mermaid
+flowchart LR
+    F(["Farmer"])
+    OMA(["Open-Meteo API"])
+    AGM(["Agmarknet data source"])
+    subgraph SYS["SmartCrop AI"]
+        U1(["Enter soil values"])
+        U2(["Select place and dates"])
+        U3(["Fetch weather automatically"])
+        U4(["Edit weather manually"])
+        U5(["Compare crops"])
+        U6(["View price prediction"])
+        U7(["View explanation"])
+        U8(["View history"])
+    end
+    F --- U1
+    F --- U2
+    F --- U3
+    F --- U4
+    F --- U5
+    F --- U6
+    F --- U7
+    F --- U8
+    U3 -.->|"uses"| OMA
+    U6 -.->|"trained on"| AGM
+    U5 -.->|"includes"| U1
+    U5 -.->|"includes"| U2
+    U5 -.->|"includes"| U7
+    U4 -.->|"alternative to"| U3
 ```
 
-## J. Installation and setup (Windows)
+*Figure 2. Use cases of the farmer. Open-Meteo and Agmarknet are external actors: Open-Meteo is
+called live, and Agmarknet is the origin of the price data used to train the models.*
+"Edit weather manually" is the fallback when the weather cannot be fetched.
 
-### 1. Prerequisites
+### 9.3 Class diagram
 
-| Tool | Version used in development |
-|---|---|
-| Python | 3.13 (3.11+ should work, not tested) |
-| Node.js | 20.x (with npm) |
-| MySQL Community Server | 8.0 |
-| Git, VS Code | any recent version |
+The backend is mostly functions and a few classes. The diagram shows real classes plus logical
+modules, marked with the `<<module>>` label.
 
-### 2. Clone and open the project
-
-```powershell
-git clone https://github.com/<organization>/SmartCrop-AI.git
-cd SmartCrop-AI
-code .
+```mermaid
+classDiagram
+    class ModelRegistry {
+        +price
+        +monthly
+        +crop
+        +load()
+    }
+    class CropRecommender {
+        +classes
+        +cities
+        +calendar
+        +economics
+        +analyze(inputs, city, planting_month, selling_month, area_acres)
+        +explain(inputs, city, planting_month, selling_month, crop)
+    }
+    class MonthlyPriceForecaster {
+        +resolve_series(crop, city)
+        +forecast_path(crop, city, target_year, target_month)
+    }
+    class PriceForecaster {
+        +options()
+        +reliability(h, commodity)
+        +validated_horizons(commodity)
+        +forecast(ref, as_of, target_date)
+    }
+    class CropCalendar {
+        +crop
+        +planting_months
+        +growth_months_min
+        +growth_months_max
+        +max_storage_months
+        +storable
+    }
+    class CropEconomics {
+        +yield_q_per_acre
+        +cost_per_acre_inr
+        +post_harvest_loss_pct
+        +marketing_cost_pct
+    }
+    class weather_service {
+        <<module>>
+        +locate(city, state)
+        +growing_months(plant, sell)
+        +growing_period_weather(city, state, plant, sell)
+    }
+    class WeatherError {
+        +status_code
+        +message
+    }
+    class recommendation_service {
+        <<module>>
+        +analyze(rec, body)
+        +recommend(db, user, rec, body)
+        +feature_ranges(rec)
+    }
+    class explainers {
+        <<module>>
+        +explain_crop()
+        +explain_monthly_price()
+        +explain_price()
+    }
+    class User {
+        +id
+        +name
+        +email
+        +password_hash
+    }
+    class CropRecommendation {
+        +nitrogen
+        +phosphorus
+        +potassium
+        +ph
+        +city
+        +planting_date
+        +selling_date
+    }
+    class RecommendationResult {
+        +rank
+        +crop_name
+        +recommendation_score
+        +expected_profit
+    }
+    class PricePrediction {
+        +market
+        +commodity
+        +predicted_price
+        +future_trend
+    }
+    class ModelVersion {
+        +model_type
+        +version
+        +algorithm
+        +metrics
+    }
+    ModelRegistry o-- CropRecommender
+    ModelRegistry o-- MonthlyPriceForecaster
+    ModelRegistry o-- PriceForecaster
+    CropRecommender --> MonthlyPriceForecaster : price path
+    CropRecommender --> CropCalendar
+    CropRecommender --> CropEconomics
+    CropRecommender ..> explainers
+    recommendation_service --> CropRecommender
+    recommendation_service --> CropRecommendation : saves
+    weather_service ..> WeatherError
+    User "1" --> "*" CropRecommendation
+    User "1" --> "*" PricePrediction
+    CropRecommendation "1" --> "*" RecommendationResult
+    ModelVersion "1" --> "*" CropRecommendation
+    ModelVersion "1" --> "*" PricePrediction
 ```
 
-Replace `<organization>` with the GitHub organization that hosts the repository.
+*Figure 3. Main classes and modules.* `ModelRegistry` loads the three models once. `CropRecommender`
+combines the classifier, the monthly price forecaster, the crop tables and the explainers.
+The services connect the API routes to the models and the database.
 
-### 3. Create the MySQL database
+### 9.4 Object diagram (drawn as a flowchart)
 
-Open the MySQL client (`mysql -u root -p`) or MySQL Workbench and run — choose your own password:
+Concrete values from a real run of the code (Pune, planting in November, selling in April, planting
+year 2026). The weather values are example inputs; the Brinjal figures are the model's output.
 
-```sql
-CREATE DATABASE smartcrop_ai CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'smartcrop_user'@'localhost' IDENTIFIED BY 'choose-a-strong-password';
-GRANT ALL PRIVILEGES ON smartcrop_ai.* TO 'smartcrop_user'@'localhost';
-FLUSH PRIVILEGES;
+```mermaid
+flowchart LR
+    A["farmerInput : FarmerInput<br/>N = 115, P = 65, K = 70<br/>pH = 6.4<br/>city = Pune<br/>planting_month = 11<br/>selling_month = 4<br/>area_acres = 1"]
+    B["weather : WeatherResult<br/>avgTemperature = 23.5<br/>avgHumidity = 62.0<br/>avgRainfall = 45.0<br/>source = Open-Meteo<br/>monthsUsed = 11, 12, 1, 2, 3, 4"]
+    C["rec : CropRecommender<br/>7 crops, 11 cities"]
+    D["brinjal : CropResult<br/>rank = 1, recommended = true<br/>agronomic_score = 100<br/>timing_score = 100<br/>profit_score = 82.2<br/>recommendation_score = 92.88<br/>status = fresh"]
+    E["economics : Economics<br/>selling_price = 1796.62<br/>gross_revenue = 137441<br/>total_cost = 82658<br/>net_profit = 54784<br/>break_even_price = 1018"]
+    A --> C
+    B --> C
+    C --> D
+    D --> E
 ```
 
-### 4. Backend (terminal 1)
+*Figure 4. One concrete set of objects.* The farmer input and the weather result go into the
+recommender, which returns a ranked Brinjal result with its economics. Brinjal is ready in time
+(`fresh`) after 5 months.
 
-```powershell
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
+### 9.5 Sequence diagram
+
+```mermaid
+sequenceDiagram
+    actor F as Farmer
+    participant FE as React form
+    participant API as FastAPI
+    participant WX as weather_service
+    participant OM as Open-Meteo
+    participant ML as CropRecommender
+    participant EX as Explainer
+    participant DB as MySQL
+    F->>FE: Enter soil, city, planting and selling month
+    FE->>API: GET /api/weather after 500 ms
+    API->>WX: growing_period_weather
+    WX->>OM: Archive request for 3 years
+    OM-->>WX: Daily temperature, humidity, rain
+    WX-->>API: Averages
+    API-->>FE: avgTemperature, avgHumidity, avgRainfall
+    F->>FE: Click Compare crops for my field
+    FE->>API: POST /api/crop-recommendation/recommend
+    API->>ML: analyze
+    ML->>EX: SHAP for each crop
+    EX-->>ML: Reasons
+    ML-->>API: 7 ranked crops with economics
+    API->>DB: Save recommendation and results
+    API-->>FE: Result JSON
+    FE-->>F: Result page
 ```
 
-Edit `backend\.env`: set `DATABASE_URL` to your database user/password and replace
-`JWT_SECRET_KEY` with your own random value:
+*Figure 5. One full request.* The weather call happens first and fills the form. The recommendation
+call then runs the models and the explainer, and the result is saved before it is returned.
 
-```powershell
-python -c "import secrets; print(secrets.token_urlsafe(48))"
+### 9.6 Activity diagram
+
+```mermaid
+flowchart TD
+    S(["Open Compare crops form"]) --> A["Enter soil values"]
+    A --> B["Select city and months"]
+    B --> C{"Weather fetch OK?"}
+    C -->|"yes"| D["Show weather cards"]
+    C -->|"no"| E{"Retry or edit?"}
+    E -->|"retry"| C
+    E -->|"edit manually"| F["Type weather values"]
+    D --> G{"All values valid?"}
+    F --> G
+    G -->|"no"| H["Show validation message"]
+    H --> A
+    G -->|"yes"| I["Submit form"]
+    I --> J["Backend ranks 7 crops"]
+    J --> K{"Crop ready in time?"}
+    K -->|"yes"| L["Mark ready in time"]
+    K -->|"storage"| M["Mark sell from storage"]
+    K -->|"no"| N["Mark not ready or spoiled"]
+    L --> O(["Show result page"])
+    M --> O
+    N --> O
 ```
 
-URL-encode special characters in the password inside `DATABASE_URL` (`@` → `%40`). Then create
-the tables:
+*Figure 6. From opening the form to the result.* The weather step can be repaired by retrying or
+typing the values. The readiness check is made for every crop and only changes how it is labelled.
 
-```powershell
-alembic upgrade head
+### 9.7 State chart diagrams
+
+Weather section:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Empty
+    Empty --> Loading : city and months set
+    Loading --> Loaded : weather received
+    Loading --> Error : request failed
+    Error --> Loading : retry
+    Error --> ManualEdit : edit manually
+    Loaded --> Loading : city or month changed
+    Loaded --> ManualEdit : edit manually
+    ManualEdit --> Loading : use automatic weather
 ```
 
-### 5. Models and data
+*Figure 7a. States of the weather section.* Changing the city or a month always restarts loading.
+Manual edit is reachable from Loaded and Error so the farmer is never blocked.
 
-The trained models (`backend/trained_models/`) and processed panels (`dataset/processed/`) are
-included, so **no training is needed** to run the app. To rebuild them, see
-[section O](#o-model-training-and-evaluation).
+Form and prediction:
 
-### 6. Frontend (terminal 2)
-
-```powershell
-cd frontend
-npm install
-copy .env.example .env
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Validating : values entered
+    Validating --> Idle : invalid, show message
+    Validating --> Submitting : all valid, click submit
+    Submitting --> ShowingResults : server answers
+    Submitting --> Failed : server error
+    Failed --> Submitting : try again
+    Failed --> Idle : edit values
+    ShowingResults --> Idle : new comparison
 ```
 
-`VITE_API_URL` defaults to `http://localhost:8000`; change it only if the backend runs elsewhere.
+*Figure 7b. States of the form.* The submit button is disabled until the form is valid. A server
+error keeps the typed values so the farmer can try again.
 
-## K. Running the project
+### 9.8 Data flow diagrams
 
-The backend and frontend run in **two separate terminals**.
+DFD level 0 (context):
 
-**Terminal 1 — backend** (from `backend/`, virtual environment active):
-
-```powershell
-venv\Scripts\activate
-uvicorn app.main:app --reload --port 8000
+```mermaid
+flowchart LR
+    F["Farmer"] -->|"soil values, city, months, field size"| P(("SmartCrop AI"))
+    P -->|"ranked crops, prices, profit, explanation"| F
+    OM["Open-Meteo"] -->|"daily weather"| P
+    P -->|"place and month request"| OM
+    AG["Agmarknet price data"] -->|"historical mandi prices"| P
 ```
 
-**Terminal 2 — frontend** (from `frontend/`):
+*Figure 8a. DFD level 0.* The system exchanges data with three external entities: the farmer,
+Open-Meteo and the Agmarknet price data.
 
-```powershell
-npm run dev
+DFD level 1:
+
+```mermaid
+flowchart TD
+    F["Farmer"]
+    OM["Open-Meteo"]
+    P1(("1. Validate input"))
+    P2(("2. Get weather"))
+    P3(("3. Classify crops"))
+    P4(("4. Project price and profit"))
+    P5(("5. Explain result"))
+    P6(("6. Save history"))
+    D1[("D1 Weather cache")]
+    D2[("D2 Price panels and models")]
+    D3[("D3 Crop tables")]
+    D4[("D4 MySQL history")]
+    F -->|"form values"| P1
+    P1 -->|"place and months"| P2
+    P2 <-->|"request and daily data"| OM
+    P2 <--> D1
+    P2 -->|"weather values"| P3
+    P1 -->|"soil values"| P3
+    D3 -->|"calendar and economics"| P3
+    P3 -->|"crop probabilities"| P4
+    D2 -->|"price history and trained models"| P4
+    D3 --> P4
+    P4 -->|"prices and profit"| P5
+    P3 --> P5
+    P5 -->|"ranked result and reasons"| P6
+    P6 --> D4
+    P5 -->|"result page"| F
 ```
 
-Open **http://localhost:5173**, register an account and start with the dashboard.
+*Figure 8b. DFD level 1.* Six processes turn the form into a saved, explained result. Weather
+passes through a cache store, price data and models sit in their own store, and history is the only
+data written for later use.
 
-| URL | What |
-|---|---|
-| http://localhost:5173 | Web app |
-| http://localhost:8000/docs | Interactive API documentation (Swagger UI) |
-| http://localhost:8000/redoc | Alternative API documentation |
-| http://localhost:8000/api/health | Health check — shows whether each model loaded |
+### 9.9 Data model (ER diagrams)
 
-Stop either service with **Ctrl + C** in its terminal. There is no single root-level command that
-starts both services yet.
+The project stores data in MySQL (tables created by Alembic migrations in `backend/alembic/versions/`).
 
-## L. Environment variables
+```mermaid
+erDiagram
+    USERS ||--o{ PRICE_PREDICTIONS : makes
+    USERS ||--o{ CROP_RECOMMENDATIONS : makes
+    MODEL_VERSIONS ||--o{ PRICE_PREDICTIONS : produced
+    MODEL_VERSIONS ||--o{ CROP_RECOMMENDATIONS : produced
+    CROP_RECOMMENDATIONS ||--o{ RECOMMENDATION_RESULTS : has
+    USERS {
+        int id PK
+        string name
+        string email UK
+        string password_hash
+        datetime created_at
+    }
+    MODEL_VERSIONS {
+        int id PK
+        string model_type
+        string version
+        string algorithm
+        json metrics
+    }
+    PRICE_PREDICTIONS {
+        int id PK
+        int user_id FK
+        int model_version_id FK
+        string market
+        string commodity
+        date input_date
+        int horizon_days
+        decimal predicted_price
+        json future_trend
+    }
+    CROP_RECOMMENDATIONS {
+        int id PK
+        int user_id FK
+        int model_version_id FK
+        float nitrogen
+        float phosphorus
+        float potassium
+        float ph
+        float temperature
+        float humidity
+        float rainfall
+        string city
+        string planting_date
+        string selling_date
+        float area_acres
+    }
+    RECOMMENDATION_RESULTS {
+        int id PK
+        int recommendation_id FK
+        int rank
+        string crop_name
+        float recommendation_score
+        float expected_profit
+        json explanation
+    }
+```
 
-Templates: [`backend/.env.example`](backend/.env.example), [`frontend/.env.example`](frontend/.env.example).
-Copy each to `.env` in the same folder; `.env` files are git-ignored.
+*Figure 9a. Tables saved by the application (main columns only).* Each saved result points to the
+user and to the model version that produced it. The full column list is in
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
-| Variable | Purpose | Required | Safe example | Where |
-|---|---|---|---|---|
-| `DATABASE_URL` | SQLAlchemy URL of the MySQL database | **Yes** | `mysql+pymysql://your_db_user:your_db_password@localhost:3306/smartcrop_ai` | `backend/.env` |
-| `JWT_SECRET_KEY` | Secret that signs login tokens (≥ 32 chars) | **Yes** | output of `python -c "import secrets; print(secrets.token_urlsafe(48))"` | `backend/.env` |
-| `JWT_ALGORITHM` | Token signing algorithm | No (`HS256`) | `HS256` | `backend/.env` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime (1–1440) | No (`60`) | `60` | `backend/.env` |
-| `CORS_ORIGINS` | Allowed frontend origins, as a **JSON list** | No (`["http://localhost:5173","http://127.0.0.1:5173"]`) | `["http://localhost:5173"]` | `backend/.env` |
-| `ENVIRONMENT` | Label for the running environment | No (`development`) | `development` | `backend/.env` |
-| `DATASET_DIR` | Override dataset folder | No (`../dataset`) | — | backend environment |
-| `MODELS_DIR` | Override trained-model folder | No (`backend/trained_models`) | — | backend environment |
-| `TEST_DATABASE_URL` | Run tests against an empty MySQL test DB instead of SQLite | No (tests only) | `mysql+pymysql://user:pass@localhost:3306/smartcrop_ai_test` | test shell |
-| `VITE_API_URL` | Backend base URL used by the frontend | No (`http://localhost:8000`) | `http://localhost:8000` | `frontend/.env` |
+The datasets are files, not tables. Their main columns:
 
-## M. API reference
+```mermaid
+erDiagram
+    PRICE_ROWS {
+        date Date
+        string Market
+        string Commodity
+        string Variety
+        float Arrivals
+        float Min_Price
+        float Max_Price
+        float Modal_Price
+    }
+    SUPPORTED_SERIES {
+        string Market
+        string Commodity
+        string Variety
+        int observations
+        float coverage
+        bool supported
+    }
+    CROP_DATASET {
+        float N
+        float P
+        float K
+        float temperature
+        float humidity
+        float ph
+        float rainfall
+        string city
+        int planting_month
+        int selling_month
+        string label
+    }
+    CITY_COORDINATES {
+        string state
+        string city
+        float latitude
+        float longitude
+    }
+    PRICE_ROWS }o--|| SUPPORTED_SERIES : summarised_by
+    CROP_DATASET }o--|| CITY_COORDINATES : city
+```
 
-Base URL: `http://localhost:8000`. All endpoints except register, login and health require
-`Authorization: Bearer <access_token>`. Full schemas: http://localhost:8000/docs.
+*Figure 9b. Dataset files and their main columns.* `supported_series.csv` summarises the price
+rows by series. The crop dataset and the coordinates share the city name.
+
+### 9.10 Machine learning pipeline
+
+```mermaid
+flowchart LR
+    R1[["Raw Agmarknet prices"]] --> C1["Cleaning<br/>prepare_price_data.py"]
+    C1 --> F1["Feature engineering<br/>features.py, monthly.py"]
+    R2[["Generated crop dataset"]] --> F2["Features<br/>crop_recommendation/features.py"]
+    F1 --> T1["Training<br/>train_price_model.py<br/>train_monthly_price_model.py"]
+    F2 --> T2["Training<br/>train_recommendation_model.py"]
+    T1 --> E1["Evaluation<br/>time-ordered cross-validation"]
+    T2 --> E2["Evaluation<br/>hold-out and 5-fold CV"]
+    E1 --> M[("Saved models<br/>trained_models/")]
+    E2 --> M
+    M --> PR["Prediction<br/>at request time"]
+    PR --> XP["Explanation<br/>SHAP TreeExplainer"]
+```
+
+*Figure 10. Offline training and online prediction.* Training runs from the scripts in
+`backend/scripts/`. The API only loads the saved models and never trains.
+
+---
+
+## 10. API reference
+
+Base URL: `http://localhost:8000`. Interactive documentation: http://localhost:8000/docs.
+All endpoints except register, login and health need the header
+`Authorization: Bearer <access_token>`.
 
 | Method | Path | Purpose | Success |
 |---|---|---|---|
-| POST | `/api/auth/register` | Create account → token + user | 201 |
-| POST | `/api/auth/login` | Log in → token + user | 200 |
+| POST | `/api/auth/register` | Create an account, returns a token and the user | 201 |
+| POST | `/api/auth/login` | Log in, returns a token and the user | 200 |
 | GET | `/api/auth/me` | Current user | 200 |
-| PUT | `/api/auth/me` | Update name / change password | 200 |
-| GET | `/api/price-prediction/options` | Supported crops, markets, today, max horizon, validated days | 200 |
-| POST | `/api/price-prediction/predict` | Daily forecast + selling advice, **saved to history** | 201 |
-| POST | `/api/price-prediction/trend` | Same forecast, not saved (`as_of` re-opens a saved one) | 200 |
-| POST | `/api/price-prediction/explain` | SHAP explanation for the target (and suggested) date | 200 |
-| POST | `/api/price-prediction/monthly-forecast` | Monthly price path for a crop/city | 200 |
-| GET | `/api/crop-recommendation/options` | Crops, cities, crop calendar, economics assumptions, input ranges | 200 |
-| POST | `/api/crop-recommendation/recommend` | Rank all 7 crops, **saved to history** | 201 |
+| PUT | `/api/auth/me` | Update name or change password | 200 |
+| GET | `/api/weather` | Growing-period climate for a city (Open-Meteo) | 200 |
+| GET | `/api/crop-recommendation/options` | Crops, cities, crop calendar, economics, input ranges | 200 |
+| GET | `/api/crop-recommendation/feature-ranges` | Hard limits and usual range per crop for each input | 200 |
+| POST | `/api/crop-recommendation/recommend` | Rank the 7 crops and save to history | 201 |
 | POST | `/api/crop-recommendation/analyze` | Same ranking, not saved | 200 |
-| POST | `/api/crop-recommendation/explain` | Classifier SHAP for one crop | 200 |
-| GET | `/api/history/summary` | Totals + 5 most recent of each type | 200 |
-| GET | `/api/history/price?limit=&offset=` | Own price predictions (paged) | 200 |
-| GET / DELETE | `/api/history/price/{id}` | One own prediction | 200 / 204 |
-| GET | `/api/history/recommendations?limit=&offset=` | Own recommendations (paged) | 200 |
-| GET / DELETE | `/api/history/recommendations/{id}` | One own recommendation | 200 / 204 |
-| GET | `/api/health` | Liveness + which models are loaded | 200 |
+| POST | `/api/crop-recommendation/explain` | SHAP explanation for one crop | 200 |
+| GET | `/api/price-prediction/options` | Crops, markets, today, forecast window | 200 |
+| POST | `/api/price-prediction/predict` | Daily forecast and selling advice, saved to history | 201 |
+| POST | `/api/price-prediction/trend` | Same forecast, not saved | 200 |
+| POST | `/api/price-prediction/explain` | SHAP explanation for the target date | 200 |
+| POST | `/api/price-prediction/monthly-forecast` | Monthly price path for a crop and city | 200 |
+| GET | `/api/history/summary` | Totals and the 5 most recent of each type | 200 |
+| GET | `/api/history/price?limit=&offset=` | Own price predictions, paged | 200 |
+| GET, DELETE | `/api/history/price/{id}` | One own prediction | 200, 204 |
+| GET | `/api/history/recommendations?limit=&offset=` | Own recommendations, paged | 200 |
+| GET, DELETE | `/api/history/recommendations/{id}` | One own recommendation | 200, 204 |
+| GET | `/api/health` | Server status and which models are loaded | 200 |
 
-**Errors:** `401` missing/invalid/expired token or wrong login · `404` not found or not owned by you ·
-`409` e-mail already registered · `422` invalid input, or a forecast that cannot be made honestly
-(with a plain-language message) · `503` model not loaded · `500` unexpected (logged, generic message).
+**Errors:** `401` missing, invalid or expired token, or wrong login · `404` not found (or not yours) ·
+`409` email already registered · `422` invalid input · `502` or `504` the weather service failed or
+timed out · `503` a model is not loaded · `500` unexpected error (logged, generic message).
 
-### Example — price forecast
+### Register and log in
+
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{ "name": "Test Farmer", "email": "farmer@example.com", "password": "secret123" }
+```
+
+The response contains `access_token` and a `user` object. Log in with
+`POST /api/auth/login` and `{ "email": "...", "password": "..." }`.
+
+### Weather
+
+```http
+GET /api/weather?city=Pune&state=Maharashtra&plantMonth=11&sellMonth=4
+Authorization: Bearer <access_token>
+```
+
+| Parameter | Meaning |
+|---|---|
+| `city` | City name (2 to 60 characters) |
+| `state` | State name, default `Maharashtra` |
+| `plantMonth`, `sellMonth` | Month numbers 1 to 12. The growing months run from planting to selling, both included, and may wrap over the new year. |
+
+Example response (illustrative values; the field names and rounding are real):
+
+```json
+{
+  "city": "Pune",
+  "lat": 18.5204,
+  "lon": 73.8567,
+  "avgTemperature": 23.5,
+  "avgHumidity": 62.0,
+  "avgRainfall": 45.0,
+  "source": "Open-Meteo",
+  "monthsUsed": [11, 12, 1, 2, 3, 4]
+}
+```
+
+Notes: results are cached in memory for 24 hours (key: latitude, longitude, months); a lookup that
+fails is never cached; the request times out after 8 seconds. A city not found returns `404` with
+the message "Could not find '<city>'. Try the nearest bigger city or enter weather manually."; a
+provider problem returns `502` or `504`; wrong months return `422`.
+
+### Feature ranges
+
+```http
+GET /api/crop-recommendation/feature-ranges
+```
+
+Returns, for each of `N`, `P`, `K`, `temperature`, `humidity`, `ph`, `rainfall`, the dataset
+`min` and `max` and `perCrop`, the 5th to 95th percentile range of each crop:
+
+```json
+{ "N": { "min": 39.0, "max": 140.0, "perCrop": { "Brinjal": [74.0, 122.55] } } }
+```
+
+(abridged: the real response lists all 7 crops for all 7 features).
+
+### Crop recommendation
+
+```http
+POST /api/crop-recommendation/analyze
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{ "nitrogen": 115, "phosphorus": 65, "potassium": 70, "temperature": 23.5, "humidity": 62,
+  "ph": 6.4, "rainfall": 45, "state": "Maharashtra", "city": "Pune",
+  "planting_month": 11, "selling_month": 4, "area_acres": 1, "soil_type": null }
+```
+
+Abridged response from a real run of the code on 2026-10-16 (`results` holds all 7 crops):
+
+```json
+{
+  "city": "Pune", "planting_date": "2026-11", "selling_date": "2027-04", "growing_months": 5,
+  "best_overall": "Brinjal",
+  "weights": { "agronomic": 0.4, "timing": 0.2, "profit": 0.4 },
+  "results": [
+    { "rank": 1, "crop_name": "Brinjal", "recommended": true,
+      "agronomic_score": 100.0, "timing_score": 100.0, "profit_score": 82.2,
+      "recommendation_score": 92.88,
+      "economics": { "selling_price": 1796.62, "gross_revenue": 137441.0,
+                     "total_cost": 82658.0, "net_profit": 54784.0, "break_even_price": 1018.0 } }
+  ]
+}
+```
+
+### Price forecast
 
 ```http
 POST /api/price-prediction/trend
@@ -498,114 +1031,221 @@ Content-Type: application/json
   "target_date": "2026-10-25" }
 ```
 
-Response (abridged from a real local run on 2026-10-11; `path` holds one entry per day):
+Abridged response (from a real local run on 2026-10-11):
 
 ```json
 {
-  "series": { "state": "Maharashtra", "market": "All markets (state median)",
-              "commodity": "Onion", "variety": "All varieties" },
-  "input_date": "2026-10-11", "target_date": "2026-10-25", "current_price": 997.5,
+  "series": { "market": "All markets (state median)", "commodity": "Onion" },
+  "current_price": 997.5,
   "target": { "horizon_days": 14, "date": "2026-10-25", "predicted_price": 1066.76,
-              "lower": 788.54, "upper": 1347.53, "change_pct": 6.94, "direction": "Stable",
-              "beats_baseline": false, "model_mae": 250.9, "baseline_mae": 227.5 },
-  "path": [ { "horizon_days": 1, "date": "2026-10-12", "predicted_price": 1006.49,
-              "lower": 875.97, "upper": 1124.54, "beats_baseline": false } ],
-  "advice": { "code": "UNCERTAIN", "label": "Forecast too uncertain to pick an exact date",
-              "recommended_date": "2026-10-25", "extra_per_quintal": 0.0, "wait_days": 0 },
-  "projection": { "reference_origin_date": "2025-10-11", "inflation_annual_pct": 5.0 },
+              "lower": 788.54, "upper": 1347.53, "direction": "Stable", "beats_baseline": false },
+  "advice": { "code": "UNCERTAIN", "label": "Forecast too uncertain to pick an exact date" },
   "model": { "approach": "direct multi-horizon (horizon is a feature), no recursion",
              "data_end": "2025-12-31" }
 }
 ```
 
-A target date more than 60 days ahead returns `422` with a message such as
-*"The model forecasts at most 60 days after the last reported price … Choose a target date on or
-before …"*.
+A target date more than 60 days ahead returns `422` with a plain-language message.
 
-### Example — crop recommendation
+---
 
-```http
-POST /api/crop-recommendation/analyze
-Authorization: Bearer <access_token>
-Content-Type: application/json
+## 11. Project structure
 
-{ "nitrogen": 80, "phosphorus": 45, "potassium": 85, "temperature": 23, "humidity": 58,
-  "ph": 6.8, "rainfall": 70, "state": "Maharashtra", "city": "Nashik",
-  "planting_month": 11, "selling_month": 3, "area_acres": 1 }
+```text
+SmartCrop-AI/
+├── README.md                    This file
+├── ARCHITECTURE.md              Database schema, authentication, ML pipeline, SHAP
+├── DATASET.md                   Data profiles and preprocessing decisions
+├── MODEL_EVALUATION.md          Validation method and every measured metric
+├── docs/screenshots/            Place screenshots here (see section 13)
+├── backend/
+│   ├── app/
+│   │   ├── main.py              FastAPI app: CORS, routers, loads models at startup, /api/health
+│   │   ├── config/settings.py   Settings read from the environment and backend/.env
+│   │   ├── auth/                JWT tokens, bcrypt passwords, current-user dependency
+│   │   ├── database/            SQLAlchemy engine, session and Base
+│   │   ├── models/              Database tables (users, predictions, recommendations, model versions)
+│   │   ├── schemas/             Pydantic request and response shapes (includes weather.py)
+│   │   ├── routes/              auth, price_prediction, crop_recommendation, history, weather
+│   │   ├── services/            Business logic: recommendation, price, history, weather, model versions
+│   │   └── ml/
+│   │       ├── price_prediction/      Cleaning, features, daily and monthly forecasters, selling advice
+│   │       ├── crop_recommendation/   Feature building and the CropRecommender class
+│   │       ├── economics/             Profit and timing engine (profit.py)
+│   │       ├── explainability/        SHAP turned into plain-language factors
+│   │       ├── common/                Paths, reference tables, season rules
+│   │       └── registry.py            Loads all models once
+│   ├── alembic/ and alembic.ini       Database migrations (0001 initial, 0002 economic recommendation)
+│   ├── scripts/                       Data preparation, dataset generation, training
+│   ├── trained_models/                Saved models, metadata and validation metrics
+│   ├── tests/                         pytest suite (83 tests)
+│   ├── requirements.txt               Python packages
+│   └── .env.example                   Configuration template
+├── frontend/
+│   ├── src/
+│   │   ├── pages/               Dashboard, PricePrediction, PriceResult, CropRecommendation,
+│   │   │                        CropResult, History, Profile, Login, Register, NotFound
+│   │   ├── components/          Shared UI; charts/ (Recharts); crop/ (result sections, form parts)
+│   │   ├── hooks/               useAsync, useAuth, useNarrow, useWeather
+│   │   ├── services/            Axios instance and API wrappers (cropService, weatherService, ...)
+│   │   ├── i18n/                English, Marathi and Hindi text
+│   │   ├── utils/               Formatting, validation, featureRanges, cropPlan
+│   │   └── index.css            App design system
+│   ├── package.json, vite.config.js, tailwind.config.js
+│   └── .env.example
+└── dataset/
+    ├── raw/                     Source CSVs (price file, legacy files)
+    ├── processed/               Generated price panels
+    ├── crop_price/              supported_series.csv
+    ├── crop_recommendation/     Crop dataset, calendar, economics, climate, markets, coordinates
+    └── reports/                 Data-quality report, dataset summary, training log
 ```
 
-Response (abridged; `results` contains all 7 crops):
+---
 
-```json
-{
-  "city": "Nashik", "planting_date": "2026-11", "selling_date": "2027-03",
-  "growing_months": 4, "area_acres": 1.0,
-  "weights": { "agronomic": 0.4, "timing": 0.2, "profit": 0.4 },
-  "results": [
-    { "rank": 1, "crop_name": "Onion", "recommended": true, "probability": 0.998,
-      "recommendation_score": 84.35, "agronomic_score": 99.78, "timing_score": 100.0,
-      "profit_score": 61.1,
-      "economics": { "selling_price": 1105.45, "price_low": 605.01, "price_high": 1547.4,
-                     "gross_revenue": 101701.0, "total_cost": 84294.0, "net_profit": 17407.0 } }
-  ]
-}
-```
+## 12. Installation and setup
 
-## N. Example workflows
+### 12.1 Prerequisites
 
-**Predict a crop price and pick a selling date**
-1. Dashboard → **Crop Price Prediction**.
-2. Choose crop, market (the state median is the most reliable) and the date you plan to sell.
-3. The result page shows the predicted price and range for your date, the daily forecast chart,
-   the **Best time to sell** card (with optional storage-cost calculator), "Why is this price
-   predicted?" and how reliable the forecast is for that crop and horizon.
-4. To compare selling dates, read the chart and the advice card: later validated dates within the
-   crop's storage limit are already compared for you.
+| Tool | Version used in development |
+|---|---|
+| Python | 3.13 |
+| Node.js with npm | 20.x |
+| MySQL Community Server | 8.0 |
+| Git and VS Code | any recent version |
+| Internet access | needed for the weather feature |
 
-**Find the most profitable crop**
-1. Dashboard → **Profitable Crop Recommendation** (or try one of the example fields on the form).
-2. Enter soil and weather values, city, planting and selling months and field size.
-3. The result shows up to three recommended crops, a profit/revenue chart for all 7, the projected
-   price trend, a profit breakdown, a growth timeline and "Why this recommendation?".
-
-**Review history**
-- **History** shows the totals and paged tables of saved forecasts and recommendations; open any
-  record to rebuild its result page, or delete it.
-
-## O. Model training and evaluation
-
-Run from `backend/` with the virtual environment active. Training takes roughly 20–25 minutes on a
-laptop (most of it the daily price model). Outputs go to `backend/trained_models/` and
-`dataset/processed/`; restart the API afterwards.
+### 12.2 Clone
 
 ```powershell
-python -m scripts.prepare_price_data          # clean data, quality report, daily panel
-python -m scripts.train_price_model           # daily price forecaster (CV + final fit)
-python -m scripts.train_monthly_price_model   # monthly selling-month price model
-python -m scripts.generate_crop_dataset       # synthetic 7-crop dataset (deterministic)
-python -m scripts.train_recommendation_model  # crop classifier
-python -m scripts.score_sensitivity           # optional: score-weight sensitivity report
+git clone https://github.com/vaishnavipawar26/Major_Project.git
+cd Major_Project/SmartCrop-AI
 ```
 
-### Recorded results
-From the metadata saved with the committed models (full tables and method in
-[MODEL_EVALUATION.md](MODEL_EVALUATION.md)):
+The folder `SmartCrop-AI` inside the repository holds the project.
 
-| Model | Validation | Result |
-|---|---|---|
-| Daily price, all horizons 1–60 | 4-fold expanding-window CV over the quarters of 2025 | MAE ₹400/qtl vs ₹406.5 for "no change"; RMSE ₹669 vs ₹710; MAPE 24.1 % |
-| Daily price, 7 days ahead | same | MAE ₹266 vs ₹278 "no change" |
-| Daily price, 30 days ahead | same | MAE ₹434 vs **₹427 "no change"** (not better) |
-| Monthly price (XGBoost) | time-ordered out-of-sample CV | MAE ₹616/qtl vs ₹750 "no change" and ₹630 seasonal naive; MAPE 45 % |
-| Crop classifier (XGBoost) | stratified 80/20 hold-out (910 rows), 5-fold CV on the training part | accuracy 0.851, macro-F1 0.850 — **on synthetic data** |
+### 12.3 Create the MySQL database
 
-> MODEL_EVALUATION.md names daily price model version `202610101837`, while the committed
-> `metadata.json` says `202610101847`; the recorded metrics are identical. **Version label requires
-> confirmation.**
+```sql
+CREATE DATABASE smartcrop_ai CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'smartcrop_user'@'localhost' IDENTIFIED BY 'choose-a-strong-password';
+GRANT ALL PRIVILEGES ON smartcrop_ai.* TO 'smartcrop_user'@'localhost';
+FLUSH PRIVILEGES;
+```
 
-## P. Testing and troubleshooting
+### 12.4 Backend (terminal 1)
 
-### Automated tests
+```powershell
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+```
+
+Edit `backend\.env` (see the table below), then create the tables:
+
+```powershell
+alembic upgrade head
+```
+
+The trained models and processed data are included, so no training is needed to run the app.
+
+### 12.5 Frontend (terminal 2)
+
+```powershell
+cd frontend
+npm install
+copy .env.example .env
+```
+
+### 12.6 Environment variables
+
+Templates: [`backend/.env.example`](backend/.env.example) and
+[`frontend/.env.example`](frontend/.env.example). `.env` files are git-ignored.
+
+| Variable | Meaning | Required | Where |
+|---|---|---|---|
+| `DATABASE_URL` | MySQL connection, for example `mysql+pymysql://user:password@localhost:3306/smartcrop_ai`. Encode `@` in a password as `%40`. | Yes | `backend/.env` |
+| `JWT_SECRET_KEY` | Secret that signs login tokens, at least 32 characters. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(48))"`. | Yes | `backend/.env` |
+| `JWT_ALGORITHM` | Token algorithm, default `HS256` | No | `backend/.env` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime, 1 to 1440, default `60` | No | `backend/.env` |
+| `CORS_ORIGINS` | Allowed frontend addresses as a JSON list, for example `["http://localhost:5173"]` | No | `backend/.env` |
+| `ENVIRONMENT` | A label such as `development` | No | `backend/.env` |
+| `DATASET_DIR`, `MODELS_DIR` | Override the dataset and trained-model folders | No | backend environment |
+| `TEST_DATABASE_URL` | Run the tests against an empty MySQL database instead of SQLite | No | test shell |
+| `VITE_API_URL` | Backend address for the frontend, default `http://localhost:8000` | No | `frontend/.env` |
+
+The weather feature needs **no** key and no variable.
+
+### 12.7 Run the project
+
+Terminal 1, from `backend/` with the virtual environment active:
+
+```powershell
+uvicorn app.main:app --reload --port 8000
+```
+
+Terminal 2, from `frontend/`:
+
+```powershell
+npm run dev
+```
+
+| Address | What |
+|---|---|
+| http://localhost:5173 | The web app |
+| http://localhost:8000/docs | API documentation (Swagger) |
+| http://localhost:8000/api/health | Which models are loaded |
+
+### 12.8 Rebuilding the models (optional)
+
+Run from `backend/` with the virtual environment active. Training takes roughly 20 to 25 minutes on
+a laptop. Restart the API afterwards.
+
+```powershell
+python -m scripts.prepare_price_data
+python -m scripts.train_price_model
+python -m scripts.train_monthly_price_model
+python -m scripts.generate_crop_dataset
+python -m scripts.train_recommendation_model
+python -m scripts.score_sensitivity
+```
+
+---
+
+## 13. How to use
+
+**Example: Pune, planting in November, selling in April.**
+
+1. Open http://localhost:5173, register and log in.
+   ![Home page](docs/screenshots/home.png)
+2. In the menu choose **Best Crop** (the page titled *Which crop should I grow?*, with the **Compare crops for my field** button).
+   ![Dashboard](docs/screenshots/dashboard.png)
+3. Under **Soil test results** enter N = 115, P = 65, K = 70 and pH = 6.4. (Or click *Fill sample
+   values*.)
+   ![Soil test results](docs/screenshots/soil-form.png)
+4. Under **Place, dates and field** choose Pune, planting month November, selling month April and
+   field size 1 acre. The badge shows "5 months from planting to selling".
+5. Under **Weather while the crop grows** wait a moment. Temperature, humidity and rainfall appear
+   with the note "Based on 3-year average for Pune, Nov-Apr (Open-Meteo)". If it fails, press
+   *Retry* or *Edit manually*.
+   ![Weather section](docs/screenshots/weather.png)
+6. Press **Compare crops for my field**.
+7. Read the result: the recommended crop, the **Best time to sell**, the price chart, the profit
+   summary, the timeline and *Why this recommendation?*.
+   ![Result page](docs/screenshots/result.png)
+8. For prices, choose **Market Price** in the menu, pick a crop, market and date, and read *Why did the
+   model predict this price?*.
+   ![Price prediction](docs/screenshots/price.png)
+9. Open **History** to reopen or delete saved results.
+
+Screenshots are placeholders. Add the images to `docs/screenshots/` and do not include real names,
+emails or tokens.
+
+---
+
+## 14. Testing
 
 ```powershell
 cd backend
@@ -613,112 +1253,267 @@ venv\Scripts\activate
 python -m pytest
 ```
 
-47 tests (all passing at the time of writing). They use a temporary SQLite database by default, so
-MySQL is not needed. To test against MySQL, point `TEST_DATABASE_URL` at an **empty** test database.
-Covered: registration/login/JWT (expired and forged tokens), password hashing, protected endpoints,
-price prediction/trend/explain, SHAP additivity, crop recommendation and scoring, users cannot read
-or delete each other's history, pagination, migrations match the ORM, feature leakage, preprocessing
-rules and the best-time-to-sell rules.
+83 tests. They use a temporary SQLite database by default, so MySQL is not needed.
 
-Frontend: there are no automated frontend tests; `npm run build` must succeed.
+| Test file | What it covers |
+|---|---|
+| `test_auth.py` | Registration, login, token expiry and forged tokens, password rules, protected endpoints |
+| `test_price_prediction.py` | Options, predict, trend, explain, SHAP additivity |
+| `test_selling_advice.py` | Best-time-to-sell rules |
+| `test_crop_recommendation.py` | Ranking of 7 crops, scores, feature ranges |
+| `test_economics.py` | Profit, timing and break-even calculations |
+| `test_ml_pipeline.py` | Preprocessing rules, feature leakage checks |
+| `test_history.py` | Users cannot read or delete each other's records, paging |
+| `test_migrations.py` | Migrations match the ORM models |
+| `test_weather.py` | Weather success and cache, unknown city, provider failure not cached, stored coordinates, alias names, state preference, login needed, bad months |
+
+The weather tests replace the network call with fake data, so they run offline.
+The frontend has no automated tests; `npm run build` must succeed.
 
 ### Troubleshooting
 
-| Symptom | Likely cause / fix |
+| Symptom | Likely cause and fix |
 |---|---|
-| `ModuleNotFoundError` when starting the backend | Virtual environment not active, or `pip install -r requirements.txt` not run. |
-| Backend exits with a validation error about `DATABASE_URL` or `JWT_SECRET_KEY` | `backend/.env` missing, or the secret is shorter than 32 characters. |
-| `Can't connect to MySQL server` / `Access denied` | MySQL service (`MySQL80`) not running, wrong user/password, or an un-encoded `@` in the password. |
-| `Table … doesn't exist` | Run `alembic upgrade head` in `backend/`. |
-| API returns **503** / `/api/health` shows a model `false` | A file in `backend/trained_models/` or `dataset/processed/` is missing — restore it or re-run the scripts in section O. |
-| Frontend shows "Cannot reach the SmartCrop server" | Backend not running on port 8000, or `VITE_API_URL` points elsewhere. |
-| Browser console shows a CORS error | Add the frontend's exact origin to the `CORS_ORIGINS` JSON list and restart the backend. |
-| Backend fails with `error parsing value for field "CORS_ORIGINS"` | Write `CORS_ORIGINS` as a JSON list, e.g. `["http://localhost:5173"]`, not comma-separated. |
-| `Port 5173 is in use` / `address already in use` on 8000 | Another dev server is still running — close it, or start on another port and update `CORS_ORIGINS` / `VITE_API_URL`. |
-| `npm` errors about missing packages | Run `npm install` in `frontend/`. |
-| A price request returns **422** | Expected for dates more than 60 days ahead or unsupported market series; the message explains why. |
+| `ModuleNotFoundError` when starting the backend | The virtual environment is not active, or `pip install -r requirements.txt` was not run. |
+| Validation error about `DATABASE_URL` or `JWT_SECRET_KEY` | `backend/.env` is missing, or the secret is shorter than 32 characters. |
+| `Can't connect to MySQL server` or `Access denied` | MySQL is not running, the user or password is wrong, or `@` in the password is not written as `%40`. |
+| `Table ... doesn't exist` | Run `alembic upgrade head` in `backend/`. |
+| API returns 503 or `/api/health` shows a model as `false` | A file in `backend/trained_models/` or `dataset/processed/` is missing. |
+| "Cannot reach the SmartCrop server" | The backend is not running on port 8000, or `VITE_API_URL` points elsewhere. |
+| CORS error in the browser console | Add the frontend address to the `CORS_ORIGINS` JSON list and restart the backend. |
+| `error parsing value for field "CORS_ORIGINS"` | Write it as a JSON list, not comma separated. |
+| Weather shows an error | The server needs internet access. On Windows, `CERTIFICATE_VERIFY_FAILED` usually means an antivirus or proxy is intercepting HTTPS. Use *Retry* or *Edit manually*. |
 
-## Q. Security and privacy
+---
 
-- **Never commit `.env` files.** Both `.env` files are git-ignored; only the `.env.example`
-  templates (placeholders only) are tracked.
-- Keep database passwords and the JWT secret private; generate a unique `JWT_SECRET_KEY` for every
-  environment. Changing it logs every user out, which is the right response if it ever leaks.
-- If a credential is ever committed or shared, **rotate it** (change the MySQL password, generate a
-  new JWT secret) — deleting it in a later commit does not remove it from Git history.
+## 15. Limitations and future scope
+
+### Limitations
+
+- Only 7 crops, Maharashtra, and 11 cities for crop comparison. Price data ends on 2025-12-31.
+- Forecasts for dates after the data are seasonal projections: the same calendar day of the last
+  data year, plus an assumed 5 % per year inflation.
+- Daily price forecasts are only about 2 % better than "no change". Day 1 is never validated and
+  onion is not validated at any horizon.
+- Selling-month prices are long-range estimates with large errors (MAPE about 45 %).
+- The crop dataset was created by the team and is small and generated. The 85 % accuracy is for that
+  data and not for real fields. Recommendations are not agronomic advice.
+- Yields, costs, storage limits and climate normals are approximate reference values. The 40, 20, 40
+  score weights are a design choice.
+- Soil type is saved but not used by the models.
+- No real-time events: weather forecasts, policy changes, strikes, pests, disease or transport.
+- Weather is a 3-year average, not a forecast for the coming season.
+- Models need retraining when new price data arrives.
+
+### Future scope
+
+- Add 2026 and later Agmarknet data and automate refresh and retraining.
+- Replace the generated crop dataset with surveyed farm records.
+- Use seasonal weather forecasts and district-level soil data.
+- Calibrated uncertainty and storage-cost-aware selling advice.
+- More states and crops.
+- Frontend tests, continuous integration, one command to start everything, and deployment.
+- Refresh tokens, rate limiting and account deletion.
+
+### Security and privacy
+
+- Never commit `.env` files. Only the `.env.example` templates are tracked.
 - Passwords are stored only as bcrypt hashes; tokens expire after `ACCESS_TOKEN_EXPIRE_MINUTES`.
-- Every history query is filtered by the logged-in user; another user's record returns 404.
-- Do not paste real tokens, passwords or personal data into issues, logs or screenshots.
+- Every history query is filtered by the logged-in user.
+- If a secret is ever shared, rotate it (change the database password and generate a new JWT secret).
 
-## R. Limitations
+---
 
-- **Coverage:** 7 crops, Maharashtra only, mandi data from 2023-01-01 to 2025-12-31. Forecasts from
-  today are **seasonal projections** based on the same date in 2025 plus an assumed 5 %/year inflation.
-- **Daily price forecasts** are only modestly better than "no change" (~2 % on MAE overall); day 1 is
-  never validated and **onion is not validated at any horizon**. Treat forecasts as estimates, not
-  future market prices.
-- **Selling-month (monthly) prices** are long-range projections with large errors (MAPE ≈ 45 %).
-- **The crop dataset is synthetic.** The classifier's 85 % accuracy measures how separable the
-  generated data is, not field accuracy. Recommendations are model outputs, **not agronomic advice**.
-- Yields, costs, storage limits and climate normals are **approximate reference values**.
-- Soil type and live weather are not used by the models; the 40/20/40 score weights are a design
-  choice, not learned.
-- Market behaviour and agricultural conditions change; models need retraining on newer data.
+## 16. Black book reference guide
 
-## S. Future improvements
+### 16.1 Chapter map
 
-*Planned or possible work — not implemented:*
-
-- Add 2026+ AGMARKNET data and automate data refresh and retraining.
-- Replace the synthetic crop dataset with surveyed farm records; let farmers enter their own yield
-  and cost figures.
-- Live weather (e.g. IMD) and district-level soil data.
-- Calibrated uncertainty (quantile or conformal models) and storage-cost-aware selling advice.
-- Frontend automated tests, CI, a single command to start both services, and deployment.
-- Refresh tokens, rate limiting, account deletion; Marathi/Hindi interface.
-
-## T. Contributors
-
-| Name | GitHub |
+| Black book chapter | Where to find it |
 |---|---|
-| Vaishnavi Pawar | [@vaishnavipawar26](https://github.com/vaishnavipawar26) |
-| Shruti Temgire | [@shruti-temgire](https://github.com/shruti-temgire) |
+| Abstract | [16.2](#162-abstract) |
+| Introduction | [Section 2](#2-introduction-and-problem-statement), [Section 3](#3-objectives-and-scope) |
+| Literature survey | [16.3](#163-literature-survey-topics) |
+| Problem definition | [Section 2](#2-introduction-and-problem-statement) |
+| Requirement analysis | [16.4](#164-requirements) |
+| System design | [Section 9](#9-diagrams), [Section 11](#11-project-structure), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Implementation | [Sections 5 to 8](#5-technology-stack), [Section 10](#10-api-reference), [Section 12](#12-installation-and-setup) |
+| Testing | [Section 14](#14-testing), [16.5](#165-sample-test-cases) |
+| Results | [Section 8](#8-machine-learning-details), [MODEL_EVALUATION.md](MODEL_EVALUATION.md), [Section 13](#13-how-to-use) |
+| Conclusion | [16.6](#166-conclusion) |
+| Future scope | [Section 15](#15-limitations-and-future-scope) |
+| References | [Section 17](#17-references-data-sources-and-license) |
 
-*Individual contribution details: to be added by the team.*
+### 16.2 Abstract
 
-## U. Contributing
+Farmers must decide which crop to plant and when to sell it, but they usually know only today's
+market price and rarely have advice that fits their own field. SmartCrop AI is a web application for
+Maharashtra that helps with both decisions. The farmer enters soil test values (nitrogen,
+phosphorus, potassium and pH), the city, the planting month, the selling month and the field size.
+The system fetches the average growing-period weather for that city from the free Open-Meteo
+service, with a manual fallback. An XGBoost classifier trained on a team-built dataset of 4,550
+examples scores how well each of seven crops suits the field. A second XGBoost model, trained on
+246,067 Agmarknet mandi price records from 2023 to 2025, projects the price in the selling month. A
+profit engine combines yield, cost and price, and a crop calendar checks whether each crop will be
+ready, can be sold from storage, or would spoil. The crops are ranked by a weighted score, and SHAP
+explains each result in plain language. A separate tool forecasts daily prices for up to 60 days. The
+system uses React, FastAPI and MySQL and supports English, Marathi and Hindi. Its results are
+estimates and are limited by the small generated crop dataset and the modest accuracy of price
+forecasting.
 
-1. **Clone** the repository and set it up as in [section J](#j-installation-and-setup-windows).
-2. **Create a branch** from an up-to-date `main`:
-   ```powershell
-   git checkout main
-   git pull
-   git checkout -b feature/short-description   # or fix/short-description, docs/…
-   ```
-3. **Make your changes**, keeping them focused on one topic.
-4. **Check them:** `python -m pytest` in `backend/`, `npm run build` in `frontend/`, and try the
-   affected pages in the browser.
-5. **Commit** with a clear message — and make sure no `.env`, credentials or personal data are staged
-   (`git status`, `git diff --staged`).
-6. **Push** the branch: `git push -u origin feature/short-description`.
-7. **Open a pull request** into `main` on GitHub describing what changed and how it was tested.
-8. **Review and merge:** important changes should be reviewed by the other owner before merging.
-   Retrained models should include the updated `metadata.json` and a note on how metrics changed.
+### 16.3 Literature survey topics
 
-## V. License
+Five suggested topics to read and cite (search for papers and textbooks on each):
 
-**No license has been chosen yet.** Until a license file is added, the code is under exclusive
-copyright of its authors and others may not reuse it. The project owners will choose a license
-(for example MIT, Apache-2.0 or GPL-3.0) before making the repository public. Note that the datasets
-may carry their own terms (see [section H](#h-datasets-and-data-sources)).
+1. Machine learning for crop recommendation from soil nutrients and climate (N, P, K, pH, rainfall).
+2. Agricultural commodity price forecasting with time-series and tree-based models, including why
+   short-term price forecasting is hard.
+3. Gradient boosting (XGBoost) and Random Forest for tabular data.
+4. Explainable AI for agriculture: SHAP and Shapley values for model explanation.
+5. Digital market information systems for farmers in India (for example Agmarknet and e-NAM) and
+   decision-support tools for farmers.
 
-## W. Acknowledgements and references
+### 16.4 Requirements
 
-- Mandi price data layout: Government of India **AGMARKNET** — https://agmarknet.gov.in/ and the
-  Open Government Data Platform — https://data.gov.in/ (exact dataset source: requires confirmation).
-- [FastAPI](https://fastapi.tiangolo.com/) · [SQLAlchemy](https://www.sqlalchemy.org/) ·
-  [Alembic](https://alembic.sqlalchemy.org/) · [Pydantic](https://docs.pydantic.dev/)
-- [scikit-learn](https://scikit-learn.org/) · [XGBoost](https://xgboost.readthedocs.io/) ·
-  [SHAP](https://shap.readthedocs.io/) · [pandas](https://pandas.pydata.org/)
-- [React](https://react.dev/) · [Vite](https://vite.dev/) · [Recharts](https://recharts.org/) ·
-  [Tailwind CSS](https://tailwindcss.com/) · [Lucide](https://lucide.dev/)
+**Functional requirements**
+
+| ID | Requirement |
+|---|---|
+| FR1 | The user can register, log in, log out and edit their profile. |
+| FR2 | The user can enter N, P, K and pH values, with validation against the data limits. |
+| FR3 | The user can choose city, planting month, selling month, field size and optional soil type. |
+| FR4 | The system fetches average temperature, humidity and rainfall for the growing months. |
+| FR5 | The user can edit the weather values manually if the fetch fails or they prefer. |
+| FR6 | The system ranks the 7 crops and marks up to 3 as recommended. |
+| FR7 | The system shows whether each crop is ready in time, sellable from storage, or not ready. |
+| FR8 | The system estimates the selling-month price, revenue, cost, net profit and break-even price. |
+| FR9 | The system suggests the best month to sell within the sellable window. |
+| FR10 | The system forecasts daily prices for a crop and market up to 60 days ahead. |
+| FR11 | The system explains each prediction in plain language. |
+| FR12 | The system saves results and lets the user view and delete their own history. |
+| FR13 | The interface is available in English, Marathi and Hindi. |
+
+**Non-functional requirements**
+
+| ID | Requirement |
+|---|---|
+| NFR1 | Security: passwords are hashed, tokens expire, and users can read only their own records. |
+| NFR2 | Performance: models load once at startup; weather results are cached for 24 hours; weather requests time out after 8 seconds. |
+| NFR3 | Reliability: a weather failure never blocks the form; a missing model returns a clear 503. |
+| NFR4 | Usability: simple wording, units shown, helpful validation messages, works on phones and desktops. |
+| NFR5 | Accessibility: labelled inputs, keyboard navigation, status messages for loading and errors. |
+| NFR6 | Maintainability: configuration in `.env`, migrations for the database, automated tests. |
+| NFR7 | Honesty: every result is labelled as an estimate. |
+
+**Software requirements:** Windows (used in development), Python 3.13, Node.js 20, MySQL 8, a modern
+browser, Git, internet access for weather.
+
+**Hardware requirements:** TODO: confirm the specification of the development laptop. As a rough
+guide (not measured), a laptop with 8 GB RAM and a few GB of free disk space is enough to run the
+app; training the daily price model took about 20 to 25 minutes on a laptop.
+
+### 16.5 Sample test cases
+
+| ID | Input | Expected output | Status |
+|---|---|---|---|
+| TC1 | `GET /api/weather` without a token | 401 | Automated, passes (`test_weather_needs_login`) |
+| TC2 | `GET /api/weather?city=Pune&plantMonth=6&sellMonth=7` with a valid token | 200 with averages and `monthsUsed = [6, 7]` | Automated, passes (mocked provider) |
+| TC3 | Same request twice | Second answer comes from the cache; provider called once | Automated, passes |
+| TC4 | `plantMonth=13` | 422 | Automated, passes |
+| TC5 | City not found by the geocoder | 404 with the "enter weather manually" message, not cached | Automated, passes |
+| TC6 | Weather provider fails | 504 or 502, not cached, next request can succeed | Automated, passes |
+| TC7 | City Chhatrapati Sambhajinagar | 200 using stored coordinates, geocoder not called | Automated, passes |
+| TC8 | Register with a duplicate email | 409 | Covered by `test_auth.py` |
+| TC9 | Open another user's history record | 404 | Covered by `test_history.py` |
+| TC10 | N = 115, P = 65, K = 70, pH 6.4, Pune, plant Nov, sell Apr, example weather | 7 crops ranked; Brinjal first | Verified by a real run of the model on 2026-10-16 |
+| TC11 | Soil value outside the data limits | Red message and the submit button stays disabled | Manual, not yet run |
+| TC12 | Turn off the network, change a month | Weather error with Retry and Edit manually | Manual, not yet run |
+| TC13 | Choose Edit manually, type three values, submit | Result page loads | Manual, not yet run |
+
+### 16.6 Conclusion
+
+SmartCrop AI shows that a farmer can get a field-specific crop comparison, a price estimate and a
+plain-language explanation from one simple form. By fetching the growing-period weather
+automatically and offering a manual fallback, it reduces typing without ever blocking the user. The
+recommendation combines a machine-learning match score, a crop calendar and a profit calculation, so
+the answer considers soil, weather, timing and money together. SHAP explanations make the reasons
+visible. The project is also honest about its limits: the crop dataset was built by the team, price
+forecasts are only modestly better than a simple baseline, and every number is an estimate. With
+surveyed farm data, newer mandi prices and seasonal weather forecasts, the same design could become
+a dependable decision-support tool for farmers.
+
+---
+
+## 17. References, data sources and license
+
+### Data sources
+
+- Agmarknet, Government of India: https://agmarknet.gov.in/
+- Open Government Data Platform India: https://data.gov.in/ (exact dataset source: TODO: confirm)
+- Open-Meteo Geocoding API: https://open-meteo.com/en/docs/geocoding-api
+- Open-Meteo Historical Weather API: https://open-meteo.com/en/docs/historical-weather-api
+
+### Libraries
+
+[FastAPI](https://fastapi.tiangolo.com/) · [Pydantic](https://docs.pydantic.dev/) ·
+[SQLAlchemy](https://www.sqlalchemy.org/) · [Alembic](https://alembic.sqlalchemy.org/) ·
+[scikit-learn](https://scikit-learn.org/) · [XGBoost](https://xgboost.readthedocs.io/) ·
+[SHAP](https://shap.readthedocs.io/) · [pandas](https://pandas.pydata.org/) ·
+[httpx](https://www.python-httpx.org/) · [React](https://react.dev/) · [Vite](https://vite.dev/) ·
+[Recharts](https://recharts.org/) · [Tailwind CSS](https://tailwindcss.com/) ·
+[Mermaid](https://mermaid.js.org/)
+
+### Authors and contact
+
+| Name | GitHub | Contact |
+|---|---|---|
+| Vaishnavi Pawar | [@vaishnavipawar26](https://github.com/vaishnavipawar26) | TODO: confirm email |
+| Shruti Temgire | [@shruti-temgire](https://github.com/shruti-temgire) | TODO: confirm email |
+
+Guide, college and department: TODO: confirm. Individual contribution details: TODO: confirm.
+
+### Contributing
+
+1. Set the project up as in [section 12](#12-installation-and-setup).
+2. Create a branch from an up-to-date `main`: `git checkout -b feature/short-description`.
+3. Keep each change focused on one topic.
+4. Check it: `python -m pytest` in `backend/`, `npm run build` in `frontend/`, and try the pages.
+5. Make sure no `.env`, credentials or personal data are staged (`git status`, `git diff --staged`).
+6. Push the branch and open a pull request into `main`. Retrained models should include the updated
+   `metadata.json` and a note on how the metrics changed.
+
+### License
+
+**No license has been chosen yet.** Until a license file is added, the code is under the copyright of
+its authors and others may not reuse it. TODO: confirm the license (for example MIT or Apache-2.0).
+The datasets may carry their own terms.
+
+---
+
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| **Agmarknet** | The Government of India portal that publishes daily mandi arrivals and prices. |
+| **APMC** | Agricultural Produce Market Committee, which runs a regulated wholesale market (mandi). |
+| **Mandi** | A wholesale agricultural market. |
+| **Quintal** | 100 kilograms. Prices in this project are ₹ per quintal. |
+| **Modal price** | The most common price paid in a market on a day. |
+| **Arrivals** | The quantity of a crop brought to a market. |
+| **NPK** | Nitrogen (N), phosphorus (P) and potassium (K), the three main soil nutrients. Here they are in kg per hectare. |
+| **pH** | A 0 to 14 scale of how acidic or alkaline the soil is. 7 is neutral. |
+| **Guntha** | A land unit used in Maharashtra. 1 acre = 40 guntha. |
+| **Growing period** | The months from planting to selling. |
+| **Harvest-ready / sell from storage** | Ready in time means the crop can be sold fresh in the selling month. Sell from storage means it is harvested earlier and kept until then. |
+| **XGBoost** | A machine-learning method that builds many small decision trees one after another. |
+| **Random Forest** | A machine-learning method that averages many decision trees. |
+| **Classifier** | A model that picks a category (here, a crop). |
+| **SHAP** | A method that shows how much each input pushed one prediction up or down. |
+| **Baseline ("no change")** | A simple guess that the future price equals today's price. A model is only useful if it beats it. |
+| **Cross-validation** | Testing a model on data it was not trained on, several times. |
+| **MAE, RMSE, MAPE** | Measures of forecast error. MAE is the average error in rupees; RMSE punishes big errors more; MAPE is the average error as a percentage. |
+| **Mean reversion** | The tendency of a price far above or below normal to move back towards normal. |
+| **Seasonal projection** | A forecast that reuses the same calendar day of the last data year, adjusted for assumed inflation. |
+| **Geocoding** | Turning a place name into latitude and longitude. |
+| **Cache** | A short-term store that avoids repeating the same request. |
+| **JWT** | JSON Web Token, the signed login token sent with each request. |
+| **ORM** | Object-relational mapper, code that reads and writes database tables as Python objects. |

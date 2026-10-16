@@ -57,11 +57,13 @@ def test_predict_starts_today_and_returns_a_daily_path(client, user):
     a = b["advice"]
     assert a["target_price"] == t["predicted_price"]
     rec = next((p for p in path if p["date"] == a["recommended_date"]), None)
-    if a["recommended_horizon_days"] == 0:
-        assert a["recommended_price"] == b["current_price"]
-    else:
-        assert rec is not None and a["recommended_price"] == rec["predicted_price"]
-    assert a["wait_days"] == a["recommended_horizon_days"] - b["target_horizon_days"]
+    assert rec is not None and a["recommended_price"] == rec["predicted_price"]
+    assert a["wait_days"] == a["recommended_horizon_days"] - b["target_horizon_days"] >= 0
+    # the chart's "In short" summary shows advice.peak: the highest validated price on the chart's path
+    validated = [p for p in path if p["beats_baseline"]]
+    if validated:
+        top = max(validated, key=lambda p: p["predicted_price"])
+        assert (a["peak"]["date"], a["peak"]["price"]) == (top["date"], top["predicted_price"])
     assert "not a guarantee" in a["disclaimer"]
 
     hist = client.get("/api/history/price", headers=user["headers"]).json()

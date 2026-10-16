@@ -27,6 +27,8 @@ joblib==1.5.3
 pyarrow==21.0.0
 matplotlib==3.10.8
 
+# Weather lookups (Open-Meteo) and the test client
+httpx==0.28.1
+
 # Testing
 pytest>=8.3,<9
-httpx==0.28.1

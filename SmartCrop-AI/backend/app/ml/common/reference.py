@@ -82,6 +82,13 @@ def city_markets() -> dict[str, list[str]]:
     return df.groupby("city")["market"].apply(list).to_dict()
 
 
+@lru_cache(maxsize=1)
+def city_coordinates() -> dict[tuple[str, str], tuple[float, float]]:
+    """(state, city) lower-cased -> (latitude, longitude), for the weather lookup (no geocoding needed)."""
+    df = pd.read_csv(paths.CITY_COORDS_PATH)
+    return {(r.state.lower(), r.city.lower()): (float(r.latitude), float(r.longitude)) for r in df.itertuples()}
+
+
 def months_between(start_month: int, end_month: int) -> int:
     """Whole months from start_month to the NEXT occurrence of end_month (1..12)."""
     d = (end_month - start_month) % 12

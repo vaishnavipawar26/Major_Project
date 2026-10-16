@@ -43,36 +43,58 @@ class PeakInfo(BaseModel):
     horizon_days: int
     price: float
     reliable: bool
-    diff_vs_target: float
-    diff_pct: float
+    diff_vs_target: float | None = None
+    diff_pct: float | None = None
 
 
 class StorageInfo(BaseModel):
     crop: str
     category: str
     max_hold_days: int
+    farm_hold_days: int
     note: str
 
 
-class SellingAdvice(BaseModel):
-    code: Literal["WAIT", "SELL_EARLIER", "SELL_ON_TARGET", "NO_CLEAR_DIFFERENCE", "UNCERTAIN"]
-    label: str
-    recommended_date: dt.date
-    recommended_horizon_days: int
-    recommended_price: float
-    recommended_low: float
-    recommended_high: float
-    target_date: dt.date
-    target_price: float
-    target_low: float
-    target_high: float
+class SellOption(BaseModel):
+    """Another selling date compared with the farmer's selected date."""
+    date: dt.date
+    horizon_days: int
+    price: float
     extra_per_quintal: float
     extra_pct: float
+    days_from_target: int
+    error_pct: float
+    meaningful: bool
+
+
+class SellingAdvice(BaseModel):
+    """Smart selling recommendation. Price fields are None only when the forecast has no
+    usable price for the planned date (code UNAVAILABLE)."""
+    code: Literal["WAIT", "NO_CLEAR_DIFFERENCE", "SELL_ON_TARGET", "STORAGE_LIMIT", "UNAVAILABLE"]
+    label: str
+    recommended_date: dt.date | None
+    recommended_horizon_days: int
+    recommended_price: float | None
+    recommended_low: float | None
+    recommended_high: float | None
+    target_date: dt.date | None
+    target_price: float | None
+    target_low: float | None
+    target_high: float | None
+    extra_per_quintal: float | None
+    extra_pct: float | None
     wait_days: int
-    typical_error_pct: float
+    typical_error_pct: float | None
     explanation: str
+    reason: str
     falls_after_target: bool
-    peak: PeakInfo
+    needs_special_storage: bool
+    best_before: SellOption | None = None
+    best_after: SellOption | None = None
+    alternative: SellOption | None = None
+    beyond_storage: SellOption | None = None
+    farm_option: SellOption | None = None
+    peak: PeakInfo | None = None
     storage: StorageInfo
     considerations: list[str]
     disclaimer: str

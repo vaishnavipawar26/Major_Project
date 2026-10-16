@@ -251,10 +251,7 @@ class PriceForecaster:
         # show dates up to the target and, beyond it, up to the last validated date
         last_validated = max(validated, default=0)
         shown = path[:max(target_h, last_validated)]
-        today_point = {"horizon_days": 0, "date": origin_date.isoformat(),
-                       "predicted_price": round(p0, 2), "lower": round(p0, 2),
-                       "upper": round(p0, 2), "beats_baseline": True, "_band": 0.0}
-        advice = best_time_to_sell(shown, today_point, target_h, ref.commodity, projected)
+        advice = best_time_to_sell(shown, target_h, ref.commodity, projected)
 
         explanations = []
         if explain:

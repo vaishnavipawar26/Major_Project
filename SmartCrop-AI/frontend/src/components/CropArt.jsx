@@ -11,7 +11,7 @@ import tomato from "../assets/photos/crop-tomato.webp";
 import wheat from "../assets/photos/crop-wheat.webp";
 
 // Local, optimised photos keyed by the crop name exactly as the API returns it (see assets/photos/CREDITS.md).
-const PHOTOS = { Brinjal: brinjal, Cabbage: cabbage, Cauliflower: cauliflower, Onion: onion, Potato: potato, Tomato: tomato, Wheat: wheat };
+export const PHOTOS = { Brinjal: brinjal, Cabbage: cabbage, Cauliflower: cauliflower, Onion: onion, Potato: potato, Tomato: tomato, Wheat: wheat };
 
 /**
  * Square crop photo. `decorative` hides it from screen readers when the crop name is shown next to it.

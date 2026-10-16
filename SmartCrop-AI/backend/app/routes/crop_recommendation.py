@@ -8,7 +8,8 @@ from app.ml.registry import require_crop
 from app.models.user import User
 from app.schemas.crop_recommendation import (CropAnalysis, CropExplainRequest,
                                              CropExplainResponse, CropRecommendationResponse,
-                                             CropRequest, RecommendationOptions)
+                                             CropRequest, FeatureRange,
+                                             RecommendationOptions)
 from app.services import recommendation_service
 
 router = APIRouter(prefix="/api/crop-recommendation", tags=["Crop recommendation"],
@@ -19,6 +20,12 @@ router = APIRouter(prefix="/api/crop-recommendation", tags=["Crop recommendation
 def options(rec: CropRecommender = Depends(require_crop)) -> dict:
     """Supported crops and cities, cropping calendar, economics assumptions, input ranges."""
     return recommendation_service.options(rec)
+
+
+@router.get("/feature-ranges", response_model=dict[str, FeatureRange])
+def feature_ranges(rec: CropRecommender = Depends(require_crop)) -> dict:
+    """Per-feature hard limits and per-crop usual ranges, computed from the training data."""
+    return recommendation_service.feature_ranges(rec)
 
 
 @router.post("/recommend", response_model=CropRecommendationResponse,

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, BookOpen, ChartNoAxesCombined, CircleCheck, History, Lightbulb, Minus, TrendingDown, TrendingUp, TriangleAlert,
+  ArrowLeft, ChartNoAxesCombined, CircleCheck, History, Lightbulb, Minus, TrendingDown, TrendingUp,
+  TriangleAlert, Warehouse,
 } from "lucide-react";
 import Alert from "../components/Alert";
 import CropArt from "../components/CropArt";
@@ -26,12 +27,6 @@ const IMPACT = {
   higher: { cls: "impact-up", icon: TrendingUp, text: "price.why.impactHigher" },
   lower: { cls: "impact-down", icon: TrendingDown, text: "price.why.impactLower" },
   small: { cls: "impact-small", icon: Minus, text: "price.why.impactSmall" },
-};
-// Plain reading of the API's direction field ("Stable" = change smaller than the model's usual error)
-const TREND = {
-  Increasing: { icon: TrendingUp, cls: "trend-up", text: "price.result.trendUp" },
-  Decreasing: { icon: TrendingDown, cls: "trend-down", text: "price.result.trendDown" },
-  Stable: { icon: Minus, cls: "trend-flat", text: "price.result.trendFlat" },
 };
 /** Translated label for a backend key, or the backend's own English label when the dictionary has none. */
 const labelFor = (t, key, fallback) => { const v = t(key); return v === key ? fallback : v; };
@@ -74,98 +69,199 @@ function ImpactPill({ impact }) {
   return <span className={`impact ${m.cls}`}><Icon size={13} aria-hidden="true" />{t(m.text)}</span>;
 }
 
-function StorageCostCalculator({ advice }) {
+/** Optional cost check: the farmer's own storage and selling costs against the extra income before costs. */
+function CostCheck({ advice }) {
   const t = useT();
-  const [cost, setCost] = useState("");
-  const perDay = Number(cost);
-  const valid = cost !== "" && !Number.isNaN(perDay) && perDay >= 0;
-  const total = valid ? perDay * advice.wait_days : null;
-  const net = valid ? advice.extra_per_quintal - total : null;
+  const [perDay, setPerDay] = useState("");
+  const [other, setOther] = useState("");
+  const num = (v) => (v === "" || Number.isNaN(Number(v)) || Number(v) < 0 ? null : Number(v));
+  const day = num(perDay);
+  const once = num(other);
+  const entered = day != null || once != null;
+  const costs = (day ?? 0) * advice.wait_days + (once ?? 0);
+  const net = advice.extra_per_quintal - costs;
   return (
     <div className="calc">
-      <label htmlFor="storage-cost" className="small" style={{ fontWeight: 600 }}>
-        {t("price.advice.storageCostLabel")}
-      </label>
-      <div className="row" style={{ marginTop: 4 }}>
-        <input id="storage-cost" type="number" min="0" step="any" inputMode="decimal" placeholder={t("price.advice.storageCostPlaceholder")}
-          value={cost} onChange={(e) => setCost(e.target.value)} style={{ maxWidth: 140 }} />
-        {valid && (
-          <span className="small">
-            {days(t, advice.wait_days)} × {rupees(perDay)} = {rupees(total)} {t("price.advice.storageWord")} →
-            {" "}<strong className={net >= 0 ? "text-good" : "text-bad"}>
+      <strong className="small">{t("price.advice.costTitle")}</strong>
+      <div className="calc-fields">
+        <label className="small">
+          {t("price.advice.storageCostLabel")}
+          <input type="number" min="0" step="any" inputMode="decimal" placeholder={t("price.advice.storageCostPlaceholder")}
+            value={perDay} onChange={(e) => setPerDay(e.target.value)} />
+        </label>
+        <label className="small">
+          {t("price.advice.otherCostLabel")}
+          <input type="number" min="0" step="any" inputMode="decimal" placeholder={t("price.advice.otherCostPlaceholder")}
+            value={other} onChange={(e) => setOther(e.target.value)} />
+        </label>
+      </div>
+      <p className="small" style={{ margin: "8px 0 0" }}>
+        {t("price.advice.grossExtra", { amount: rupees(advice.extra_per_quintal) })}
+        {entered && (
+          <>
+            {" − "}{t("price.advice.yourCosts", { amount: rupees(costs) })}{" = "}
+            <strong className={net >= 0 ? "text-good" : "text-bad"}>
               {t(net >= 0 ? "price.advice.netGain" : "price.advice.netLoss", { amount: rupees(Math.abs(net)) })}
             </strong>
-          </span>
+          </>
         )}
-      </div>
-      <p className="muted small" style={{ margin: "4px 0 0" }}>{t("price.advice.storageCostNote")}</p>
+      </p>
+      <p className="muted small" style={{ margin: "4px 0 0" }}>
+        {t(entered ? "price.advice.costsPartial" : "price.advice.costsNotDeducted")}
+      </p>
     </div>
   );
 }
 
-function AdviceCard({ advice, commodity }) {
+/** One cell of the selling summary: a date with its predicted price, or a single figure. */
+function SellCell({ label, date, price, value, sub, rec, tone }) {
   const t = useT();
-  const style = ADVICE_STYLE[advice.code] || ADVICE_STYLE.NO_CLEAR_DIFFERENCE;
-  const AdviceIcon = style.icon;
-  const moved = advice.recommended_date !== advice.target_date;
-  const peak = advice.peak;
-  const showPeak = peak.date !== advice.recommended_date && peak.diff_vs_target > 0;
-  // same rule as the backend label: SELL_EARLIER with a suggested date of today reads "selling now"
-  const labelCode = advice.code === "SELL_EARLIER" && advice.recommended_horizon_days === 0 ? "SELL_NOW" : advice.code;
   return (
-    <section className={`card suggestion ${style.tone}`} aria-labelledby="advice-title">
-      <span className="stat-label">{t("price.advice.title")}</span>
-      <div className="suggestion-label" id="advice-title"><AdviceIcon size={22} aria-hidden="true" />{labelFor(t, `price.advice.code.${labelCode}`, advice.label)}</div>
+    <div className={`sell-cell${rec ? " is-rec" : ""}${tone ? ` ${tone}` : ""}`}>
+      <span className="sell-cell-label">{label}{rec && <span className="sell-rec-tag"><CircleCheck size={12} aria-hidden="true" />{t("price.sell.recTag")}</span>}</span>
+      {date !== undefined && <span className="sell-cell-date">{date ? fmtDate(date, { day: "numeric", month: "short", year: "numeric" }) : "—"}</span>}
+      {price !== undefined && <span className="sell-cell-price">{rupees(price)}<span className="unit"> {t("unit.perQuintal")}</span></span>}
+      {value !== undefined && <span className="sell-cell-value">{value}</span>}
+      {sub && <span className="sell-cell-sub">{sub}</span>}
+    </div>
+  );
+}
 
-      <dl className="advice-grid">
-        <div><dt>{t("price.advice.recDate")}</dt><dd className="big">{fmtDate(advice.recommended_date)}</dd></div>
-        <div><dt>{t("price.advice.recPrice")}</dt><dd className="big">{rupees(advice.recommended_price)}<span className="unit"> {t("unit.perQuintal")}</span></dd></div>
-        <div><dt>{t("price.advice.yourDatePrice", { date: fmtDate(advice.target_date, { day: "numeric", month: "short" }) })}</dt><dd>{rupees(advice.target_price)}</dd></div>
-        <div><dt>{t("price.advice.extra")}</dt><dd>{moved ? signedRupees(advice.extra_per_quintal) : "₹0"}</dd></div>
-        <div><dt>{t("price.advice.diff")}</dt><dd>{moved ? pct(advice.extra_pct) : "0%"}</dd></div>
-        <div><dt>{advice.wait_days < 0 ? t("price.advice.daysEarlier") : t("price.advice.daysWait")}</dt>
-          <dd>{days(t, Math.abs(advice.wait_days))}</dd></div>
-      </dl>
+/**
+ * Smart selling recommendation (codes from app/ml/price_prediction/selling_advice.py). Everything shown
+ * is built from the API's numbers; the wording is short, translated and never repeats a price.
+ */
+function SellRecommendation({ advice, commodity }) {
+  const t = useT();
+  const style = ADVICE_STYLE[advice.code] || ADVICE_STYLE.UNAVAILABLE;
+  const Icon = style.icon;
+  const crop = cropName(t, commodity);
+  const s = advice.storage;
+  const farmDays = s.farm_hold_days ?? s.max_hold_days;
+  const wait = advice.code === "WAIT";
+  const noPrice = advice.target_price == null;
+  // the best other date the backend reports (the recommended date when waiting is advised)
+  const [kind, alt] = wait ? ["wait", advice.alternative]
+    : advice.alternative ? ["alternative", advice.alternative]
+    : advice.beyond_storage ? ["beyond", advice.beyond_storage]
+    : advice.best_before ? ["before", advice.best_before] : [null, null];
+  const sd = (d) => fmtDate(d, { day: "numeric", month: "long" });
+  const altDays = alt ? days(t, Math.abs(alt.days_from_target)) : null;
 
-      <ServerText as="p" className="advice-text">{advice.explanation}</ServerText>
-      {showPeak && (
-        <p className="small text-2">
-          {t("price.advice.peak")} <strong>{rupees(peak.price)}</strong> {t("price.advice.peakOn", { date: fmtDate(peak.date) })}
-          {" "}({signedRupees(peak.diff_vs_target)}, {pct(peak.diff_pct)} {t("price.advice.vsYourDate")})
-          {peak.date > advice.target_date && advice.code !== "WAIT" ? ` — ${t("price.advice.peakNotRecommended")}` : "."}
+  let why;
+  if (advice.code === "UNAVAILABLE") {
+    why = noPrice ? t("price.sell.why.noPrice") : t("price.sell.why.unreliable");
+  } else if (kind === "wait") {
+    why = t("price.sell.why.wait", { date: sd(alt.date) });
+  } else if (kind === "alternative") {
+    why = t("price.sell.why.small", { date: sd(alt.date) });
+  } else if (kind === "beyond") {
+    why = t("price.sell.why.beyond", { date: sd(alt.date), days: altDays, crop });
+  } else if (kind === "before") {
+    why = t("price.sell.why.before", { date: sd(alt.date) });
+  } else {
+    why = t("price.sell.why.best", { days: days(t, s.max_hold_days) });
+  }
+  if (advice.falls_after_target && (advice.code === "SELL_ON_TARGET" || advice.code === "NO_CLEAR_DIFFERENCE")) {
+    why += ` ${t("price.sell.why.fallsAfter")}`;
+  }
+
+  let store;
+  if (wait) {
+    store = t("price.sell.store.wait", { crop, days: altDays });
+    if (advice.needs_special_storage) {
+      store += ` ${t("price.sell.store.special", { crop, farm: days(t, farmDays) })}`;
+      if (advice.farm_option) store += ` ${t("price.sell.store.farmOption", { date: sd(advice.farm_option.date), price: rupees(advice.farm_option.price) })}`;
+    }
+  } else if (kind === "alternative" && alt.days_from_target > 0) {
+    store = t("price.sell.store.small", { crop, days: altDays });
+  } else if (advice.code === "STORAGE_LIMIT") {
+    store = t("price.sell.store.limit", { crop, days: days(t, s.max_hold_days) });
+  } else if (advice.code === "UNAVAILABLE") {
+    store = t("price.sell.store.unknown", { crop });
+  } else {
+    store = t("price.sell.store.onTime");
+  }
+
+  return (
+    <div className={`sell-card ${style.tone}`}>
+      <div className="sell-badge"><Icon size={18} aria-hidden="true" />
+        {labelFor(t, `price.advice.code.${advice.code}`, advice.label)}</div>
+
+      <div className={`sell-summary${alt ? "" : " is-short"}`}>
+        <SellCell label={t("price.sell.planned")} date={advice.target_date} price={advice.target_price}
+          rec={!wait && advice.code !== "UNAVAILABLE"} />
+        {alt ? (
+          <>
+            <SellCell label={t("price.sell.alt")} date={alt.date} price={alt.price} rec={wait}
+              sub={wait ? null : t(`price.sell.altWhy.${kind}`)} />
+            <SellCell label={t("price.sell.diff")} tone={wait ? "is-up" : ""}
+              value={<>{signedRupees(alt.extra_per_quintal)} <small>({pct(alt.extra_pct, 1)})</small></>}
+              sub={t("price.sell.beforeCosts")} />
+            <SellCell label={alt.days_from_target < 0 ? t("price.sell.daysBefore") : t("price.sell.waitTime")} value={altDays} />
+          </>
+        ) : !noPrice && advice.code !== "UNAVAILABLE" && (
+          <SellCell label={t("price.sell.alt")} value={t("price.sell.noAlt")} />
+        )}
+      </div>
+
+      <div className="sell-why">
+        <h3><Lightbulb size={16} aria-hidden="true" />{t("price.sell.whyTitle")}</h3>
+        <p>{why}</p>
+      </div>
+
+      <div className="sell-store">
+        <h3><Warehouse size={16} aria-hidden="true" />{t("price.sell.storageTitle")}</h3>
+        <p>{store}</p>
+        <p className="sell-store-general">
+          <span className="sell-store-tag">{t("price.sell.generalLabel")}</span>{" "}
+          <ServerText>{s.note}</ServerText>{" "}
+          {t("price.advice.keepsFarm", { days: days(t, farmDays) })}
+          {s.max_hold_days > farmDays && <> {t("price.advice.keepsGood", { days: days(t, s.max_hold_days) })}</>}
         </p>
-      )}
-      <details className="advice-more">
-        <summary>{t("price.advice.storageMore")}</summary>
-        {advice.wait_days > 0 && <StorageCostCalculator advice={advice} />}
-        <div className="storage-note">
-          <strong>{t("price.advice.storageFor", { crop: cropName(t, commodity), category: labelFor(t, `price.storageCat.${advice.storage.category}`, advice.storage.category.toLowerCase()) })}</strong>
-          <p className="small" style={{ margin: "2px 0 0" }}><ServerText>{advice.storage.note}</ServerText>{" "}
-            {t("price.advice.storageLimit", { days: days(t, advice.storage.max_hold_days) })}</p>
-        </div>
-      </details>
+        {advice.wait_days > 0 && <CostCheck advice={advice} />}
+      </div>
 
-    </section>
+      <p className="sell-note"><TriangleAlert size={15} aria-hidden="true" />
+        <span>{advice.typical_error_pct != null
+          ? t("price.sell.note", { pct: advice.typical_error_pct.toFixed(0) })
+          : t("price.sell.noteNoError")}</span></p>
+    </div>
   );
 }
 
-function FactorGlossary({ factors }) {
+// Direction of a factor's SHAP contribution as the API reports it ("impact"); never inferred here
+const PUSH = {
+  higher: { cls: "push-up", icon: TrendingUp, label: "price.why.pushUp", detail: "price.why.detailUp" },
+  lower: { cls: "push-down", icon: TrendingDown, label: "price.why.pushDown", detail: "price.why.detailDown" },
+  small: { cls: "push-small", icon: Minus, label: "price.why.pushSmall", detail: null },
+};
+// factors whose backend observation is a measured fact worth showing (the others are generic)
+const OBSERVED = new Set(["recent_week", "recent_month", "averages", "volatility", "arrivals", "state_market", "price_level"]);
+
+/** One factor: what it did to the prediction (icon + label) and what it means, in one or two short sentences. */
+function FactorCard({ f, commodity }) {
   const t = useT();
-  const keys = [...new Set(factors.map((f) => f.factor))].filter((k) => t(`gloss.price.${k}`) !== `gloss.price.${k}`);
-  if (!keys.length) return null;
+  const m = PUSH[f.impact] || PUSH.small;
+  const crop = cropName(t, commodity);
+  const sayKey = `price.why.say.${f.factor}.${f.impact in PUSH ? f.impact : "small"}`;
+  const say = t(sayKey, { crop });
   return (
-    <details className="glossary">
-      <summary className="section-title"><BookOpen size={18} aria-hidden="true" />{t("why.glossaryTitle")}</summary>
-      <dl>
-        {keys.map((k) => (
-          <div key={k}><dt>{labelFor(t, `price.factor.${k}`, factors.find((f) => f.factor === k).title)}</dt><dd>{t(`gloss.price.${k}`)}</dd></div>
-        ))}
-      </dl>
-    </details>
+    <li className={`factor-card ${m.cls}`}>
+      <span className="factor-push"><m.icon size={16} aria-hidden="true" />{t(m.label)}</span>
+      <strong className="factor-name">{labelFor(t, `price.factor.${f.factor}`, f.title)}</strong>
+      <p className="factor-say">
+        {say !== sayKey ? say : <ServerText>{f.observation}</ServerText>}
+        {m.detail && <> <span className="factor-detail">{t(m.detail, { pct: `${Math.abs(f.effect_pct).toFixed(1)}%` })}</span></>}
+      </p>
+      {say !== sayKey && OBSERVED.has(f.factor) && (
+        <p className="factor-seen"><ServerText>{f.observation}</ServerText></p>
+      )}
+    </li>
   );
 }
 
-/** Step 6 — the factors the model relied on most, one per row, in plain words (from the API's SHAP explanation). */
+/** Step 4 — the three factors the model relied on most, as cards (from the API's SHAP explanation). */
 function WhyFactors({ explain, error, forecast, which, setWhich }) {
   const t = useT();
   const exps = explain?.explanations || [];
@@ -194,18 +290,9 @@ function WhyFactors({ explain, error, forecast, which, setWhich }) {
             {t("price.why.introB", { change: pct(exp.prediction_change_pct) })}
           </p>
           {exp.all_small && <Alert type="info">{t("price.why.allSmall")}</Alert>}
-          <ul className="factor-list">
-            {exp.factors.slice(0, 3).map((f) => (
-              <li key={f.factor}>
-                <div className="factor-head"><strong>{labelFor(t, `price.factor.${f.factor}`, f.title)}</strong><ImpactPill impact={f.impact} /></div>
-                <p className="small" style={{ margin: "4px 0 0" }}>
-                  <ServerText>{f.observation}</ServerText>
-                  {f.impact !== "small" && <> {t(f.impact === "higher" ? "price.why.linkHigher" : "price.why.linkLower", { pct: pct(f.effect_pct) })}</>}
-                </p>
-              </li>
-            ))}
+          <ul className="factor-cards">
+            {exp.factors.slice(0, 3).map((f) => <FactorCard key={f.factor} f={f} commodity={forecast.series.commodity} />)}
           </ul>
-          <FactorGlossary factors={exp.factors.slice(0, 3)} />
           <p className="muted small" style={{ margin: 0 }}>{t("price.why.patternsNote")}</p>
         </div>
       )}
@@ -213,7 +300,7 @@ function WhyFactors({ explain, error, forecast, which, setWhich }) {
   );
 }
 
-/** Step 8 — every factor with its SHAP value, the raw model inputs and the model/validation details (collapsed). */
+/** Step 6 — every factor with its SHAP value, the raw model inputs and the model/validation details (collapsed). */
 function AdvancedDetails({ explain, forecast, which }) {
   const tr = useT();
   const exps = explain?.explanations || [];
@@ -260,7 +347,7 @@ function AdvancedDetails({ explain, forecast, which }) {
           </p>
         </>
       )}
-      <h3 className="tech-subtitle mt-4">{tr("price.rel.title")}</h3>
+      <h3 className="tech-subtitle mt-4">{tr("price.rel.modelTitle")}</h3>
       <dl className="kv">
         <dt>{tr("price.rel.yourDate")}</dt>
         <dd>{t.beats_baseline ? tr("price.rel.validatedShort") : tr("price.rel.notValidatedShort")}</dd>
@@ -270,76 +357,6 @@ function AdvancedDetails({ explain, forecast, which }) {
       </dl>
       <p className="muted small" style={{ margin: "10px 0 0" }}>{tr("price.rel.validatedMeaning", { crop })}</p>
     </TechnicalDetails>
-  );
-}
-
-/**
- * Step 3 — a neutral reading built only from fields the API returns (direction and size of the change,
- * the model's usual error, whether this horizon was validated, whether it is a seasonal projection),
- * followed by the plain reliability figures.
- */
-function MeaningContent({ forecast }) {
-  const tr = useT();
-  const t = forecast.target;
-  const crop = cropName(tr, forecast.series.commodity);
-  const vars = {
-    date: fmtDate(t.date), size: `${Math.abs(t.change_pct).toFixed(1)}%`, start: rupees(forecast.current_price),
-    change: pct(t.change_pct), band: t.stable_band_pct.toFixed(0),
-  };
-  const lines = [
-    t.direction === "Increasing" ? tr("price.understand.up", vars)
-      : t.direction === "Decreasing" ? tr("price.understand.down", vars) : tr("price.understand.stable", vars),
-    ...(forecast.projection ? [tr("price.understand.projection")] : []),
-    tr("price.understand.estimate"),
-  ];
-  return (
-    <div className="meaning-grid">
-      <ul className="list meaning-list">{lines.map((l) => <li key={l}>{l}</li>)}</ul>
-      <div className={`meaning-sure ${t.beats_baseline ? "is-ok" : "is-caution"}`}>
-        <p className="meaning-sure-title">
-          {t.beats_baseline ? <CircleCheck size={18} aria-hidden="true" /> : <TriangleAlert size={18} aria-hidden="true" />}
-          <strong>{tr("price.rel.title")}</strong>
-        </p>
-        <p className="small !mb-2">{t.beats_baseline
-          ? tr("price.rel.validated", { days: days(tr, t.horizon_days), crop })
-          : tr("price.rel.notValidated", { days: days(tr, t.horizon_days), crop })}</p>
-        <dl className="kv small">
-          <dt>{tr("price.rel.typicalError")}</dt><dd>{tr("price.rel.typicalErrorValue", { pct: t.stable_band_pct.toFixed(0) })}</dd>
-          <dt>{tr("price.rel.avgError")}</dt>
-          <dd>{tr("price.rel.avgErrorValue", { model: rupees(t.model_mae), days: days(tr, t.horizon_days), baseline: rupees(t.baseline_mae) })}</dd>
-          <dt>{tr("price.rel.dataUpTo")}</dt><dd>{fmtDate(forecast.model.data_end)}</dd>
-        </dl>
-      </div>
-    </div>
-  );
-}
-
-/** Step 4 — rising / no clear change / falling, highlighting the direction the API returned (text label + icon, not colour alone). */
-function MovementContent({ forecast }) {
-  const tr = useT();
-  const t = forecast.target;
-  const trend = TREND[t.direction] || TREND.Stable;
-  const scale = [["Increasing", TREND.Increasing], ["Stable", TREND.Stable], ["Decreasing", TREND.Decreasing]];
-  return (
-    <>
-      <ul className="move-scale" aria-label={tr("price.steps.movementScale")}>
-        {scale.map(([key, m]) => {
-          const on = (TREND[t.direction] ? t.direction : "Stable") === key;
-          return (
-            <li key={key} className={`move-chip ${m.cls}${on ? " is-on" : ""}`} aria-current={on ? "true" : undefined}>
-              <m.icon size={18} aria-hidden="true" /><span>{tr(m.text)}</span>
-              {on && <span className="sr-only">{tr("price.steps.thisForecast")}</span>}
-            </li>
-          );
-        })}
-      </ul>
-      <p className={`trend-line ${trend.cls}`}>
-        <trend.icon size={18} aria-hidden="true" />
-        <span><strong>{tr(trend.text)}</strong>{" "}
-          <span className="text-2">{tr("price.result.vsStart", { change: pct(t.change_pct), start: rupees(forecast.current_price) })}</span></span>
-      </p>
-      {t.direction === "Stable" && <p className="small text-2 !mb-0">{tr("price.result.stableNote", { band: t.stable_band_pct.toFixed(0) })}</p>}
-    </>
   );
 }
 
@@ -379,15 +396,6 @@ export default function PriceResult() {
   const { series, target: t, advice } = forecast;
   const validated = t.beats_baseline;
   const marketName = series.market === STATE_MARKET ? tr("price.form.allMarkets") : series.market;
-  const notes = [
-    source.fromHistory && tr("price.result.noteHistory", { price: rupees(source.saved.predicted_price) }),
-    forecast.projection && tr("price.result.noteProjection", {
-      end: fmtDate(forecast.model.data_end), ref: fmtDate(forecast.projection.reference_origin_date),
-      inflation: forecast.projection.inflation_annual_pct,
-    }),
-    !forecast.projection && forecast.forecast_origin_date !== forecast.input_date
-      && tr("price.result.noteOrigin", { date: fmtDate(forecast.input_date), origin: fmtDate(forecast.forecast_origin_date) }),
-  ].filter(Boolean);
 
   return (
     <>
@@ -441,22 +449,7 @@ export default function PriceResult() {
         </ResultStep>
       </div>
 
-      {notes.length > 0 && (
-        <details className={`notes-box mb-1 ${forecast.projection ? "is-warn" : ""}`}>
-          <summary><TriangleAlert size={17} aria-hidden="true" />{tr("price.result.notesTitle")}<span className="notes-count">{notes.length}</span></summary>
-          {notes.length === 1 ? <p>{notes[0]}</p> : <ul className="list">{notes.map((n) => <li key={n}>{n}</li>)}</ul>}
-        </details>
-      )}
-
-      <ResultStep n={3} id="step-meaning" title={tr("price.steps.meaning")} icon={Lightbulb} className="understand">
-        <MeaningContent forecast={forecast} />
-      </ResultStep>
-
-      <ResultStep n={4} id="step-movement" title={tr("price.steps.movement")}>
-        <MovementContent forecast={forecast} />
-      </ResultStep>
-
-      <ResultStep n={5} id="step-chart" title={tr("price.chart.title", { crop: cropName(tr, series.commodity) })} className="reveal">
+      <ResultStep n={3} id="step-chart" title={tr("price.chart.title", { crop: cropName(tr, series.commodity) })} className="reveal">
         <p className="chart-desc mb-3">
           {tr("price.chart.desc", { from: fmtDate(forecast.forecast_origin_date), to: fmtDate(forecast.path[forecast.path.length - 1].date) })}
           {forecast.path.length > t.horizon_days && ` ${tr("price.chart.descLater")}`}
@@ -464,7 +457,7 @@ export default function PriceResult() {
         <PriceTrendChart history={forecast.history} historyIsReference={forecast.history_is_reference}
           actualAfter={forecast.actual_after_origin} path={forecast.path}
           originDate={forecast.forecast_origin_date} currentPrice={forecast.current_price}
-          targetDate={forecast.target_date} recommendedDate={advice.recommended_horizon_days > 0 ? advice.recommended_date : null} />
+          targetDate={forecast.target_date} recommendedDate={advice.recommended_date} peak={advice.peak} />
         {forecast.path.some((p) => !p.beats_baseline) && (
           <p className="small text-2" style={{ marginTop: 8 }}>
             {forecast.validated_days > 0
@@ -476,25 +469,21 @@ export default function PriceResult() {
         )}
       </ResultStep>
 
-      <ResultStep n={6} id="step-why" title={tr("price.why.title")} className="reveal">
+      <ResultStep n={4} id="step-why" title={tr("price.why.title")} className="reveal">
         <WhyFactors explain={explain} error={explainError} forecast={forecast} which={which} setWhich={setWhich} />
       </ResultStep>
 
-      <ResultStep n={7} id="step-check" title={tr("price.steps.check")}>
-        <AdviceCard advice={advice} commodity={series.commodity} />
-        <h3 className="tech-subtitle mt-4">{tr("price.advice.checkFirst")}</h3>
-        <ul className="check-list">
-          {advice.considerations.map((c) => <li key={c}><CircleCheck size={17} aria-hidden="true" /><ServerText>{c}</ServerText></li>)}
-        </ul>
-        <ServerText as="p" className="muted small advice-disclaimer">{advice.disclaimer}</ServerText>
+      <ResultStep n={5} id="step-sell" title={tr("price.sell.title")} className="sell-step">
+        <p className="step-subtitle">{tr("price.sell.subtitle")}</p>
+        <SellRecommendation advice={advice} commodity={series.commodity} />
       </ResultStep>
 
-      <ResultStep n={8} id="step-advanced" title={tr("price.steps.advanced")}>
+      <ResultStep n={6} id="step-advanced" title={tr("price.steps.advanced")}>
         <p className="small text-2 !mb-0">{tr("price.steps.advancedHint")}</p>
         <AdvancedDetails explain={explain} forecast={forecast} which={which} />
       </ResultStep>
 
-      <ServerText as="p" className="muted small mt-4">{forecast.disclaimer}</ServerText>
+      <p className="price-disclaimer"><strong>{tr("price.result.disclaimerLabel")}</strong> {tr("price.result.disclaimer")}</p>
     </>
   );
 }

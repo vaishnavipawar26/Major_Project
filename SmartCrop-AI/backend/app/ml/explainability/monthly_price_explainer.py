@@ -111,6 +111,12 @@ def explain_monthly_price(*, crop: str, shap_values: dict[str, float], base_valu
             headline += (f" {month_name} is historically a low-price month because market "
                          f"arrivals rise about {s_dev:.0f}% (harvest glut).")
 
+    seasonal = None
+    if price_profile is not None:
+        seasonal = {"month": target_month, "price_vs_avg_pct": round(_pct(price_profile[target_month]), 1),
+                    "arrivals_vs_avg_pct": None if supply_profile is None
+                    else round(_pct(supply_profile[target_month]), 1)}
+
     technical = [{"feature": f, "label": TECHNICAL_LABELS.get(f, f),
                   "value": None if (isinstance(row[f], float) and np.isnan(row[f])) else round(float(row[f]), 4),
                   "shap_value": round(s, 5)}
@@ -120,7 +126,7 @@ def explain_monthly_price(*, crop: str, shap_values: dict[str, float], base_valu
     if not beats_baseline:
         caveats.insert(0, f"For {crop}, this model was not more accurate in testing than simply "
                           "carrying the latest price forward with inflation — treat as indicative.")
-    return {"headline": headline, "factors": factors, "technical": technical,
+    return {"headline": headline, "factors": factors, "technical": technical, "seasonal": seasonal,
             "base_value": round(base_value, 5),
             "inflation_log": round(math.log1p(inflation_effect_pct / 100), 5),
             "method": "SHAP TreeExplainer on the XGBoost monthly price model (real log change)",

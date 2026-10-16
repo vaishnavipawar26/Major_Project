@@ -2,8 +2,13 @@
 
 Scores (each 0-100)
 -------------------
-Agronomic  A = XGBoost classifier probability x 100 (soil, weather, city, planting month,
-               selling month).
+Agronomic  A = share of the farmer's 7 soil and weather values (N, P, K, pH, temperature,
+               humidity, rainfall) that lie inside the crop's typical 5th-95th percentile range
+               in the training dataset, x 100 (so 5 of 7 values -> 71.4). It is an absolute
+               measure of whether the crop can grow in these conditions. The XGBoost classifier
+               probability ("model_match_score") is NOT used in the score: it is relative to the
+               other six crops, so a crop that fits every value can still get ~0 % when another
+               crop fits slightly better, which wrongly decided rankings.
 Timing     T = 50 % planting-window fit (100 in a documented planting month, 50 one month
                off, else 0) + 50 % selling fit (100 if the crop is freshly harvested in the
                selling month, minus 12 per month of storage for storable crops, 0 if it would
@@ -18,9 +23,21 @@ cannot be learned. Suitability and profit share most of the weight equally — a
 cannot grow is never a good choice, and the farmer asked for financial returns — while
 timing is a feasibility check. scripts/score_sensitivity.py reports how rankings change.
 
-Eligibility: a crop is recommended only if its suitability probability is at least
-MIN_PROBABILITY and it can actually be sold in the chosen month. All 7 crops are still
-returned (ranked, flagged) so the comparison chart shows every option.
+Eligibility: a crop is recommended only if it is agronomically viable - at least MIN_RANGE_FIT of
+the farmer's 7 soil/weather values lie inside the crop's typical range (each range covers 90 % of
+that crop's training rows, so a suitable field normally has about 6 of 7 inside; fewer than 5 is
+unusual) - it can actually be sold in the chosen month, AND its expected net profit is positive. A
+crop that is expected to lose money is therefore never "recommended" however well its soil/weather
+fit scores, and is ranked below every eligible crop. All 7 crops are
+still returned (ranked, flagged) so the comparison chart shows every option.
+
+"Best overall" (the first recommended crop, by Overall score) and "highest expected profit" (the
+feasible crop with the largest net profit) are reported separately because they can differ: the
+highest-profit crop may fit the farmer's soil and weather poorly.
+
+Range fit (the Agronomic score above and the soil/weather counts shown to the farmer): how many of the farmer's soil (N, P, K, pH) and
+weather (temperature, humidity, rainfall) values lie inside the crop's typical 5th-95th
+percentile range in the training dataset.
 """
 from __future__ import annotations
 
@@ -41,8 +58,20 @@ from app.ml.explainability.crop_explainer import explain_crop
 from app.ml.price_prediction.monthly_forecaster import MonthlyForecastError
 
 WEIGHTS = {"agronomic": 0.40, "timing": 0.20, "profit": 0.40}
-MIN_PROBABILITY = 0.05
+MIN_RANGE_FIT = 5  # of 7 soil and weather values
 TOP_N = 3
+
+
+SOIL_FEATURES = ("N", "P", "K", "ph")
+WEATHER_FEATURES = ("temperature", "humidity", "rainfall")
+
+
+def range_fit(inputs: dict, ranges: dict) -> dict:
+    """Which soil / weather inputs lie in the crop's typical (p05-p95) range."""
+    def one(features):
+        items = {f: bool(ranges[f]["p05"] <= inputs[f] <= ranges[f]["p95"]) for f in features}
+        return {"within": sum(items.values()), "total": len(items), "items": items}
+    return {"soil": one(SOIL_FEATURES), "weather": one(WEATHER_FEATURES)}
 
 
 def planting_year_for(planting_month: int, today: date) -> int:
@@ -136,7 +165,10 @@ class CropRecommender:
         results = []
         for i, crop in enumerate(self.classes):
             cal = self.calendar[crop]
-            a = float(proba[i] * 100)
+            fit = range_fit(inputs, self.ranges[crop])
+            n_in = fit["soil"]["within"] + fit["weather"]["within"]
+            n_all = fit["soil"]["total"] + fit["weather"]["total"]
+            a = 100.0 * n_in / n_all
             t, status, stored = timing_score(cal, planting_month, offset)
             shap_map = dict(zip(self.features, map(float, sv[:, i])))
             exp = explain_crop(crop, shap_map, ctx, self.ranges[crop], cal)
@@ -151,18 +183,25 @@ class CropRecommender:
             overall = (WEIGHTS["agronomic"] * a + WEIGHTS["timing"] * t
                        + WEIGHTS["profit"] * p_score)
             feasible = econ["feasible"] if econ else status in ("fresh", "stored")
+            profitable = bool(econ and econ["net_profit"] > 0)
+            viable = n_in >= MIN_RANGE_FIT
+            eligible = bool(viable and feasible and profitable)
             results.append({
                 "crop_name": crop, "probability": float(proba[i]),
+                "model_match_score": round(float(proba[i] * 100), 2),
                 "agronomic_score": round(a, 2), "timing_score": round(t, 1),
                 "profit_score": p_score, "recommendation_score": round(overall, 2),
                 "seasonal_score": float(100 if planting_month in cal.planting_months else 0),
                 "price_score": market["forecast"]["price_score"] if market["forecast"] else None,
-                "eligible": bool(proba[i] >= MIN_PROBABILITY and feasible),
+                "eligible": eligible, "profitable": profitable,
                 "feasible": bool(feasible),
-                "low_agronomic_suitability": bool(proba[i] < MIN_PROBABILITY),
+                "range_fit": fit,
+                "forecast_reliable": (market["forecast"]["reliability"]["beats_baseline"]
+                                      if market["forecast"] else None),
+                "low_agronomic_suitability": not viable,
                 "summary": exp["summary"], "reasons": exp["reasons"],
                 "limitations": self._limitations(crop, exp, status, stored, offset, econ,
-                                                 market, proba[i]),
+                                                 market, proba[i], not viable),
                 "important_factors": exp["factors"], "factor_groups": exp["groups"],
                 "shap_base_value": float(self._base_values()[i]),
                 "economics": econ, "timeline": market["timeline"],
@@ -175,7 +214,17 @@ class CropRecommender:
         for rank, r in enumerate(results, start=1):
             r["rank"] = rank
             r["recommended"] = r["eligible"] and rank <= TOP_N
+        priced = sorted((r for r in results if r["feasible"] and r["economics"]),
+                        key=lambda r: r["economics"]["net_profit"], reverse=True)
+        for k, r in enumerate(priced, start=1):
+            r["profit_rank"] = k
+        for r in results:
+            r.setdefault("profit_rank", None)
+        best_overall = next((r["crop_name"] for r in results if r["recommended"]), None)
+        highest_profit = priced[0]["crop_name"] if priced and priced[0]["economics"]["net_profit"] > 0 else None
         return {
+            "generated_at": today.isoformat(),
+            "best_overall": best_overall, "highest_profit": highest_profit,
             "state": STATE, "city": city, "planting_month": planting_month,
             "selling_month": selling_month, "planting_date": month_label(py, planting_month),
             "selling_date": month_label(sy, sm), "growing_months": offset,
@@ -196,10 +245,11 @@ class CropRecommender:
             ],
         }
 
-    def _limitations(self, crop, exp, status, stored, offset, econ, market, p) -> list[str]:
+    def _limitations(self, crop, exp, status, stored, offset, econ, market, p,
+                     low: bool) -> list[str]:
         out = list(exp["limitations"])
         cal = self.calendar[crop]
-        if p < MIN_PROBABILITY:
+        if low:
             out.insert(0, f"Low suitability: the model gives {crop} only a {p * 100:.0f}% match "
                           "for your soil, weather and timing.")
         if status == "not_ready":
