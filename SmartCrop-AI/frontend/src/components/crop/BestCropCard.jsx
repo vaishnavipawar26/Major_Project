@@ -49,9 +49,11 @@ export default function BestCropCard({ response, onSelect }) {
       <div className="best-stats">
         <Stat big icon={TrendingUp} label={t("cr.best.profit")} value={signedRupees(e.net_profit)} tone={e.net_profit < 0 ? "neg" : null}
           sub={t("cr.best.profitSub", { cost: compactRupees(e.total_cost) })} />
-        <Stat big icon={Coins} label={t("cr.best.price", { month: monthLabel(response.selling_date) })} value={rupees(e.selling_price)}
+        <Stat icon={Coins} label={t("cr.best.price", { month: monthLabel(response.selling_date) })} value={rupees(e.selling_price)}
           sub={t("cr.best.priceSub")} />
-        <Stat icon={Gauge} label={t("cr.best.score")} value={`${Math.round(best.recommendation_score)}/100`} sub={t("cr.best.scoreSub")} />
+        <Stat icon={Gauge} label={t("cr.best.score")} value={`${Math.round(best.recommendation_score)}/100`}
+          sub={[t("cr.best.rankValue", { rank: best.rank, total: response.results.length }),
+            best.profit_rank ? t("cr.best.profitRankValue", { rank: best.profit_rank }) : null].filter(Boolean).join(" · ")} />
         <Stat icon={CalendarCheck} label={t("cr.best.harvestLabel")} value={harvestSpan(tl)} sub={t("cr.best.plantSub", { month: monthLabel(tl.planting) })} />
         <Stat icon={ShieldCheck} label={t("cr.best.reliabilityLabel")} value={t(`cr.rel.${rel}`)} sub={t(`cr.rel.${rel}Sub`)} />
       </div>

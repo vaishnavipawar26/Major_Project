@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
@@ -49,11 +48,10 @@ function ProfitTooltip({ active, payload }) {
  * the zero line; the optional breakdown adds total sales and total costs as separate bars.
  * Crops that cannot be sold in the chosen month have no bar (their profit would be meaningless).
  */
-export default function ProfitComparisonChart({ rows, selected, onSelect }) {
+export default function ProfitComparisonChart({ rows, selected, onSelect, breakdown = false }) {
   const t = useT();
   const narrow = useNarrow();
   const tiny = useNarrow(480);
-  const [breakdown, setBreakdown] = useState(false);
   const data = rows.map((r) => ({
     crop: r.crop, name: r.name, feasible: r.feasible, timing: r.timing, price: r.price, roi: r.roi,
     revenue: r.feasible ? r.revenue : null, cost: r.feasible ? r.cost : null, profit: r.feasible ? r.profit : null,
@@ -124,9 +122,6 @@ export default function ProfitComparisonChart({ rows, selected, onSelect }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <button type="button" className="btn-link small" onClick={() => setBreakdown((s) => !s)} aria-pressed={breakdown}>
-        {breakdown ? t("cr.chart.hideBreakdown") : t("cr.chart.showBreakdown")}
-      </button>
     </div>
   );
 }

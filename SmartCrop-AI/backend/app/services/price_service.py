@@ -36,7 +36,8 @@ def _forecast_fields(f: dict) -> dict:
                               "target_horizon_days", "current_price", "arrivals_used", "target",
                               "path", "last_validated_days", "validated_days",
                               "max_horizon_days", "advice", "history", "history_is_reference",
-                              "actual_after_origin", "model", "projection", "disclaimer")}
+                              "actual_after_origin", "model", "projection", "source", "dates",
+                              "disclaimer")}
 
 
 def predict(db: Session, user: User, forecaster: PriceForecaster, req: PriceRequest) -> dict:
@@ -54,8 +55,9 @@ def predict(db: Session, user: User, forecaster: PriceForecaster, req: PriceRequ
 
     row = PricePrediction(
         user_id=user.id, model_version_id=mv.id if mv else None,
-        state=f["series"]["state"], market=f["series"]["market"],
-        commodity=f["series"]["commodity"], variety=f["series"]["variety"],
+        # the market the farmer chose, even when another source was used (re-opening repeats the choice)
+        state=req.state, market=f["source"]["requested_market"],
+        commodity=f["series"]["commodity"], variety=f["source"]["requested_variety"],
         input_date=start, forecast_origin_date=date.fromisoformat(f["forecast_origin_date"]),
         arrivals=f["arrivals_used"],
         # days from the forecast start to the target date, so the target can be rebuilt

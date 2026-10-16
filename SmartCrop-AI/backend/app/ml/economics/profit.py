@@ -69,7 +69,10 @@ def evaluate(crop_econ: CropEconomics, cal: CropCalendar, *, price: float, price
     revenue = eff_yield * price
     total_cost = cultivation + storage
     profit = net(price)
-    roi = profit / total_cost if total_cost else 0.0
+    # ROI uses the same all-in costs that are shown to the farmer (cultivation + storage + marketing), so
+    # net profit / total_cost x 100 reproduces the displayed ROI exactly.
+    all_in_cost = total_cost + revenue * mkt
+    roi = profit / all_in_cost if all_in_cost else 0.0
     break_even = total_cost / (eff_yield * (1 - mkt)) if eff_yield else None
     return {
         "area_acres": area_acres, "status": status, "months_stored": stored,

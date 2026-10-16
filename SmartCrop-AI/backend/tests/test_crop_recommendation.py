@@ -67,7 +67,7 @@ def test_score_formula(client, user):
     w = b["weights"]
     for x in b["results"]:
         exp = (w["agronomic"] * x["agronomic_score"] + w["timing"] * x["timing_score"]
-               + w["profit"] * x["profit_score"])
+               + w["profit"] * x["profit_score_used"])
         assert abs(exp - x["recommendation_score"]) < 0.05
 
 
@@ -267,3 +267,120 @@ def test_weather_is_clipped_to_the_dataset_range_for_the_model_but_saved_as_ente
     assert [x["crop_name"] for x in same["results"]] == [x["crop_name"] for x in b["results"]]
     saved = client.get(f"/api/history/recommendations/{b['id']}", headers=user["headers"]).json()
     assert saved["rainfall"] == 900          # the real value is what the user sees later
+
+
+# ---- one ranking for the whole page: featured crop, labels, explanation ----------------------------
+NAGPUR_PLAN = {**ONION_LIKE, "city": "Nagpur"}  # best overall (Onion) is also the top-profit crop
+SCENARIOS = (ONION_LIKE, NAGPUR_PLAN, {**ONION_LIKE, "city": "Pune", "planting_month": 9, "selling_month": 1},
+             {**ONION_LIKE, "planting_month": 10, "selling_month": 2, "area_acres": 3},
+             {**ONION_LIKE, "area_acres": 0.5}, WHEAT_LIKE)
+
+
+def analyze(client, user, body):
+    return post(client, user, body, "analyze").json()
+
+
+def test_featured_crop_is_the_top_ranked_recommendation(client, user):
+    for body in SCENARIOS:
+        b = analyze(client, user, body)
+        rec = [x for x in b["results"] if x["recommended"]]
+        if rec:
+            assert b["best_overall"] == rec[0]["crop_name"] == b["results"][0]["crop_name"]
+            assert rec[0]["rank"] == 1
+            assert rec[0]["recommendation_score"] == max(x["recommendation_score"] for x in b["results"]
+                                                         if x["eligible"])
+
+
+def test_best_label_belongs_only_to_the_best_crop_and_labels_follow_rules(client, user):
+    for body in SCENARIOS:
+        b = analyze(client, user, body)
+        assert [x["crop_name"] for x in b["results"] if x["status"]["key"] == "best"] \
+            == ([b["best_overall"]] if b["best_overall"] else [])
+        for x in b["results"]:
+            key = x["status"]["key"]
+            if not x["feasible"]:
+                assert key == "notFeasible"
+            elif x["crop_name"] == b["best_overall"]:
+                assert key == "best"
+            elif x["recommended"]:
+                assert key == "recommended"
+            elif x["economics"]["net_profit"] <= 0:
+                assert key == "loss"
+            elif x["low_agronomic_suitability"]:
+                assert key == "poorFit"
+            else:
+                assert key == "notTop"
+
+
+def test_highest_profit_is_independent_of_best_overall(client, user):
+    for body in SCENARIOS:
+        b = analyze(client, user, body)
+        priced = [x for x in b["results"] if x["feasible"] and x["economics"]]
+        top = max(priced, key=lambda x: x["economics"]["net_profit"])
+        assert b["highest_profit"] == top["crop_name"] and top["profit_rank"] == 1
+
+
+def test_explanation_when_most_profitable_crop_is_not_best_overall(client, user):
+    seen = 0
+    for body in SCENARIOS:
+        b = analyze(client, user, body)
+        ex, by = b["ranking_explanation"], {x["crop_name"]: x for x in b["results"]}
+        assert ex["best_overall"] == b["best_overall"] and ex["highest_profit"] == b["highest_profit"]
+        if b["best_overall"] and b["highest_profit"] and b["best_overall"] != b["highest_profit"]:
+            seen += 1
+            best, top = by[b["best_overall"]], by[b["highest_profit"]]
+            assert not ex["same_crop"] and ex["reasons"]
+            assert best["recommendation_score"] > top["recommendation_score"]
+            gap = top["economics"]["net_profit"] - best["economics"]["net_profit"]
+            assert ex["profit_gap"] == gap and gap > 0
+            assert ex["reasons"] == sorted(ex["reasons"], key=lambda r: -r["points"])
+        elif b["best_overall"]:
+            assert ex["same_crop"] and ex["reasons"] == [] and ex["profit_gap"] is None
+    assert seen >= 1, "no scenario had a most-profitable crop that is not the best overall"
+
+
+def test_same_crop_wins_both_when_profit_and_score_agree(client, user):
+    b = analyze(client, user, NAGPUR_PLAN)
+    assert b["best_overall"] == b["highest_profit"] == "Onion"
+    assert b["ranking_explanation"]["same_crop"]
+
+
+def test_losses_poor_fit_and_limited_forecasts_are_labelled(client, user):
+    b = analyze(client, user, ONION_LIKE)
+    by = {x["crop_name"]: x for x in b["results"]}
+    assert by["Tomato"]["status"]["key"] == "loss" and by["Tomato"]["economics"]["net_profit"] < 0
+    assert by["Potato"]["low_agronomic_suitability"] and by["Potato"]["forecast_reliability"] == "limited"
+    assert not by["Potato"]["recommended"]
+    # limited forecasts are pulled towards the neutral 50; tested ones are used as they are
+    for x in b["results"]:
+        if x["forecast_reliability"] == "tested" or not x["profit_score"]:
+            assert x["profit_score_used"] == x["profit_score"]
+        else:
+            assert abs(x["profit_score_used"] - (50 + 0.75 * (x["profit_score"] - 50))) < 0.06
+        assert x["forecast_reliable"] == (x["forecast_reliability"] == "tested") or x["market"]["beyond_model_horizon"]
+
+
+def test_net_profit_and_score_parts_are_consistent_for_other_plans(client, user):
+    """Changing planting date, selling month or field size keeps every figure internally consistent."""
+    small = analyze(client, user, {**ONION_LIKE, "area_acres": 1})
+    big = analyze(client, user, {**ONION_LIKE, "area_acres": 4})
+    for s, g in zip(sorted(small["results"], key=lambda x: x["crop_name"]),
+                    sorted(big["results"], key=lambda x: x["crop_name"])):
+        assert abs(g["economics"]["net_profit"] - 4 * s["economics"]["net_profit"]) <= 8
+    for body in SCENARIOS:
+        for x in analyze(client, user, body)["results"]:
+            e, p = x["economics"], x["score_points"]
+            assert abs(e["net_profit"] - (e["gross_revenue"] - e["total_cost"])) <= 2
+            assert abs(sum(p.values()) - x["recommendation_score"]) <= 0.2
+    # selling a month earlier or later changes the plan the whole page reports
+    other = analyze(client, user, {**ONION_LIKE, "selling_month": 4})
+    assert other["selling_date"] == "2027-04" and other["ranking_explanation"]["best_overall"] == other["best_overall"]
+
+
+def test_displayed_roi_is_net_profit_over_the_displayed_total_cost(client, user):
+    """A farmer dividing the shown net profit by the shown costs must get the shown ROI."""
+    for body in SCENARIOS:
+        for x in analyze(client, user, body)["results"]:
+            e = x["economics"]
+            if e["total_cost"]:
+                assert abs(e["roi_pct"] - 100 * e["net_profit"] / e["total_cost"]) < 0.3

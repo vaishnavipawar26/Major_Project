@@ -16,7 +16,7 @@ import { errorMessage } from "../services/api";
 import { historyService } from "../services/historyService";
 import { priceService } from "../services/priceService";
 import { ADVICE_STYLE, STATE_MARKET } from "../utils/constants";
-import { addDays, cropName, dayRanges, fmtDate, pct, rupees, signedRupees } from "../utils/format";
+import { addDays, cropName, dayRanges, fmtDate, pct, rupees, signedRupees, priceSourceKey } from "../utils/format";
 import { LAST_PRICE_REQUEST_KEY } from "./PricePrediction";
 
 const ALGORITHMS = { random_forest: "Random Forest", xgboost: "XGBoost" };
@@ -421,6 +421,8 @@ export default function PriceResult() {
 
   const { series, target: t, advice } = forecast;
   const validated = t.beats_baseline;
+  const sourceKey = priceSourceKey(forecast.source);
+  const estimated = forecast.source?.method === "historical_baseline";
   const marketName = series.market === STATE_MARKET ? tr("price.form.allMarkets") : series.market;
 
   return (
@@ -446,9 +448,10 @@ export default function PriceResult() {
           <div className="stat-sub">{tr("price.result.likelyRange", { low: rupees(t.lower), high: rupees(t.upper) })}</div>
           <div className="hero-meta">
             <div><span className="stat-label">{tr("price.result.startingPrice")}</span><strong>{rupees(forecast.current_price)}</strong>
-              <span className="muted small">{tr(forecast.projection ? "price.result.projectedOn" : "price.result.reportedOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
+              <span className="muted small">{tr(estimated ? "price.result.estimatedOn" : forecast.projection ? "price.result.projectedOn" : "price.result.reportedOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
             <div><span className="stat-label">{tr("price.result.daysAhead")}</span><strong>{t.horizon_days}</strong></div>
           </div>
+          {sourceKey && <p className="price-source">{tr(sourceKey)}</p>}
           <span className={`reliability ${validated ? "ok" : "weak"}`}>
             {validated
               ? <><CircleCheck size={15} aria-hidden="true" />{tr("price.result.validated")}</>

@@ -151,6 +151,31 @@ class RangeFit(BaseModel):
     weather: RangeFitPart
 
 
+class CropStatus(BaseModel):
+    key: str
+    tone: str
+
+
+class ScorePoints(BaseModel):
+    agronomic: float
+    timing: float
+    profit: float
+
+
+class RankingReason(BaseModel):
+    code: str
+    points: float
+    params: dict[str, float | int]
+
+
+class RankingExplanation(BaseModel):
+    best_overall: str | None
+    highest_profit: str | None
+    same_crop: bool
+    profit_gap: float | None
+    reasons: list[RankingReason]
+
+
 class CropResult(BaseModel):
     rank: int
     crop_name: str
@@ -168,6 +193,10 @@ class CropResult(BaseModel):
     agronomic_score: float
     timing_score: float
     profit_score: float
+    profit_score_used: float
+    forecast_reliability: str
+    score_points: ScorePoints
+    status: CropStatus
     seasonal_score: float
     price_score: float | None
     summary: str
@@ -195,6 +224,7 @@ class CropAnalysis(BaseModel):
     generated_at: str
     best_overall: str | None
     highest_profit: str | None
+    ranking_explanation: RankingExplanation
     season_used: str
     results: list[CropResult]
     weights: dict[str, float]

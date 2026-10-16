@@ -1,7 +1,6 @@
 // English text of the crop result page (keys "cr.*") plus the timeline strings that page changed.
 // Spread into en.js; Marathi and Hindi follow in cropResult.mr.js / cropResult.hi.js.
 export default {
-  "cr.subtitle": "Which crop may be worth growing, what it may sell for in your chosen month, and what profit to expect.",
 
   // ---- 1. plan summary
   "cr.plan.title": "Your crop plan",
@@ -79,7 +78,6 @@ export default {
   "cr.picker.best": "Best",
 
   // ---- 4. why
-  "cr.why.title": "Why this crop fits your plan",
   "cr.group.market": "Market price and profit",
   "cr.group.soil": "Soil suitability",
   "cr.group.weather": "Weather suitability",
@@ -191,8 +189,35 @@ export default {
   "cr.plan.sell": "Sell:",
   "cr.plan.growing": "{crop} growing period: about {months} months",
   "cr.plan.generatedOn": "Analysis date: {date}",
-  "cr.best.score": "Suitability score",
-  "cr.best.scoreSub": "Compares crops for your plan",
+  "cr.best.score": "Overall score",
+  "cr.best.scoreSub": "Soil and weather fit, timing and profit combined",
+  "cr.best.rank": "Overall rank",
+  "cr.best.profitRank": "Profit rank",
+  "cr.best.rankValue": "#{rank} of {total}",
+  "cr.best.profitRankValue": "#{rank} for profit",
+  "cr.best.same": "{crop} is both the best overall choice and the highest estimated profit.",
+  "cr.why.titleSame": "Why {best} ranks first",
+  "cr.why.title": "Why {best} ranks first",
+  "cr.why.introCheaper": "{top} may earn you {gap} more in total profit. However, {best} costs less to grow and gives you more profit for every ₹100 spent.",
+  "cr.why.introReturn": "{top} may earn you {gap} more in total profit. However, {best} gives you more profit for every ₹100 spent.",
+  "cr.why.introOther": "{top} may earn you {gap} more in total profit. However, {best} scores higher overall on the factors below.",
+  "cr.why.totalTitle": "Total estimated profit",
+  "cr.why.totalNote": "{top} earns {gap} more overall.",
+  "cr.why.costs": "Estimated costs: {best} {bestCost}, {top} {topCost}.",
+  "cr.why.roiTitle": "Profit for every ₹100 spent",
+  "cr.why.about": "about {v}",
+  "cr.why.roiNote": "{best} gives about {diff} more profit per ₹100 invested.",
+  "cr.why.fit": "{best} fits your soil and weather better ({best_in} of {total} values in its usual range, against {top_in} for {top}).",
+  "cr.why.timing": "{best} fits your planting and selling dates better.",
+  "cr.why.forecast": "The price forecast for {best} is more reliable, so its profit is less uncertain than {top}.",
+  "cr.why.choose": "Choose {best} if you want a better return on your investment. Choose {top} if your priority is the highest estimated total profit. Actual results may differ.",
+  "cr.why.defNet": "Net profit: estimated sales revenue minus estimated cultivation costs.",
+  "cr.why.defRoi": "Return on investment (ROI): estimated net profit compared with the money spent, as a percentage. A higher ROI does not always mean a higher total profit.",
+  "cr.why.defRank": "Overall rank: how a crop compares with the other options. The score is {fit}% soil and weather fit, {timing}% planting and selling timing and {profit}% profit. The profit part is based on ROI and counts for less when the price forecast is uncertain.",
+  "cr.why.defsTitle": "What these words mean",
+  "cr.table.rank": "Overall rank",
+  "cr.table.profitRank": "Profit rank",
+  "cr.table.sortNote": "Table sorted by overall rank (soil and weather fit, timing and profit). The chart above is sorted by estimated profit, so the order can differ.",
   "cr.fin.limitedWarning": "Forecast has limited reliability. Use as a rough guide and check current mandi prices.",
   "cr.fin.beyondWarning": "Your selling month is further ahead than the price model was built to forecast. Use this estimate as a rough guide and check current mandi prices.",
   "cr.fin.dataNote": "Recorded mandi prices end in {dataEnd}. Later months on the graph are model estimates, not recorded prices.",

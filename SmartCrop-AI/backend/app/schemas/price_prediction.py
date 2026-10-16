@@ -34,8 +34,8 @@ class ForecastPoint(BaseModel):
     direction: Direction
     actual_price: float | None = None
     beats_baseline: bool
-    model_mae: float
-    baseline_mae: float
+    model_mae: float | None = None  # None for a historical estimate (no model involved)
+    baseline_mae: float | None = None
 
 
 class PeakInfo(BaseModel):
@@ -129,6 +129,31 @@ class ProjectionInfo(BaseModel):
     price_level_factor: float
 
 
+class SourceInfo(BaseModel):
+    """Which data and method produced the forecast. ``fallback`` is true whenever it is not
+    "the selected market, recent reports, trained model"."""
+    kind: Literal["market", "state_median", "other_market"]
+    method: Literal["trained_model", "historical_baseline"]
+    requested_market: str
+    requested_variety: str
+    used_market: str
+    used_variety: str
+    data_age_days: int
+    fallback: bool
+    observations: int
+
+
+class DatesInfo(BaseModel):
+    """The dates of a forecast, kept apart. ``reference_date`` is the seasonal cut-off inside the
+    dataset (the forecast start moved back whole years); nothing after it is used."""
+    forecast_start: dt.date
+    target_date: dt.date
+    reference_date: dt.date
+    origin_observation_date: dt.date
+    latest_data_date: dt.date
+    years_shifted: int
+
+
 class PriceForecastResponse(BaseModel):
     series: SeriesInfo
     input_date: dt.date
@@ -148,6 +173,8 @@ class PriceForecastResponse(BaseModel):
     actual_after_origin: list[PricePoint]
     model: ModelInfo
     projection: ProjectionInfo | None = None
+    source: SourceInfo
+    dates: DatesInfo
     disclaimer: str
 
 
@@ -229,6 +256,7 @@ class PriceOptionsResponse(BaseModel):
     max_horizon_days: int
     commodities: list[CommodityOption]
     unsupported_series: int
+    min_listed_days: int
 
 
 class MonthlyForecastRequest(BaseModel):

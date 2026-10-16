@@ -16,7 +16,16 @@ Timing     T = 50 % planting-window fit (100 in a documented planting month, 50 
 Profit     P = 50 + 50 tanh(ROI) from the profitability engine, using the XGBoost monthly
                price forecast for the selling month in the user's city (0 if infeasible).
 
-Overall    = 0.40 A + 0.20 T + 0.40 P
+Overall    = 0.40 A + 0.20 T + 0.40 P'
+
+where P' is the profit score after the forecast-reliability adjustment: when the price forecast did
+not beat the simple "latest price + inflation" baseline in testing (or reaches beyond the model's
+horizon), P is pulled towards the neutral 50 by RELIABILITY_SHRINK (P' = 50 + 0.75 (P - 50)), so an
+uncertain price can neither lift nor sink a crop as much as a tested one. The unadjusted P is still
+reported as profit_score. P is based on ROI (net profit / total cost), so a crop with the largest
+rupee profit can score below a cheaper crop with a better return per rupee spent; that is why
+"highest profit" and "best overall" can differ and why the API explains the difference
+(ranking_explanation).
 
 Why these weights: there is no labelled ground truth for "best crop to plant", so weights
 cannot be learned. Suitability and profit share most of the weight equally — a crop that
@@ -58,6 +67,8 @@ from app.ml.explainability.crop_explainer import explain_crop
 from app.ml.price_prediction.monthly_forecaster import MonthlyForecastError
 
 WEIGHTS = {"agronomic": 0.40, "timing": 0.20, "profit": 0.40}
+RELIABILITY_SHRINK = 0.75  # weight kept on (P - 50) when the price forecast is limited
+MATERIAL_POINTS = 0.5  # weighted score difference below which a part is not named as a reason
 MIN_RANGE_FIT = 5  # of 7 soil and weather values
 TOP_N = 3
 
@@ -72,6 +83,60 @@ def range_fit(inputs: dict, ranges: dict) -> dict:
         items = {f: bool(ranges[f]["p05"] <= inputs[f] <= ranges[f]["p95"]) for f in features}
         return {"within": sum(items.values()), "total": len(items), "items": items}
     return {"soil": one(SOIL_FEATURES), "weather": one(WEATHER_FEATURES)}
+
+
+def forecast_reliability(market: dict | None) -> str:
+    """tested = beat the simple baseline in testing; limited = did not, or beyond the model horizon."""
+    f = market["forecast"] if market else None
+    if not f:
+        return "unavailable"
+    return "limited" if f.get("beyond_model_horizon") or not f["reliability"]["beats_baseline"] else "tested"
+
+
+def status_of(r: dict, best_overall: str | None) -> dict:
+    """The single label of a crop in the comparison table. Order matters: the first match wins."""
+    if not r["feasible"]:
+        return {"key": "notFeasible", "tone": "bad"}
+    if r["crop_name"] == best_overall:
+        return {"key": "best", "tone": "good"}
+    if r["recommended"]:
+        return {"key": "recommended", "tone": "good"}
+    if not r["profitable"]:
+        return {"key": "loss", "tone": "bad"}
+    if r["low_agronomic_suitability"]:
+        return {"key": "poorFit", "tone": "warn"}
+    return {"key": "notTop", "tone": "neutral"}
+
+
+def ranking_explanation(results: list[dict], best_overall: str | None, highest_profit: str | None) -> dict:
+    """Why the best overall crop is (or is not) the one with the highest profit, from the real scores.
+    Reasons are codes + numbers so the page can phrase them in the farmer's language."""
+    by = {r["crop_name"]: r for r in results}
+    out = {"best_overall": best_overall, "highest_profit": highest_profit,
+           "same_crop": best_overall is not None and best_overall == highest_profit, "reasons": [],
+           "profit_gap": None}
+    if best_overall is None or highest_profit is None or out["same_crop"]:
+        return out
+    b, h = by[best_overall], by[highest_profit]
+    out["profit_gap"] = round(h["economics"]["net_profit"] - b["economics"]["net_profit"], 0)
+    pts = {k: WEIGHTS[k] * (b[s] - h[s]) for k, s in
+           (("agronomic", "agronomic_score"), ("timing", "timing_score"), ("profit", "profit_score_used"))}
+    n = lambda r: r["range_fit"]["soil"]["within"] + r["range_fit"]["weather"]["within"]
+    total = b["range_fit"]["soil"]["total"] + b["range_fit"]["weather"]["total"]
+    reasons = out["reasons"]
+    if pts["agronomic"] > MATERIAL_POINTS:
+        reasons.append({"code": "fit", "points": round(pts["agronomic"], 1),
+                        "params": {"best_in": n(b), "top_in": n(h), "total": total}})
+    if pts["timing"] > MATERIAL_POINTS:
+        reasons.append({"code": "timing", "points": round(pts["timing"], 1), "params": {}})
+    if pts["profit"] > MATERIAL_POINTS:
+        code = ("forecast" if b["forecast_reliability"] == "tested" and h["forecast_reliability"] != "tested"
+                else "returns")
+        reasons.append({"code": code, "points": round(pts["profit"], 1),
+                        "params": {"best_roi": round(b["economics"]["roi_pct"]),
+                                   "top_roi": round(h["economics"]["roi_pct"])}})
+    reasons.sort(key=lambda x: -x["points"])
+    return out
 
 
 def planting_year_for(planting_month: int, today: date) -> int:
@@ -184,8 +249,11 @@ class CropRecommender:
                           "error": str(err)}
             econ = market["economics"]
             p_score = econ["profit_score"] if econ else 0.0
+            reliability = forecast_reliability(market)
+            p_used = (50 + RELIABILITY_SHRINK * (p_score - 50)
+                      if econ and p_score and reliability == "limited" else p_score)
             overall = (WEIGHTS["agronomic"] * a + WEIGHTS["timing"] * t
-                       + WEIGHTS["profit"] * p_score)
+                       + WEIGHTS["profit"] * p_used)
             feasible = econ["feasible"] if econ else status in ("fresh", "stored")
             profitable = bool(econ and econ["net_profit"] > 0)
             viable = n_in >= MIN_RANGE_FIT
@@ -194,7 +262,8 @@ class CropRecommender:
                 "crop_name": crop, "probability": float(proba[i]),
                 "model_match_score": round(float(proba[i] * 100), 2),
                 "agronomic_score": round(a, 2), "timing_score": round(t, 1),
-                "profit_score": p_score, "recommendation_score": round(overall, 2),
+                "profit_score": p_score, "profit_score_used": round(p_used, 1),
+                "forecast_reliability": reliability, "recommendation_score": round(overall, 2),
                 "seasonal_score": float(100 if planting_month in cal.planting_months else 0),
                 "price_score": market["forecast"]["price_score"] if market["forecast"] else None,
                 "eligible": eligible, "profitable": profitable,
@@ -220,15 +289,22 @@ class CropRecommender:
             r["recommended"] = r["eligible"] and rank <= TOP_N
         priced = sorted((r for r in results if r["feasible"] and r["economics"]),
                         key=lambda r: r["economics"]["net_profit"], reverse=True)
+        for r in results:
+            r["score_points"] = {"agronomic": round(WEIGHTS["agronomic"] * r["agronomic_score"], 1),
+                                 "timing": round(WEIGHTS["timing"] * r["timing_score"], 1),
+                                 "profit": round(WEIGHTS["profit"] * r["profit_score_used"], 1)}
         for k, r in enumerate(priced, start=1):
             r["profit_rank"] = k
         for r in results:
             r.setdefault("profit_rank", None)
         best_overall = next((r["crop_name"] for r in results if r["recommended"]), None)
         highest_profit = priced[0]["crop_name"] if priced and priced[0]["economics"]["net_profit"] > 0 else None
+        for r in results:
+            r["status"] = status_of(r, best_overall)
         return {
             "generated_at": today.isoformat(),
             "best_overall": best_overall, "highest_profit": highest_profit,
+            "ranking_explanation": ranking_explanation(results, best_overall, highest_profit),
             "state": STATE, "city": city, "planting_month": planting_month,
             "selling_month": selling_month, "planting_date": month_label(py, planting_month),
             "selling_date": month_label(sy, sm), "growing_months": offset,

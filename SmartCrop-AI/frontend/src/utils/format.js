@@ -81,3 +81,12 @@ export const dayRanges = (days) => {
   });
   return out.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(", ");
 };
+
+/** Small source note for a price forecast, or null when it is the usual case (this market, recent reports, trained model). */
+export function priceSourceKey(source) {
+  if (!source || !source.fallback) return null;
+  if (source.method === "historical_baseline") return "price.src.estimate";
+  if (source.kind === "state_median") return "price.src.state";
+  if (source.kind === "other_market") return "price.src.other";
+  return "price.src.market";
+}

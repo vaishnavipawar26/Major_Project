@@ -167,7 +167,7 @@ export default function PricePrediction() {
       </form>
       {opts.unsupported_series > 0 && (
         <p className="muted small" style={{ marginTop: "0.75rem" }}>
-          {t("price.form.hiddenSeries", { n: opts.unsupported_series })}
+          {t("price.form.hiddenSeries", { n: opts.unsupported_series, days: opts.min_listed_days })}
         </p>
       )}
     </>

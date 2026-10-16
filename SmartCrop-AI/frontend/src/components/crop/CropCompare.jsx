@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CircleCheck, CircleHelp, CircleX, IndianRupee, TriangleAlert } from "lucide-react";
-import ChartIntro, { ChartSummary } from "../ChartIntro";
+import ChartIntro from "../ChartIntro";
 import CropArt from "../CropArt";
 import ProfitComparisonChart from "../charts/ProfitComparisonChart";
+import RankingCompare from "./RankingCompare";
 import { useT } from "../../i18n/LanguageContext";
 import { compareRows } from "../../utils/cropPlan";
 import { compactRupees, monthLabel, rupees, signedRupees } from "../../utils/format";
@@ -23,11 +24,9 @@ function Fit({ part }) {
 /** Section 3 - every crop side by side: clickable profit chart, then a table with the exact numbers. */
 export default function CropCompare({ response, selected, onSelect }) {
   const t = useT();
+  const [breakdown, setBreakdown] = useState(false);
   const rows = useMemo(() => compareRows(response.results, response, t), [response, t]);
   const month = monthLabel(response.selling_date);
-  const priced = rows.filter((r) => r.feasible && r.profit != null);
-  const losses = priced.filter((r) => r.profit < 0).length;
-  const top = rows.find((r) => r.isTop);
 
   return (
     <section className="card compare-section" aria-labelledby="compare-title">
@@ -35,22 +34,26 @@ export default function CropCompare({ response, selected, onSelect }) {
       <ChartIntro icon={IndianRupee} title={t("cr.compare.chartTitle", { month })}>
         {t("cr.compare.chartDesc", { n: rows.length, area: response.area_acres })}
       </ChartIntro>
-      <ProfitComparisonChart rows={rows} selected={selected} onSelect={onSelect} />
-      <ChartSummary>
-        {top ? t("cr.compare.summaryTop", { crop: top.name, profit: signedRupees(top.profit) }) : t("cr.compare.summaryNone")}{" "}
-        {priced.length > 0 && (losses ? t("cr.compare.summaryLosses", { n: losses, total: priced.length }) : t("cr.compare.summaryNoLoss"))}
-      </ChartSummary>
+      <ProfitComparisonChart rows={rows} selected={selected} onSelect={onSelect} breakdown={breakdown} />
+
+      <RankingCompare response={response} />
+
+      <button type="button" className="btn-link small mt-3" onClick={() => setBreakdown((s) => !s)} aria-pressed={breakdown}>
+        {breakdown ? t("cr.chart.hideBreakdown") : t("cr.chart.showBreakdown")}
+      </button>
 
       <div className="table-wrap mt-3">
         <table className="compare-table">
           <caption className="sr-only">{t("cr.table.caption")}</caption>
           <thead>
             <tr>
+              <th scope="col" className="num">{t("cr.table.rank")}</th>
               <th scope="col">{t("table.crop")}</th>
               <th scope="col" className="num">{t("cr.table.price", { month })}</th>
               <th scope="col" className="num">{t("cr.table.costs")}</th>
               <th scope="col" className="num">{t("cr.table.profit")}</th>
               <th scope="col" className="num">{t("cr.table.roi")}</th>
+              <th scope="col" className="num">{t("cr.table.profitRank")}</th>
               <th scope="col">{t("cr.table.soil")}</th>
               <th scope="col">{t("cr.table.weather")}</th>
               <th scope="col">{t("cr.table.timing")}</th>
@@ -64,6 +67,7 @@ export default function CropCompare({ response, selected, onSelect }) {
               const priceOk = r.feasible && r.price != null;
               return (
                 <tr key={r.crop} className={r.crop === selected ? "is-selected" : ""}>
+                  <td className="num">#{r.rank}</td>
                   <th scope="row">
                     <button type="button" className="crop-cell" onClick={() => onSelect(r.crop)} aria-pressed={r.crop === selected}>
                       <CropArt crop={r.crop} size={30} decorative />{r.name}
@@ -73,6 +77,7 @@ export default function CropCompare({ response, selected, onSelect }) {
                   <td className="num">{priceOk ? compactRupees(r.cost) : "—"}</td>
                   <td className={`num font-bold ${priceOk && r.profit < 0 ? "text-neg" : ""}`}>{priceOk ? signedRupees(r.profit) : "—"}</td>
                   <td className="num">{priceOk ? `${r.roi > 0 ? "+" : ""}${Math.round(r.roi)}%` : "—"}</td>
+                  <td className="num">{priceOk && r.profitRank ? `#${r.profitRank}` : "—"}</td>
                   <td><Fit part={r.soil} /></td>
                   <td><Fit part={r.weather} /></td>
                   <td>{t(`cr.timing.${r.timing}`)}</td>
@@ -84,7 +89,7 @@ export default function CropCompare({ response, selected, onSelect }) {
           </tbody>
         </table>
       </div>
-      <p className="muted small !mb-0 mt-2">{t("cr.table.note")}</p>
+      <p className="muted small !mb-0 mt-2">{t("cr.table.note")} {t("cr.table.sortNote")}</p>
     </section>
   );
 }

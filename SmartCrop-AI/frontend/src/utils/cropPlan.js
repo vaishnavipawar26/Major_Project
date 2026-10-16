@@ -20,12 +20,7 @@ export const harvestSpan = (tl) => (tl.harvest_start === tl.harvest_end
   ? monthLabel(tl.harvest_start) : `${monthLabel(tl.harvest_start)} – ${monthLabel(tl.harvest_end)}`);
 
 /** Is the price forecast for this crop trustworthy? tested = beat the simple baseline in testing. */
-export function reliabilityOf(r) {
-  const m = r.market;
-  if (!m) return "unavailable";
-  if (m.beyond_model_horizon || !m.reliability.beats_baseline) return "limited";
-  return "tested";
-}
+export const reliabilityOf = (r) => r.forecast_reliability;
 
 /**
  * Best month to sell, read from the API's own selling options. Those options already cover only the
@@ -55,14 +50,44 @@ export function bestSellTime(r, response) {
 /** "2027-11" -> "November 2027" */
 export const monthYear = (ym) => `${monthLong(monthNo(ym))} ${ym.split("-")[0]}`;
 
-/** Recommendation status of one crop, used for badges in the comparison table. */
-export function statusOf(r, response) {
-  if (!r.feasible) return { key: "notFeasible", tone: "bad" };
-  if (r.crop_name === response.best_overall) return { key: "best", tone: "good" };
-  if (r.recommended) return { key: "recommended", tone: "good" };
-  if (!r.profitable) return { key: "loss", tone: "bad" };
-  if (r.low_agronomic_suitability) return { key: "poorFit", tone: "warn" };
-  return { key: "notTop", tone: "neutral" };
+/** ROI in % = net profit / estimated costs x 100, from the API's own unrounded-to-percent figures; null if unusable. */
+export const roiOf = (e) => {
+  if (!e || !Number.isFinite(e.net_profit) || !Number.isFinite(e.total_cost) || e.total_cost <= 0) return null;
+  return (e.net_profit / e.total_cost) * 100;
+};
+
+/**
+ * Data for "Why X ranks first": the best overall crop set against the crop with the highest total profit,
+ * using only the API's own figures. Total profit and profit per Rs 100 spent (ROI) are separate
+ * comparisons. The ROI comparison is shown only when both ROI values are valid and the best crop's
+ * rounded return is really higher; the "choose" advice only when the profit leader is itself a sound
+ * option (feasible, profitable, good soil/weather fit). Returns null when one crop wins both or none is recommended.
+ */
+export function rankingCompare(response) {
+  // both winners are read from the ranked results themselves and compared by crop id (crop_name)
+  const results = response.results || [];
+  const best = results.find((r) => r.rank === 1 && r.recommended);
+  const top = results.find((r) => r.profit_rank === 1);
+  if (!best || !top || best.crop_name === top.crop_name) return null;
+  if (!Number.isFinite(best.economics?.net_profit) || !Number.isFinite(top.economics?.net_profit)) return null;
+  const ex = response.ranking_explanation;
+  const reasonsOk = ex && ex.best_overall === best.crop_name && ex.highest_profit === top.crop_name;
+  const be = best.economics, te = top.economics;
+  const gap = te.net_profit - be.net_profit;
+  if (!(gap > 0)) return null; // the profit leader must really earn more
+  const rb = roiOf(be), rt = roiOf(te);
+  const roi = rb != null && rt != null ? { best: Math.round(rb), top: Math.round(rt) } : null;
+  const roiShown = !!roi && roi.best - roi.top >= 1 && gap > 0;
+  return {
+    best, top, gap, roiShown,
+    roi: roiShown ? roi : null,
+    roiDiff: roiShown ? roi.best - roi.top : null,
+    cheaper: be.total_cost < te.total_cost,
+    // fit, timing and forecast reasons come from the score; "returns" is what the ROI panel itself shows
+    reasons: (reasonsOk ? ex.reasons : []).filter((x) => x.code !== "returns"),
+    canChoose: roiShown && top.eligible && !top.low_agronomic_suitability,
+    weights: response.weights,
+  };
 }
 
 /** Rows for the all-crops chart and table: every number comes straight from the API. */
@@ -75,7 +100,7 @@ export function compareRows(results, response, t) {
       profit: e?.net_profit ?? null, roi: e?.roi_pct ?? null,
       soil: r.range_fit.soil, weather: r.range_fit.weather,
       timing: e?.status ?? r.timeline.status, feasible: r.feasible,
-      reliability: reliabilityOf(r), status: statusOf(r, response),
+      reliability: reliabilityOf(r), status: r.status, rank: r.rank, profitRank: r.profit_rank,
       isBest: r.crop_name === response.best_overall, isTop: r.crop_name === response.highest_profit,
     };
   });

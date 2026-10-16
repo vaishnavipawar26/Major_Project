@@ -94,7 +94,6 @@ export default function CropResult() {
       <div className="page-header">
         <div>
           <h1>{tr("crop.result.title")}</h1>
-          <p>{tr("cr.subtitle")}</p>
         </div>
         {backLinks}
       </div>
@@ -104,7 +103,7 @@ export default function CropResult() {
       )}
 
       <div className="stack">
-        <PlanSummary response={response} crop={best || current} fromHistory={data.fromHistory} savedAt={data.createdAt} />
+        <PlanSummary response={response} crop={best || current} />
         <BestCropCard response={response} onSelect={setSelected} />
         <CropCompare response={response} selected={current.crop_name} onSelect={setSelected} />
         <CropPicker results={results} selected={current.crop_name} bestName={response.best_overall} onSelect={setSelected} />

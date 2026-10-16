@@ -268,7 +268,7 @@ const en = {
   "price.form.projectedNote": "Mandi prices in this app are available up to {date}. Forecasts from today use the price pattern from the same time last year, adjusted for about {inflation}% inflation per year.",
   "price.form.submit": "Show expected price",
   "price.form.submitting": "Analyzing market trends…",
-  "price.form.hiddenSeries": "{n} market price series are hidden because they have fewer than 180 days of price reports.",
+  "price.form.hiddenSeries": "{n} market price series are not listed because they have fewer than {days} days of price reports.",
 
   // ---- price result ----
   "price.result.title": "Expected market price",
@@ -284,6 +284,11 @@ const en = {
   "price.result.expectedOn": "Expected market price on {date}",
   "price.result.likelyRange": "Likely range: {low} – {high}",
   "price.result.startingPrice": "Starting price",
+  "price.src.market": "Based on historical prices from this market",
+  "price.src.state": "Based on the Maharashtra state median",
+  "price.src.other": "Based on historical prices from another market",
+  "price.src.estimate": "Indicative historical estimate",
+  "price.result.estimatedOn": "estimated for {date}",
   "price.result.projectedOn": "projected for {date}",
   "price.result.reportedOn": "reported on {date}",
   "price.result.daysAhead": "Days ahead",
