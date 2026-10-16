@@ -1,0 +1,17 @@
+{
+  "test_set": "original rows only",
+  "before": {
+    "accuracy": 0.8505494505494505,
+    "precision_macro": 0.8514024159255289,
+    "recall_macro": 0.8505494505494505,
+    "f1_macro": 0.8507130967276167,
+    "n_test": 910
+  },
+  "after": {
+    "accuracy": 0.8505494505494505,
+    "precision_macro": 0.8500972676845381,
+    "recall_macro": 0.8505494505494505,
+    "f1_macro": 0.8500388620380043,
+    "n_test": 910
+  }
+}

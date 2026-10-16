@@ -1,40 +1,52 @@
-"""Growing-period climate for a city, from Open-Meteo (free, no API key).
+"""Growing-period weather for a city, from the Open-Meteo historical archive.
 
-Coordinates come from dataset/crop_recommendation/city_coordinates.csv when the city is listed there (no
-geocoding at all). Other cities are geocoded with the Open-Meteo Geocoding API, which still knows renamed
-cities by their old names, so CITY_ALIASES maps new names to those. Daily temperature, humidity and rainfall of the
-last 3 full calendar years come from the Open-Meteo Historical Archive API. For the months between
-planting and selling (both included) the service returns the mean temperature, the mean humidity and the
-rainfall per month (daily rainfall summed per month, then averaged over months and years) - the same
-three quantities the crop model takes as inputs.
+Inputs are a city, a planting month and a selling month. The window runs from the first day of the planting
+month to the last day of the selling month; when the selling month is earlier than the planting month the
+window crosses the year end (Oct to Feb ends in the next year), and equal months give a 1-month window.
 
-Results are cached in memory for 24 hours. No key is needed, so nothing secret is read or returned.
+For the last 3 COMPLETED seasons of that window (a window that ended less than 7 days ago is skipped because
+archive data lags) the service takes, per season: the mean daily temperature, the mean hourly relative
+humidity and the total rainfall divided by the number of months in the window. The three seasons are then
+averaged: {"temperature": °C, "humidity": %, "rainfall": mm per month}. Rainfall is per month, the same unit
+the crop model was trained on.
+
+Coordinates come from dataset/crop_recommendation/city_coordinates.csv (the cities of the City dropdown);
+any other city is geocoded with the Open-Meteo Geocoding API. If OPEN_METEO_API_KEY is set (optional,
+commercial use) the customer archive endpoint is used with the key; the key is only sent to Open-Meteo and
+is never logged or returned. Successful results are cached in memory per (city, months, day).
 """
 from __future__ import annotations
 
+import calendar
 import logging
-import time
-from datetime import date
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date, timedelta
 from statistics import fmean
 
 import httpx
 
-from app.ml.common.reference import city_coordinates
+from app.config.settings import get_settings
+from app.ml.common.reference import STATE, city_coordinates
 
 log = logging.getLogger("smartcrop.weather")
 
 GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
-ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
-SOURCE = "Open-Meteo"
-YEARS = 3
-TIMEOUT_SECONDS = 8.0
-CACHE_TTL_SECONDS = 24 * 3600
+FREE_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+PAID_ARCHIVE_URL = "https://customer-archive-api.open-meteo.com/v1/archive"
+SEASONS = 3                 # completed seasons averaged
+MAX_LOOKBACK_YEARS = 8      # how far back to look for those seasons
+LAG_DAYS = 7                # a window that ended less than this many days ago is not complete in the archive
+TIMEOUT_SECONDS = 20.0
+UNAVAILABLE = "Weather data unavailable"
 
-_cache: dict[tuple, tuple[float, dict]] = {}
+# city (lower case) -> (latitude, longitude), built from the cities of the City dropdown
+CITY_COORDS: dict[str, tuple[float, float]] = {c: ll for (_, c), ll in city_coordinates().items()}
+
+_cache: dict[tuple, dict] = {}
 
 
 class WeatherError(Exception):
-    """A problem the farmer can understand; `status_code` is the HTTP status the API should answer with."""
+    """`status_code` is the HTTP status the API answers with; `message` is safe to show to the user."""
 
     def __init__(self, status_code: int, message: str):
         super().__init__(message)
@@ -42,26 +54,50 @@ class WeatherError(Exception):
         self.message = message
 
 
-def growing_months(plant_month: int, sell_month: int) -> list[int]:
-    """Calendar months from planting to selling, both included (wraps over the new year, at most 12)."""
-    n = ((sell_month - plant_month) % 12) + 1
-    return [((plant_month - 1 + i) % 12) + 1 for i in range(n)]
+def months_in_window(planting_month: int, selling_month: int) -> int:
+    """Calendar months from planting to selling, both included (wraps over the year end, 1 to 12)."""
+    return ((selling_month - planting_month) % 12) + 1
+
+
+def season_windows(planting_month: int, selling_month: int, today: date,
+                   seasons: int = SEASONS) -> list[tuple[date, date]]:
+    """The last `seasons` completed (start, end) windows, newest first. A window that ends within
+    LAG_DAYS of today (or later) is skipped."""
+    out: list[tuple[date, date]] = []
+    for year in range(today.year, today.year - MAX_LOOKBACK_YEARS, -1):
+        end_year = year if selling_month >= planting_month else year + 1
+        start = date(year, planting_month, 1)
+        end = date(end_year, selling_month, calendar.monthrange(end_year, selling_month)[1])
+        if end > today - timedelta(days=LAG_DAYS):
+            continue
+        out.append((start, end))
+        if len(out) == seasons:
+            break
+    return out
+
+
+def _archive_url() -> str:
+    return PAID_ARCHIVE_URL if get_settings().OPEN_METEO_API_KEY else FREE_ARCHIVE_URL
 
 
 def _get_json(url: str, params: dict) -> dict:
+    """GET + decode. Errors become WeatherError without leaking the URL parameters (they may hold the key)."""
     try:
         r = httpx.get(url, params=params, timeout=TIMEOUT_SECONDS)
     except httpx.TimeoutException:
-        raise WeatherError(504, "The weather service took too long to answer. Please try again.")
-    except httpx.HTTPError:
-        raise WeatherError(502, "The weather service could not be reached. Please try again.")
+        log.warning("Open-Meteo request timed out (%s)", url)
+        raise WeatherError(502, UNAVAILABLE) from None
+    except httpx.HTTPError as e:
+        log.warning("Open-Meteo request failed (%s): %s", url, type(e).__name__)
+        raise WeatherError(502, UNAVAILABLE) from None
     if r.status_code != 200:
         log.warning("Open-Meteo %s answered %s", url, r.status_code)
-        raise WeatherError(502, "The weather service returned an error. Please try again later.")
+        raise WeatherError(502, UNAVAILABLE)
     try:
         return r.json()
     except ValueError:
-        raise WeatherError(502, "The weather service returned an unreadable answer.")
+        log.warning("Open-Meteo %s returned unreadable JSON", url)
+        raise WeatherError(502, UNAVAILABLE) from None
 
 
 # New (official) names -> the name Open-Meteo's geocoder (GeoNames) still uses. Lower-case keys.
@@ -77,81 +113,68 @@ CITY_ALIASES: dict[str, list[str]] = {
 }
 
 
-def _search(name: str, state: str) -> tuple[float, float, str] | None:
+def _search(name: str) -> tuple[float, float] | None:
     data = _get_json(GEOCODE_URL, {"name": name, "count": 10, "language": "en", "format": "json",
                                    "countryCode": "IN"})
     results = data.get("results") or []
     if not results:
         return None
-    in_state = [r for r in results if (r.get("admin1") or "").lower() == state.lower()]
+    in_state = [r for r in results if (r.get("admin1") or "").lower() == STATE.lower()]
     best = (in_state or results)[0]
-    return float(best["latitude"]), float(best["longitude"]), best.get("name") or name
+    return float(best["latitude"]), float(best["longitude"])
 
 
-def locate(city: str, state: str) -> tuple[float, float, str, str]:
-    """(latitude, longitude, name, source) with source = stored | alias | geocoder.
-
-    Stored coordinates win; otherwise the typed name is geocoded first, then each alias."""
-    stored = city_coordinates().get((state.lower(), city.lower()))
+def locate(city: str) -> tuple[float, float]:
+    """Stored coordinates win (no geocoding); otherwise the name is geocoded, then each alias."""
+    stored = CITY_COORDS.get(city.lower())
     if stored:
-        return stored[0], stored[1], city, "stored"
-    candidates = [(city, "geocoder")] + [(a, "alias") for a in CITY_ALIASES.get(city.lower(), [])]
-    for name, source in candidates:
-        found = _search(name, state)
+        return stored
+    for name in [city, *CITY_ALIASES.get(city.lower(), [])]:
+        found = _search(name)
         if found:
-            return found[0], found[1], found[2], source
+            return found
     raise WeatherError(404, f"Could not find '{city}'. Try the nearest bigger city or enter weather manually.")
 
 
-def _climate(lat: float, lon: float, months: list[int], today: date) -> tuple[float, float, float]:
-    first, last = today.year - YEARS, today.year - 1
-    data = _get_json(ARCHIVE_URL, {
-        "latitude": lat, "longitude": lon, "start_date": f"{first}-01-01", "end_date": f"{last}-12-31",
-        "daily": "temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum", "timezone": "auto"})
-    daily = data.get("daily") or {}
-    days = daily.get("time") or []
-    temp = daily.get("temperature_2m_mean") or []
-    hum = daily.get("relative_humidity_2m_mean") or []
-    rain = daily.get("precipitation_sum") or []
-    if not days or not (len(days) == len(temp) == len(hum) == len(rain)):
-        raise WeatherError(502, "The weather service returned no data for this place.")
-
-    temps, hums = [], []
-    rain_by_month: dict[str, float] = {}   # "YYYY-MM" -> total rain of that month
-    for d, t, h, p in zip(days, temp, hum, rain):
-        if int(d[5:7]) not in months:
-            continue
-        if t is not None:
-            temps.append(t)
-        if h is not None:
-            hums.append(h)
-        if p is not None:
-            rain_by_month[d[:7]] = rain_by_month.get(d[:7], 0.0) + p
-    if not temps or not hums or not rain_by_month:
-        raise WeatherError(502, "The weather service had no data for these months.")
-    return fmean(temps), fmean(hums), fmean(rain_by_month.values())
+def _season(lat: float, lon: float, start: date, end: date, months: int) -> tuple[float, float, float] | None:
+    """(mean temperature, mean humidity, rainfall per month) of one season, or None when it has no data."""
+    params = {"latitude": lat, "longitude": lon, "start_date": start.isoformat(), "end_date": end.isoformat(),
+              "daily": "temperature_2m_mean,precipitation_sum", "hourly": "relative_humidity_2m",
+              "timezone": "auto"}
+    key = get_settings().OPEN_METEO_API_KEY
+    if key:
+        params["apikey"] = key
+    data = _get_json(_archive_url(), params)
+    daily, hourly = data.get("daily") or {}, data.get("hourly") or {}
+    temps = [v for v in daily.get("temperature_2m_mean") or [] if v is not None]
+    rain = [v for v in daily.get("precipitation_sum") or [] if v is not None]
+    hums = [v for v in hourly.get("relative_humidity_2m") or [] if v is not None]
+    if not temps or not hums or not rain:
+        return None
+    return fmean(temps), fmean(hums), sum(rain) / months
 
 
-def growing_period_weather(city: str, state: str, plant_month: int, sell_month: int,
+def growing_period_weather(city: str, planting_month: int, selling_month: int,
                            today: date | None = None) -> dict:
-    """Average growing-period weather for `city`; cached for 24 hours."""
-    city, state = " ".join(city.split()), " ".join(state.split())
-    if not city:
-        raise WeatherError(422, "Please choose a city.")
-    months = growing_months(plant_month, sell_month)
-    lat, lon, name, source = locate(city, state)
-    log.info("Weather for %r: coordinates from %s (%.4f, %.4f)", city, source, lat, lon)
-    # only successful results are cached (errors raise before this point), so Retry really retries
-    key = (round(lat, 4), round(lon, 4), tuple(months))
-    hit = _cache.get(key)
-    if hit and time.monotonic() - hit[0] < CACHE_TTL_SECONDS:
-        return hit[1]
+    """{"temperature", "humidity", "rainfall"} averaged over the last 3 completed seasons."""
+    city = " ".join(city.split())
+    today = today or date.today()
+    key = (city.lower(), planting_month, selling_month, today.isoformat())
+    if key in _cache:                       # only successful results are cached, so Retry really retries
+        return _cache[key]
 
-    t, h, r = _climate(lat, lon, months, today or date.today())
-    out = {"city": name, "lat": round(lat, 4), "lon": round(lon, 4),
-           "avgTemperature": round(t, 2), "avgHumidity": round(h, 2), "avgRainfall": round(r, 2),
-           "source": SOURCE, "monthsUsed": months}
-    _cache[key] = (time.monotonic(), out)
+    lat, lon = locate(city)
+    months = months_in_window(planting_month, selling_month)
+    windows = season_windows(planting_month, selling_month, today)
+    with ThreadPoolExecutor(max_workers=SEASONS) as pool:
+        seasons = [s for s in pool.map(lambda w: _season(lat, lon, w[0], w[1], months), windows) if s]
+    if not seasons:
+        log.warning("No usable archive data for %r (%s to %s months)", city, planting_month, selling_month)
+        raise WeatherError(502, UNAVAILABLE)
+    out = {"temperature": round(fmean(s[0] for s in seasons), 2),
+           "humidity": round(fmean(s[1] for s in seasons), 2),
+           "rainfall": round(fmean(s[2] for s in seasons), 2)}
+    _cache[key] = out
     return out
 
 

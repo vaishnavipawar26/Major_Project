@@ -1,25 +1,16 @@
-import { CloudRain, Droplets, Info, MapPin, Pencil, RefreshCw, Thermometer, TriangleAlert } from "lucide-react";
+import { CloudRain, Droplets, MapPin, Pencil, RefreshCw, Thermometer, TriangleAlert } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
-import { cropName, monthShort } from "../../utils/format";
+import { cropName } from "../../utils/format";
 
 const ROWS = [
-  { key: "temperature", icon: Thermometer, tone: "warm", unit: "°C", from: "avgTemperature" },
-  { key: "humidity", icon: Droplets, tone: "cool", unit: "%", from: "avgHumidity" },
-  { key: "rainfall", icon: CloudRain, tone: "teal", unit: "mm / month", from: "avgRainfall" },
+  { key: "temperature", icon: Thermometer, tone: "warm", unit: "°C", from: "temperature" },
+  { key: "humidity", icon: Droplets, tone: "cool", unit: "%", from: "humidity" },
+  { key: "rainfall", icon: CloudRain, tone: "teal", unit: "mm / month", from: "rainfall" },
 ];
 
-/** "Jun–Oct" for the months the average covers (they may wrap over the new year). */
-const monthSpan = (months) => (months.length === 1 ? monthShort(months[0]) : `${monthShort(months[0])}–${monthShort(months[months.length - 1])}`);
-
-/** Union of the crops' usual ranges for one field: [lowest low, highest high]. */
-const usualRange = (range) => {
-  const spans = Object.values(range.perCrop);
-  return [Math.min(...spans.map((s) => s[0])), Math.max(...spans.map((s) => s[1]))];
-};
-
-/** Thin track for the usual range with a dot where the value sits (amber and pinned to the end when outside). */
+/** Thin track for the dataset range with a dot where the value sits (amber and pinned to the end when outside). */
 function TypicalBar({ value, range }) {
-  const [lo, hi] = usualRange(range);
+  const lo = range.min, hi = range.max;
   const span = hi - lo || 1;
   const raw = ((value - lo) / span) * 100;
   const outside = raw < 0 || raw > 100;
@@ -64,7 +55,7 @@ export default function WeatherCards({ weather, onRetry, onManual, city, ranges 
                     <span className={`wx-icon tone-${tone}`}><Icon size={20} aria-hidden="true" /></span>
                     <span className="wx-label">{t(`crop.form.field.${key}`)}</span>
                     <strong className="wx-value num">{data[from]}<small>{cropName(t, unit, "unit")}</small></strong>
-                    {ranges?.[key] && <TypicalBar value={data[from]} range={ranges[key]} />}
+                    {Number.isFinite(ranges?.[key]?.min) && <TypicalBar value={data[from]} range={ranges[key]} />}
                   </>
                 ) : (
                   <>
@@ -76,10 +67,6 @@ export default function WeatherCards({ weather, onRetry, onManual, city, ranges 
               </li>
             ))}
           </ul>
-          {state === "ok" && (
-            <p className="wx-caption"><Info size={14} aria-hidden="true" />
-              {t("crop.form.weatherCaption", { years: 3, city: cropName(t, city, "city"), months: monthSpan(data.monthsUsed), source: data.source })}</p>
-          )}
         </>
       )}
     </div>

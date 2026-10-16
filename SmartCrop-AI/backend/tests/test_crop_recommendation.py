@@ -54,7 +54,7 @@ def test_agronomic_score_is_the_share_of_values_in_range(client, user):
 
 def test_equally_suitable_crops_are_ranked_by_profit(client, user):
     """Onion and Brinjal both fit all 7 values; Brinjal earns far more, so it must rank first."""
-    b = post(client, user, ONION_LIKE, "analyze").json()
+    b = post(client, user, {**ONION_LIKE, "potassium": 80}, "analyze").json()
     by = {x["crop_name"]: x for x in b["results"]}
     assert by["Onion"]["agronomic_score"] == by["Brinjal"]["agronomic_score"] == 100
     if by["Brinjal"]["eligible"] and by["Brinjal"]["economics"]["net_profit"] > by["Onion"]["economics"]["net_profit"]:
@@ -112,10 +112,15 @@ def test_validation_and_warnings(client, user):
     assert post(client, user, {**ONION_LIKE, "ph": 15}).status_code == 422
     assert post(client, user, {**ONION_LIKE, "city": "Atlantis"}).status_code == 422
     assert post(client, user, {**ONION_LIKE, "state": "Kerala"}).status_code == 422
-    r = post(client, user, {**ONION_LIKE, "rainfall": 900, "soil_type": "Black"})
+    r = post(client, user, {**ONION_LIKE, "rainfall": 900})
     assert r.status_code == 201
-    w = r.json()["warnings"]
-    assert any("rainfall" in s for s in w) and any("Soil type" in s for s in w)
+    assert any("rainfall" in s for s in r.json()["warnings"])
+    # soil type: only the known values are accepted; skipped / "Not sure" become "unknown"
+    assert post(client, user, {**ONION_LIKE, "soil_type": "Black"}).status_code == 422
+    for given in (None, "", "Not sure / skip", "unknown"):
+        assert post(client, user, {**ONION_LIKE, "soil_type": given}, "analyze").status_code == 200
+    for given in ("Sandy loam", "Alluvial soil", "clay_loam"):
+        assert post(client, user, {**ONION_LIKE, "soil_type": given}, "analyze").status_code == 200
 
 
 def test_analyze_does_not_save(client, user):
@@ -223,3 +228,42 @@ def test_feature_ranges_come_from_the_data(client, user):
         for low, high in r["perCrop"].values():
             assert low <= high
             assert r["min"] <= low and high <= r["max"]
+
+
+def test_corners_and_middle_of_the_range_do_not_warn(client, user):
+    """Smoke test: every input at its dataset min, max and middle, with each soil type, gives a valid
+    crop ranking and no out-of-range warning (the dataset covers the whole app range)."""
+    ranges = client.get("/api/crop-recommendation/feature-ranges", headers=user["headers"]).json()
+    field = {"N": "nitrogen", "P": "phosphorus", "K": "potassium", "ph": "ph",
+             "temperature": "temperature", "humidity": "humidity", "rainfall": "rainfall"}
+    for corner in ("min", "max", "mid"):
+        values = {field[f]: (r["min"] if corner == "min" else r["max"] if corner == "max"
+                             else (r["min"] + r["max"]) / 2) for f, r in ranges.items()}
+        for soil in ("sandy_loam", "loam", "clay_loam", "alluvial", "unknown"):
+            r = post(client, user, {**ONION_LIKE, **values, "soil_type": soil}, "analyze")
+            assert r.status_code == 200, (corner, soil, r.text)
+            b = r.json()
+            assert not any("outside the range" in w for w in b["warnings"]), (corner, soil, b["warnings"])
+            assert {x["crop_name"] for x in b["results"]} == CROPS
+            assert all(0 <= x["probability"] <= 1 for x in b["results"])
+            assert b["results"][0]["crop_name"] in CROPS
+
+
+def test_soil_type_is_a_model_input_and_is_explained(client, user):
+    b = post(client, user, {**ONION_LIKE, "soil_type": "sandy_loam"}, "analyze").json()
+    feats = {f["feature"] for f in b["results"][0]["important_factors"]}
+    assert "soil_type" in feats
+    ranges = client.get("/api/crop-recommendation/feature-ranges", headers=user["headers"]).json()
+    assert ranges["rainfall"]["min"] <= 1 and ranges["rainfall"]["max"] == 300
+
+
+def test_weather_is_clipped_to_the_dataset_range_for_the_model_but_saved_as_entered(client, user):
+    r = post(client, user, {**ONION_LIKE, "rainfall": 900, "temperature": 40, "humidity": 99})
+    assert r.status_code == 201
+    b = r.json()
+    assert any("rainfall" in w and "limited to 300" in w for w in b["warnings"])
+    # same answer as a request that already holds the clipped value (300), so the model never saw 900
+    same = post(client, user, {**ONION_LIKE, "rainfall": 300, "temperature": 40, "humidity": 99}, "analyze").json()
+    assert [x["crop_name"] for x in same["results"]] == [x["crop_name"] for x in b["results"]]
+    saved = client.get(f"/api/history/recommendations/{b['id']}", headers=user["headers"]).json()
+    assert saved["rainfall"] == 900          # the real value is what the user sees later

@@ -13,7 +13,7 @@
 ![Open-Meteo](https://img.shields.io/badge/Weather-Open--Meteo-2E8B57)
 
 > **Status:** academic major project and working prototype. Every forecast and recommendation is a
-> model-based estimate, not a guarantee. See [section 15](#15-limitations-and-future-scope).
+> model-based estimate, not a guarantee. See [section 16](#16-limitations-and-future-scope).
 
 ---
 
@@ -32,11 +32,12 @@
 11. [Project structure](#11-project-structure)
 12. [Installation and setup](#12-installation-and-setup)
 13. [How to use](#13-how-to-use)
-14. [Testing](#14-testing)
-15. [Limitations and future scope](#15-limitations-and-future-scope)
-16. [Black book reference guide](#16-black-book-reference-guide)
-17. [References, data sources and license](#17-references-data-sources-and-license)
-18. [Glossary](#glossary)
+14. [Weather data: how it is calculated](#14-weather-data-how-it-is-calculated)
+15. [Testing](#15-testing)
+16. [Limitations and future scope](#16-limitations-and-future-scope)
+17. [Black book reference guide](#17-black-book-reference-guide)
+18. [References, data sources and license](#18-references-data-sources-and-license)
+19. [Glossary](#glossary)
 
 More detail lives in three companion files: [ARCHITECTURE.md](ARCHITECTURE.md) (database schema,
 authentication, full ML pipeline, SHAP), [DATASET.md](DATASET.md) (data profiles and cleaning) and
@@ -102,7 +103,7 @@ method that shows which inputs pushed a prediction up or down.
 
 - 7 crops, Maharashtra, 11 cities for crop comparison.
 - Soil values entered by the farmer (N, P, K, pH).
-- Weather from Open-Meteo (3-year average for the growing months).
+- Weather from the Open-Meteo archive (average of the last 3 completed seasons of the growing months).
 - Price forecasts based on 2023-2025 mandi prices.
 - User accounts (register, log in, history).
 
@@ -112,7 +113,7 @@ method that shows which inputs pushed a prediction up or down.
 - It does not measure the soil. The farmer must bring a soil test report.
 - It does not use live news, government policy, pests, disease or real-time market events.
 - It does not cover states other than Maharashtra or crops other than the seven listed.
-- Soil type (Black cotton, Red and so on) is stored with the result but the model does not use it.
+- Soil type (sandy loam, loam, clay loam, alluvial, or "Not sure / skip" = unknown) is a model input; skipping it is fine.
 
 ---
 
@@ -121,7 +122,7 @@ method that shows which inputs pushed a prediction up or down.
 | Feature | What the user sees |
 |---|---|
 | **Soil test results** | Four fields: Nitrogen (N), Phosphorus (P), Potassium (K) and Soil pH. Each shows its unit, the usual range from the data, and a small range bar. A value outside the data limits is blocked; a value few crops grow well at gets an amber hint. |
-| **Place, dates and field** | State (fixed to Maharashtra), a searchable City / nearest mandi list, planting month, selling month, a duration badge ("4 months from planting to selling") with a month timeline, field size in acres (with the acre-to-guntha conversion) and an optional soil type. |
+| **Place, dates and field** | State (fixed to Maharashtra), a searchable City / nearest mandi list, planting month, selling month, a duration badge ("4 months from planting to selling") with a month timeline, field size in acres (with the acre-to-guntha conversion) and an optional soil type (sandy loam, loam, clay loam, alluvial). |
 | **Automatic weather by city** | Once city, planting month and selling month are set, the form loads average temperature, humidity and rainfall for the growing months from Open-Meteo. |
 | **Edit manually fallback** | If the weather cannot be loaded, or the farmer prefers their own numbers, "Edit manually" turns the three weather cards into normal inputs. Nobody is blocked. |
 | **Likely good fits preview** | As soon as the soil and weather values are valid, a small preview lists the crops whose usual ranges match. Final results come after submit. |
@@ -167,8 +168,8 @@ Versions are copied from [`backend/requirements.txt`](backend/requirements.txt) 
 | | PyArrow | 21.0.0 | Parquet data panels |
 | | matplotlib | 3.10.8 | Confusion-matrix image during training |
 | Explainability | SHAP (`TreeExplainer`) | 0.52.0 | Shows which inputs raised or lowered a prediction |
-| Weather API | Open-Meteo Geocoding and Historical Archive | no key | Free weather data |
-| Caching | In-memory dictionary in `weather_service.py` | n/a | Keeps weather results for 24 hours |
+| Weather API | Open-Meteo Geocoding and Historical Archive | optional key | Weather data (free tier needs no key) |
+| Caching | In-memory dictionary in `weather_service.py` | n/a | Keeps weather results for the rest of the day |
 | Testing | pytest | >= 8.3, < 9 | 83 backend tests |
 | Tools | Git, VS Code, MySQL Workbench (optional) | any recent | Development |
 
@@ -244,16 +245,60 @@ Versions are copied from [`backend/requirements.txt`](backend/requirements.txt) 
   estimate. The classifier's accuracy (about 85 %) tells how well it separates this generated data,
   not how well it predicts real fields. Yields, costs and storage limits are approximate.
 
+#### 6.2.1 Extended dataset: which rows are synthetic, and why
+
+Everything in 6.2 is simulated. The model is trained on `dataset/crop_recommendation/crop_dataset_extended.csv`
+(8,400 rows, exactly 1,200 per crop), which has a `source` column:
+
+| `source` | Rows | What it is |
+|---|---|---|
+| `original` | 4,550 | The 6.2 rows. They have no soil type, so `soil_type = unknown`. Only 15 pH values below 4.5 were clipped to 4.5. The original file is not modified. |
+| `synthetic` | 3,850 (550 per crop) | Generated by `backend/scripts/extend_crop_dataset.py` (seed 2025). |
+
+Columns: `N, P, K, temperature, humidity, ph, rainfall, soil_type, label, source`, plus `state, city,
+planting_month, selling_month` (the model also uses location and timing, so synthetic rows carry them).
+
+- **Why.** The original rows never had rainfall below 20 mm/month and had no soil type, so a normal Oct to Feb
+  (rabi) field (5 to 20 mm/month, as the automatic Open-Meteo lookup returns for Pune), cold or hot extremes, or a
+  chosen soil type put the model outside what it had seen.
+- **How the synthetic rows are made.** All values are sampled from truncated normal distributions with a fixed seed,
+  per crop, from one editable table (`CROP_CONFIG` at the top of the script): ideal ranges for N, P, K, pH,
+  and for temperature, humidity and rainfall separately for rabi (planted Oct to Feb) and kharif (Jun to Sep),
+  plus preferred soil types (for example potato: sandy loam / loam; wheat: loam / clay loam / alluvial).
+  Per crop there are three kinds of synthetic rows:
+  1. **core** (about 76 %): inside the ideal ranges;
+  2. **edge** (20 %): one or two inputs drawn with a wide spread across the whole app range (dry, cold, hot, humid,
+     low or high nutrients), the rest in the ideal zone;
+  3. **anchor** (14 rows): each input once at the app minimum and once at the maximum, so the dataset min/max equal
+     the app's accepted range.
+- **Soil type.** About 70 % of synthetic rows get one of the crop's preferred soils, 15 % another soil and 15 %
+  `unknown` (so the model works when the farmer skips it). Soil type nudges K and pH slightly (for example sandy loam
+  lowers both). Because the original rows are all `unknown`, about 61 % of the whole file is `unknown`.
+- **Covered ranges** (equal to the app's inputs; checked by the script, which fails loudly otherwise): N 1 to 140,
+  P 5 to 145, K 5 to 205, pH 4.5 to 9.0, temperature 8 to 45 °C, humidity 14 to 100 %, rainfall 0 to 300 mm/month.
+  All 10 equal-width bins of every input contain rows (the extreme bins only a few dozen), every soil type appears for
+  every crop, and rows with rainfall 0 to 50 mm exist for all 7 crops. Duplicates and NaNs are removed.
+- **These are assumptions, not measurements.** The crop ranges in `CROP_CONFIG` are indicative agronomic values
+  written by the team, not taken from field trials. **They must be reviewed and corrected by an agronomist** before
+  the recommendations are relied on; re-running the two scripts regenerates everything from the edited table.
+  Edge and anchor rows put a crop label on conditions where it may not actually grow; they exist to keep the model
+  stable at the extremes, not to say the crop thrives there.
+- **Model.** `soil_type` is one-hot encoded inside the same scikit-learn `Pipeline` as the XGBoost classifier
+  (`handle_unknown="ignore"`). Training also writes `backend/trained_models/crop_recommendation/feature_ranges.json`
+  (min/max of every numeric input from this dataset); the API reads it for the form hints, limits and the
+  out-of-range note.
+- **Evaluation.** The 20 % hold-out test set (910 rows) contains original rows only; synthetic rows are training-only.
+  XGBoost, same test set: before (original training rows only) accuracy 0.851, macro F1 0.851;
+  after (plus synthetic rows) accuracy 0.851, macro F1 0.850. There is no gain on this test
+  set, which was built from the old conditions; the point of the extension is coverage, and no real dry-season or
+  soil-type field data exists to measure that.
+- **Reproduce.** `python -m scripts.extend_crop_dataset` then `python -m scripts.train_recommendation_model`.
+
 ### 6.3 Weather data (Open-Meteo)
 
-- Fetched live by `backend/app/services/weather_service.py`. No API key is needed.
-- **Geocoding API** (`geocoding-api.open-meteo.com`) finds a place only when its coordinates are not
-  stored in `city_coordinates.csv`.
-- **Historical Archive API** (`archive-api.open-meteo.com/v1/archive`) gives daily mean temperature,
-  mean relative humidity and total precipitation for the last 3 full calendar years.
-- For the months from planting to selling (both included) the service returns the mean temperature,
-  the mean humidity and the rainfall per month (daily rain summed per month, then averaged over
-  months and years).
+Weather is not stored in the project. The backend fetches real historical weather from the Open-Meteo archive
+for the chosen city and months. How the values are calculated, cached and checked is described in
+[section 14](#14-weather-data-how-it-is-calculated).
 
 ### 6.4 All datasets at a glance
 
@@ -266,7 +311,7 @@ Versions are copied from [`backend/requirements.txt`](backend/requirements.txt) 
 | Crop calendar and economics | Created by the team from references | Written by hand | Timing and profit | `dataset/crop_recommendation/crop_season_calendar.csv`, `crop_economics.csv` |
 | City climate and market tables | Created by the team | Written by hand | Dataset generation, city-to-market mapping | `dataset/crop_recommendation/city_climate_normals.csv`, `city_market_map.csv` |
 | City coordinates | Public map coordinates entered by the team | Written by hand | Weather lookup without geocoding | `dataset/crop_recommendation/city_coordinates.csv` |
-| Weather | Open-Meteo APIs | Live request, cached 24 hours | Temperature, humidity, rainfall | Not stored on disk |
+| Weather | Open-Meteo APIs | Live request, cached in memory per day | Temperature, humidity, rainfall | Not stored on disk |
 | 22-crop dataset and legacy tables | Public dataset (source: TODO: confirm) | Earlier version | **Not used**; kept for reference | `dataset/raw/Crop_recommendation.csv`, `dataset/raw/legacy/` |
 
 All datasets and trained models needed to run the app are in the repository. Nothing has to be
@@ -283,8 +328,9 @@ downloaded to run it. Full data profiles: [DATASET.md](DATASET.md).
 3. **Step 2, Place, dates and field:** the farmer picks the city, planting month, selling month and
    field size.
 4. **Step 3, Weather while the crop grows:** the form waits half a second, then asks the backend
-   (`GET /api/weather`) for the 3-year average temperature, humidity and rainfall of the growing
-   months. If it fails, the farmer can retry or choose **Edit manually**.
+   (`GET /api/weather`) for the average temperature, humidity and rainfall of the growing months
+   (last 3 completed seasons). Changing the city or either month fetches again. If it fails, the form switches to
+   manual entry; typed values are kept until the city or a month changes.
 5. When all values are valid, the **Compare crops for my field** button is enabled. The page also
    shows a "Likely good fits" preview using the crops' usual ranges.
 6. On submit, the frontend sends the values to `POST /api/crop-recommendation/recommend`.
@@ -312,11 +358,11 @@ date, and the daily model predicts the price for every day up to that date.
 |---|---|
 | Task | Classify which of 7 crops best matches the field |
 | Algorithm | XGBoost classifier (`XGBClassifier`, 400 trees, depth 4, learning rate 0.08) |
-| Input features | N, P, K, temperature, humidity, pH, rainfall, city code, planting month, selling month, growing months |
+| Input features | N, P, K, temperature, humidity, pH, rainfall, soil type (one-hot), city code, planting month, selling month, growing months |
 | Output | A probability for each crop |
-| Training data | 4,550 generated rows (see 6.2) |
+| Training data | 4,550 original + 3,850 synthetic rows (see 6.2.1); test set uses original rows only |
 | Training steps | Stratified 80/20 split; 5-fold cross-validation on the training part; compared with logistic regression and random forest; XGBoost deployed |
-| Metrics (hold-out, 910 rows) | accuracy 0.851, macro precision 0.851, macro recall 0.851, macro F1 0.850 |
+| Metrics (hold-out, 910 original rows) | accuracy 0.851, macro precision 0.850, macro recall 0.851, macro F1 0.850 (trained on original rows only: 0.851 / 0.851 / 0.851 / 0.851) |
 | Important note | A logistic-regression baseline reaches a similar cross-validated accuracy (0.849), so the data is easy to separate. The metric is for generated data, not real fields. |
 | Saved files | `backend/trained_models/crop_recommendation/` |
 
@@ -403,7 +449,7 @@ flowchart LR
     FE -->|"JSON + Bearer token"| API["FastAPI backend<br/>port 8000"]
     API --> AUTH["Auth<br/>bcrypt and JWT"]
     API --> WX["weather_service.py"]
-    WX --> CACHE[("In-memory cache<br/>24 hours")]
+    WX --> CACHE[("In-memory cache<br/>per day")]
     WX -->|"HTTPS"| OM["Open-Meteo APIs"]
     WX --> COORD[["city_coordinates.csv"]]
     API --> REG["ModelRegistry<br/>loaded at startup"]
@@ -425,7 +471,7 @@ flowchart LR
 *Figure 1. The browser talks only to the FastAPI backend. The backend fetches weather, runs the
 models and the explainer, and stores history in MySQL.*
 The models and datasets are loaded once when the server starts. Weather is the only live external
-call during a request, and it is cached for 24 hours.
+call during a request, and it is cached for the rest of the day.
 
 ### 9.2 Use case diagram (drawn as a flowchart)
 
@@ -511,9 +557,10 @@ classDiagram
     }
     class weather_service {
         <<module>>
-        +locate(city, state)
-        +growing_months(plant, sell)
-        +growing_period_weather(city, state, plant, sell)
+        +locate(city)
+        +months_in_window(plant, sell)
+        +season_windows(plant, sell, today)
+        +growing_period_weather(city, plant, sell)
     }
     class WeatherError {
         +status_code
@@ -593,7 +640,7 @@ year 2026). The weather values are example inputs; the Brinjal figures are the m
 ```mermaid
 flowchart LR
     A["farmerInput : FarmerInput<br/>N = 115, P = 65, K = 70<br/>pH = 6.4<br/>city = Pune<br/>planting_month = 11<br/>selling_month = 4<br/>area_acres = 1"]
-    B["weather : WeatherResult<br/>avgTemperature = 23.5<br/>avgHumidity = 62.0<br/>avgRainfall = 45.0<br/>source = Open-Meteo<br/>monthsUsed = 11, 12, 1, 2, 3, 4"]
+    B["weather : WeatherResult<br/>temperature = 23.5<br/>humidity = 62.0<br/>rainfall = 45.0 mm per month"]
     C["rec : CropRecommender<br/>7 crops, 11 cities"]
     D["brinjal : CropResult<br/>rank = 1, recommended = true<br/>agronomic_score = 100<br/>timing_score = 100<br/>profit_score = 82.2<br/>recommendation_score = 92.88<br/>status = fresh"]
     E["economics : Economics<br/>selling_price = 1796.62<br/>gross_revenue = 137441<br/>total_cost = 82658<br/>net_profit = 54784<br/>break_even_price = 1018"]
@@ -622,10 +669,10 @@ sequenceDiagram
     F->>FE: Enter soil, city, planting and selling month
     FE->>API: GET /api/weather after 500 ms
     API->>WX: growing_period_weather
-    WX->>OM: Archive request for 3 years
-    OM-->>WX: Daily temperature, humidity, rain
+    WX->>OM: Archive request for each of 3 seasons
+    OM-->>WX: Daily temperature and rain, hourly humidity
     WX-->>API: Averages
-    API-->>FE: avgTemperature, avgHumidity, avgRainfall
+    API-->>FE: temperature, humidity, rainfall
     F->>FE: Click Compare crops for my field
     FE->>API: POST /api/crop-recommendation/recommend
     API->>ML: analyze
@@ -678,16 +725,16 @@ stateDiagram-v2
     [*] --> Empty
     Empty --> Loading : city and months set
     Loading --> Loaded : weather received
-    Loading --> Error : request failed
-    Error --> Loading : retry
-    Error --> ManualEdit : edit manually
+    Loading --> ManualEdit : request failed (switches by itself)
     Loaded --> Loading : city or month changed
     Loaded --> ManualEdit : edit manually
-    ManualEdit --> Loading : use automatic weather
+    ManualEdit --> Loading : city or month changed
+    ManualEdit --> Loaded : use automatic weather
 ```
 
-*Figure 7a. States of the weather section.* Changing the city or a month always restarts loading.
-Manual edit is reachable from Loaded and Error so the farmer is never blocked.
+*Figure 7a. States of the weather section.* Changing the city or a month always restarts loading. A failed
+request moves the section to manual entry, so the farmer is never blocked; typed values stay until the city or a
+month changes.
 
 Form and prediction:
 
@@ -909,7 +956,7 @@ All endpoints except register, login and health need the header
 | POST | `/api/auth/login` | Log in, returns a token and the user | 200 |
 | GET | `/api/auth/me` | Current user | 200 |
 | PUT | `/api/auth/me` | Update name or change password | 200 |
-| GET | `/api/weather` | Growing-period climate for a city (Open-Meteo) | 200 |
+| GET | `/api/weather?city=&planting_month=&selling_month=` | Average weather of the last 3 completed seasons of the window (Open-Meteo), see [section 14](#14-weather-data-how-it-is-calculated) | 200 |
 | GET | `/api/crop-recommendation/options` | Crops, cities, crop calendar, economics, input ranges | 200 |
 | GET | `/api/crop-recommendation/feature-ranges` | Hard limits and usual range per crop for each input | 200 |
 | POST | `/api/crop-recommendation/recommend` | Rank the 7 crops and save to history | 201 |
@@ -928,7 +975,7 @@ All endpoints except register, login and health need the header
 | GET | `/api/health` | Server status and which models are loaded | 200 |
 
 **Errors:** `401` missing, invalid or expired token, or wrong login · `404` not found (or not yours) ·
-`409` email already registered · `422` invalid input · `502` or `504` the weather service failed or
+`400` invalid weather query (month or city) · `409` email already registered · `422` invalid input · `502` the weather service failed or
 timed out · `503` a model is not loaded · `500` unexpected error (logged, generic message).
 
 ### Register and log in
@@ -945,36 +992,9 @@ The response contains `access_token` and a `user` object. Log in with
 
 ### Weather
 
-```http
-GET /api/weather?city=Pune&state=Maharashtra&plantMonth=11&sellMonth=4
-Authorization: Bearer <access_token>
-```
-
-| Parameter | Meaning |
-|---|---|
-| `city` | City name (2 to 60 characters) |
-| `state` | State name, default `Maharashtra` |
-| `plantMonth`, `sellMonth` | Month numbers 1 to 12. The growing months run from planting to selling, both included, and may wrap over the new year. |
-
-Example response (illustrative values; the field names and rounding are real):
-
-```json
-{
-  "city": "Pune",
-  "lat": 18.5204,
-  "lon": 73.8567,
-  "avgTemperature": 23.5,
-  "avgHumidity": 62.0,
-  "avgRainfall": 45.0,
-  "source": "Open-Meteo",
-  "monthsUsed": [11, 12, 1, 2, 3, 4]
-}
-```
-
-Notes: results are cached in memory for 24 hours (key: latitude, longitude, months); a lookup that
-fails is never cached; the request times out after 8 seconds. A city not found returns `404` with
-the message "Could not find '<city>'. Try the nearest bigger city or enter weather manually."; a
-provider problem returns `502` or `504`; wrong months return `422`.
+`GET /api/weather?city=&planting_month=&selling_month=` returns `{temperature, humidity, rainfall}` (rainfall in
+mm per month). Parameters, errors, caching and the calculation are described in
+[section 14](#14-weather-data-how-it-is-calculated).
 
 ### Feature ranges
 
@@ -982,11 +1002,13 @@ provider problem returns `502` or `504`; wrong months return `422`.
 GET /api/crop-recommendation/feature-ranges
 ```
 
-Returns, for each of `N`, `P`, `K`, `temperature`, `humidity`, `ph`, `rainfall`, the dataset
-`min` and `max` and `perCrop`, the 5th to 95th percentile range of each crop:
+Returns, for each of `N`, `P`, `K`, `temperature`, `humidity`, `ph`, `rainfall`, the training
+dataset's `min` and `max` from `feature_ranges.json` (outside them the app only shows a soft note), the API's own validity limits
+`hardMin` and `hardMax` (outside them a request is rejected), and `perCrop`, the 5th to 95th percentile
+range of each crop. All values are read from the trained model's metadata, nothing is hard-coded in the form:
 
 ```json
-{ "N": { "min": 39.0, "max": 140.0, "perCrop": { "Brinjal": [74.0, 122.55] } } }
+{ "N": { "min": 1.0, "max": 140.0, "hardMin": 0, "hardMax": 300, "perCrop": { "Brinjal": [74.0, 122.55] } } }
 ```
 
 (abridged: the real response lists all 7 crops for all 7 features).
@@ -1078,7 +1100,7 @@ SmartCrop-AI/
 │   ├── alembic/ and alembic.ini       Database migrations (0001 initial, 0002 economic recommendation)
 │   ├── scripts/                       Data preparation, dataset generation, training
 │   ├── trained_models/                Saved models, metadata and validation metrics
-│   ├── tests/                         pytest suite (83 tests)
+│   ├── tests/                         pytest suite (98 tests)
 │   ├── requirements.txt               Python packages
 │   └── .env.example                   Configuration template
 ├── frontend/
@@ -1172,11 +1194,12 @@ Templates: [`backend/.env.example`](backend/.env.example) and
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime, 1 to 1440, default `60` | No | `backend/.env` |
 | `CORS_ORIGINS` | Allowed frontend addresses as a JSON list, for example `["http://localhost:5173"]` | No | `backend/.env` |
 | `ENVIRONMENT` | A label such as `development` | No | `backend/.env` |
+| `OPEN_METEO_API_KEY` | Optional commercial Open-Meteo key. Empty uses the free non-commercial endpoint. See [section 14.9](#149-configuration) | No | `backend/.env` |
 | `DATASET_DIR`, `MODELS_DIR` | Override the dataset and trained-model folders | No | backend environment |
 | `TEST_DATABASE_URL` | Run the tests against an empty MySQL database instead of SQLite | No | test shell |
 | `VITE_API_URL` | Backend address for the frontend, default `http://localhost:8000` | No | `frontend/.env` |
 
-The weather feature needs **no** key and no variable.
+The weather feature works without any variable (free Open-Meteo endpoint). `OPEN_METEO_API_KEY` is only for commercial use.
 
 ### 12.7 Run the project
 
@@ -1227,9 +1250,8 @@ python -m scripts.score_sensitivity
    ![Soil test results](docs/screenshots/soil-form.png)
 4. Under **Place, dates and field** choose Pune, planting month November, selling month April and
    field size 1 acre. The badge shows "5 months from planting to selling".
-5. Under **Weather while the crop grows** wait a moment. Temperature, humidity and rainfall appear
-   with the note "Based on 3-year average for Pune, Nov-Apr (Open-Meteo)". If it fails, press
-   *Retry* or *Edit manually*.
+5. Under **Weather while the crop grows** wait a moment. Temperature, humidity and rainfall appear.
+   If it fails, the section switches to manual entry with a message.
    ![Weather section](docs/screenshots/weather.png)
 6. Press **Compare crops for my field**.
 7. Read the result: the recommended crop, the **Best time to sell**, the price chart, the profit
@@ -1245,7 +1267,203 @@ emails or tokens.
 
 ---
 
-## 14. Testing
+## 14. Weather data: how it is calculated
+
+### 14.1 Overview
+
+The farmer picks a **City**, a **Planting month** and a **Selling month**. The app then fills three
+weather values by itself:
+
+| Value | Unit | Meaning |
+|---|---|---|
+| Average temperature | °C | Mean daily temperature while the crop grows |
+| Average humidity | % | Mean relative humidity while the crop grows |
+| Average rainfall | mm per month | Rain per month while the crop grows |
+
+The data is **real historical weather** from the Open-Meteo Archive API
+(`archive-api.open-meteo.com/v1/archive`). It is not a forecast. The code does not choose a weather
+model, so Open-Meteo uses its default "best match", which combines the ERA5 reanalysis (about 25 km
+grid), ERA5-Land (about 11 km) and the ECMWF IFS model (about 9 km). The code is in
+`backend/app/services/weather_service.py`.
+
+### 14.2 Flow
+
+```mermaid
+flowchart TD
+    A["User selects City, Planting month and Selling month"] --> B["Frontend waits 500 ms, then calls GET /api/weather"]
+    B --> C{"Result in cache?"}
+    C -->|"yes"| H["Return JSON"]
+    C -->|"no"| D["Find coordinates<br/>city_coordinates.csv, else geocoding"]
+    D --> E["Fetch the last 3 completed seasons<br/>from the Open-Meteo archive"]
+    E --> F["Calculate the average of each season,<br/>then the average of the seasons"]
+    F --> G["Save in cache"]
+    G --> H
+    E -.->|"request fails"| K["502 Weather data unavailable<br/>UI switches to Edit manually"]
+    H --> I["UI fills the three weather cards<br/>with the real values"]
+    I --> J["On submit the backend clips the three values<br/>to the dataset min and max, then runs the model"]
+```
+
+Text version: user selects city and months, then the frontend calls `GET /api/weather`, the backend
+checks the cache, finds the coordinates, fetches the last 3 completed seasons from Open-Meteo,
+calculates the averages and returns JSON, the UI fills the cards, and the values are clipped to the
+dataset range before the model call.
+
+### 14.3 Step-by-step calculation
+
+1. **Season window.** It starts on the first day of the planting month and ends on the last day of
+   the selling month. If the selling month is earlier than the planting month, the window crosses the
+   year end (for example October to February ends in the next year). If both months are equal, the
+   window is one month long.
+2. **Which seasons.** The code takes the last 3 **completed** seasons of this window, newest first
+   (`season_windows`). A window that ended less than 7 days ago, or has not ended yet, is skipped
+   because archive data arrives with a delay.
+3. **Per season.** The service makes one archive request per season (the three requests run in
+   parallel) and calculates:
+   - temperature = mean of the daily mean temperatures (`temperature_2m_mean`)
+   - humidity = mean of the hourly relative humidity (`relative_humidity_2m`)
+   - rainfall = total of the daily precipitation (`precipitation_sum`) divided by the number of
+     months in the window, both months included
+   - `None` values from the API are ignored. A season with no usable data is dropped.
+4. **Final value.** The three seasons are averaged and rounded to 2 decimals.
+
+```text
+months     = ((selling_month - planting_month) mod 12) + 1        # Oct to Feb -> 5
+temp_s     = mean(daily temperature_2m_mean in the window)
+humidity_s = mean(hourly relative_humidity_2m in the window)
+rain_s     = sum(daily precipitation_sum in the window) / months
+
+temperature = round(mean(temp_s over the seasons), 2)
+humidity    = round(mean(humidity_s over the seasons), 2)
+rainfall    = round(mean(rain_s over the seasons), 2)
+```
+
+### 14.4 Worked example: Pune, October to February
+
+The three season windows below are the real output of `season_windows(10, 2, today)` on
+2026-10-16. The season that starts in October 2026 ends in February 2027, so it is not complete and is
+not used.
+
+| Season | From | To | Months |
+|---|---|---|---|
+| 1 | 2025-10-01 | 2026-02-28 | 5 |
+| 2 | 2024-10-01 | 2025-02-28 | 5 |
+| 3 | 2023-10-01 | 2024-02-29 | 5 |
+
+Pune uses the stored coordinates 18.5204, 73.8567 (no geocoding call).
+
+**Averaged values: not available here.** The machine used to write this section could not reach
+Open-Meteo (`ConnectError`), so no real output exists yet and none is invented. To produce it, run this
+on a computer with internet access and paste the result below:
+
+```bash
+cd backend
+python -m scripts.weather_smoke Pune 10 2
+```
+
+```text
+temperature = <TODO: paste °C>   humidity = <TODO: paste %>   rainfall = <TODO: paste mm/month>
+```
+
+### 14.5 API reference
+
+```http
+GET /api/weather?city=Pune&planting_month=10&selling_month=2
+Authorization: Bearer <access_token>
+```
+
+| Parameter | Rule |
+|---|---|
+| `city` | Required, not empty after trimming spaces, at most 60 characters |
+| `planting_month` | Required integer from 1 to 12 |
+| `selling_month` | Required integer from 1 to 12 |
+
+Success (`200`). Field names are real; the numbers below only show the shape, use 14.4 for real values:
+
+```json
+{ "temperature": 0.0, "humidity": 0.0, "rainfall": 0.0 }
+```
+
+| Status | When | Body |
+|---|---|---|
+| 400 | A month is missing, not an integer or outside 1 to 12; `city` is empty or longer than 60 characters | `{"detail": "planting_month must be an integer from 1 to 12"}` (or the `selling_month` / `city is required` text) |
+| 401 | No or invalid login token | standard auth error |
+| 404 | The city has no stored coordinates and the geocoder does not know it | `{"detail": "Could not find '<city>'. Try the nearest bigger city or enter weather manually."}` |
+| 502 | Open-Meteo timed out, returned an error or an unreadable answer, or had no usable data | `{"detail": "Weather data unavailable"}` |
+
+### 14.6 Caching and performance
+
+- Successful results are cached **in memory** in the backend process (`_cache` in `weather_service.py`).
+- Cache key: `(city in lower case, planting_month, selling_month, today's date)`.
+- There is no timer. Because the date is part of the key, a result is reused for the rest of the day and a
+  new day fetches again. Old entries stay in memory until the server restarts.
+- Errors are never cached, so *Retry* or a new request tries again.
+- Each Open-Meteo request has a 20 second timeout. The three season requests run in parallel.
+- The frontend waits 500 ms after the last change before it calls the API.
+
+### 14.7 Failure handling and manual mode
+
+- The frontend hook is `frontend/src/hooks/useWeather.js`. When City, Planting month and Selling month are all
+  set it calls the API; when any of the three changes it calls again. An old request is cancelled, and an old
+  answer can never replace a newer one.
+- While loading, the three weather cards show a loading shimmer.
+- If the call fails, the section switches to **Edit manually** by itself and shows: "Could not load
+  weather. Please enter the values manually." The three inputs are normal fields.
+- The farmer can also press **Edit manually** at any time. Typed values are **not** overwritten until the City,
+  Planting month or Selling month changes (or *Use automatic weather* is pressed).
+- After a failed attempt, the next successful fetch fills the values and switches back to automatic mode.
+
+### 14.8 Model input safety
+
+- The UI always shows the **real fetched value**, even when it is outside the dataset range.
+- The backend clips temperature, humidity and rainfall to the training dataset's min and max before the
+  model runs (`model_inputs` in `backend/app/services/recommendation_service.py`). The saved history record keeps
+  the real value, and the result page shows a note when a value was limited.
+- The min and max come from `backend/trained_models/crop_recommendation/feature_ranges.json`, which training
+  writes from the dataset. Today they are temperature 8 to 45 °C, humidity 14 to 100 % and rainfall 0 to 300 mm
+  per month. The same file feeds the "Typical range" hints in the form.
+- The rainfall unit is **mm per month**, the same unit the model was trained on.
+
+### 14.9 Configuration
+
+`OPEN_METEO_API_KEY` is optional (`backend/.env.example`):
+
+```text
+# Weather lookups use the Open-Meteo historical archive (https://open-meteo.com). The free endpoint needs no key
+# (non-commercial use only; the server just needs internet access). Optional: set a commercial key to use
+# customer-archive-api.open-meteo.com instead. Leave it empty for the free endpoint. Never commit a real key.
+OPEN_METEO_API_KEY=
+```
+
+- Empty: the free endpoint `archive-api.open-meteo.com` is used (non-commercial use only).
+- Set: the commercial endpoint `customer-archive-api.open-meteo.com` is used and the key is sent as `apikey`.
+- The key is read by the backend only (`backend/app/config/settings.py`). It is never sent to the frontend,
+  returned in a response or written to the logs.
+
+**Adding a city.**
+
+1. For the weather lookup, add a row to `dataset/crop_recommendation/city_coordinates.csv`
+   (`state,city,latitude,longitude`) and restart the backend. This builds `CITY_COORDS`.
+   A city without a row is looked up with the Open-Meteo Geocoding API (`countryCode=IN`, a result in
+   Maharashtra is preferred). `CITY_ALIASES` in `weather_service.py` maps new official names to the old names the
+   geocoder still knows.
+2. The City list in the form comes from `city_climate_normals.csv` through the trained model, and the
+   recommender accepts only those cities. A new dropdown city therefore also needs rows in
+   `city_climate_normals.csv` and `city_market_map.csv`, and the model has to be trained again.
+
+### 14.10 Limitations
+
+- Reanalysis data such as ERA5 can differ a little from a local rain gauge or weather station.
+- The average of the last 3 seasons is a typical value, not a forecast for the coming season.
+- Rainfall is the season total spread evenly over the months. It does not show dry spells or heavy
+  days, and it ignores irrigation.
+- Only the 3 most recent completed seasons are used, so one unusual year moves the average.
+- The free Open-Meteo endpoint is for **non-commercial use only**. See the
+  [Open-Meteo terms](https://open-meteo.com/en/terms) and
+  [licence information](https://open-meteo.com/en/licence).
+
+---
+
+## 15. Testing
 
 ```powershell
 cd backend
@@ -1265,10 +1483,10 @@ python -m pytest
 | `test_ml_pipeline.py` | Preprocessing rules, feature leakage checks |
 | `test_history.py` | Users cannot read or delete each other's records, paging |
 | `test_migrations.py` | Migrations match the ORM models |
-| `test_weather.py` | Weather success and cache, unknown city, provider failure not cached, stored coordinates, alias names, state preference, login needed, bad months |
+| `test_weather.py` | Season windows (Jan to Mar, Oct to Feb, same month, recent windows skipped), averages, request parameters, API key handling, cache, 400/401/404/502 answers, stored coordinates, alias names |
 
 The weather tests replace the network call with fake data, so they run offline.
-The frontend has no automated tests; `npm run build` must succeed.
+The frontend has one test file (`frontend/src/hooks/useWeather.test.jsx`, run with `npm test`) that checks the weather hook: it fetches again when the city or either month changes and ignores stale answers. `npm run build` must also succeed.
 
 ### Troubleshooting
 
@@ -1282,11 +1500,11 @@ The frontend has no automated tests; `npm run build` must succeed.
 | "Cannot reach the SmartCrop server" | The backend is not running on port 8000, or `VITE_API_URL` points elsewhere. |
 | CORS error in the browser console | Add the frontend address to the `CORS_ORIGINS` JSON list and restart the backend. |
 | `error parsing value for field "CORS_ORIGINS"` | Write it as a JSON list, not comma separated. |
-| Weather shows an error | The server needs internet access. On Windows, `CERTIFICATE_VERIFY_FAILED` usually means an antivirus or proxy is intercepting HTTPS. Use *Retry* or *Edit manually*. |
+| Weather shows an error | The server needs internet access. On Windows, `CERTIFICATE_VERIFY_FAILED` usually means an antivirus or proxy is intercepting HTTPS. The form switches to manual entry; type the values or change the city or a month to try again. |
 
 ---
 
-## 15. Limitations and future scope
+## 16. Limitations and future scope
 
 ### Limitations
 
@@ -1302,7 +1520,7 @@ The frontend has no automated tests; `npm run build` must succeed.
   score weights are a design choice.
 - Soil type is saved but not used by the models.
 - No real-time events: weather forecasts, policy changes, strikes, pests, disease or transport.
-- Weather is a 3-year average, not a forecast for the coming season.
+- Weather is an average of past seasons, not a forecast for the coming season.
 - Models need retraining when new price data arrives.
 
 ### Future scope
@@ -1324,26 +1542,26 @@ The frontend has no automated tests; `npm run build` must succeed.
 
 ---
 
-## 16. Black book reference guide
+## 17. Black book reference guide
 
-### 16.1 Chapter map
+### 17.1 Chapter map
 
 | Black book chapter | Where to find it |
 |---|---|
-| Abstract | [16.2](#162-abstract) |
+| Abstract | [17.2](#172-abstract) |
 | Introduction | [Section 2](#2-introduction-and-problem-statement), [Section 3](#3-objectives-and-scope) |
-| Literature survey | [16.3](#163-literature-survey-topics) |
+| Literature survey | [17.3](#173-literature-survey-topics) |
 | Problem definition | [Section 2](#2-introduction-and-problem-statement) |
-| Requirement analysis | [16.4](#164-requirements) |
+| Requirement analysis | [17.4](#174-requirements) |
 | System design | [Section 9](#9-diagrams), [Section 11](#11-project-structure), [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Implementation | [Sections 5 to 8](#5-technology-stack), [Section 10](#10-api-reference), [Section 12](#12-installation-and-setup) |
-| Testing | [Section 14](#14-testing), [16.5](#165-sample-test-cases) |
+| Testing | [Section 15](#15-testing), [17.5](#175-sample-test-cases) |
 | Results | [Section 8](#8-machine-learning-details), [MODEL_EVALUATION.md](MODEL_EVALUATION.md), [Section 13](#13-how-to-use) |
-| Conclusion | [16.6](#166-conclusion) |
-| Future scope | [Section 15](#15-limitations-and-future-scope) |
-| References | [Section 17](#17-references-data-sources-and-license) |
+| Conclusion | [17.6](#176-conclusion) |
+| Future scope | [Section 16](#16-limitations-and-future-scope) |
+| References | [Section 18](#18-references-data-sources-and-license) |
 
-### 16.2 Abstract
+### 17.2 Abstract
 
 Farmers must decide which crop to plant and when to sell it, but they usually know only today's
 market price and rarely have advice that fits their own field. SmartCrop AI is a web application for
@@ -1360,7 +1578,7 @@ system uses React, FastAPI and MySQL and supports English, Marathi and Hindi. It
 estimates and are limited by the small generated crop dataset and the modest accuracy of price
 forecasting.
 
-### 16.3 Literature survey topics
+### 17.3 Literature survey topics
 
 Five suggested topics to read and cite (search for papers and textbooks on each):
 
@@ -1372,7 +1590,7 @@ Five suggested topics to read and cite (search for papers and textbooks on each)
 5. Digital market information systems for farmers in India (for example Agmarknet and e-NAM) and
    decision-support tools for farmers.
 
-### 16.4 Requirements
+### 17.4 Requirements
 
 **Functional requirements**
 
@@ -1397,7 +1615,7 @@ Five suggested topics to read and cite (search for papers and textbooks on each)
 | ID | Requirement |
 |---|---|
 | NFR1 | Security: passwords are hashed, tokens expire, and users can read only their own records. |
-| NFR2 | Performance: models load once at startup; weather results are cached for 24 hours; weather requests time out after 8 seconds. |
+| NFR2 | Performance: models load once at startup; weather results are cached in memory for the rest of the day; each weather request to Open-Meteo times out after 20 seconds. |
 | NFR3 | Reliability: a weather failure never blocks the form; a missing model returns a clear 503. |
 | NFR4 | Usability: simple wording, units shown, helpful validation messages, works on phones and desktops. |
 | NFR5 | Accessibility: labelled inputs, keyboard navigation, status messages for loading and errors. |
@@ -1411,25 +1629,25 @@ browser, Git, internet access for weather.
 guide (not measured), a laptop with 8 GB RAM and a few GB of free disk space is enough to run the
 app; training the daily price model took about 20 to 25 minutes on a laptop.
 
-### 16.5 Sample test cases
+### 17.5 Sample test cases
 
 | ID | Input | Expected output | Status |
 |---|---|---|---|
-| TC1 | `GET /api/weather` without a token | 401 | Automated, passes (`test_weather_needs_login`) |
-| TC2 | `GET /api/weather?city=Pune&plantMonth=6&sellMonth=7` with a valid token | 200 with averages and `monthsUsed = [6, 7]` | Automated, passes (mocked provider) |
+| TC1 | `GET /api/weather` without a token | 401 | Automated, passes (`test_endpoint_needs_login`) |
+| TC2 | `GET /api/weather?city=Pune&planting_month=10&selling_month=2` with a valid token | 200 with `temperature`, `humidity`, `rainfall` | Automated, passes (mocked provider, `test_endpoint_success`) |
 | TC3 | Same request twice | Second answer comes from the cache; provider called once | Automated, passes |
-| TC4 | `plantMonth=13` | 422 | Automated, passes |
+| TC4 | `planting_month=13` | 400 | Automated, passes |
 | TC5 | City not found by the geocoder | 404 with the "enter weather manually" message, not cached | Automated, passes |
-| TC6 | Weather provider fails | 504 or 502, not cached, next request can succeed | Automated, passes |
+| TC6 | Weather provider fails | 502 `Weather data unavailable`, not cached, next request can succeed | Automated, passes |
 | TC7 | City Chhatrapati Sambhajinagar | 200 using stored coordinates, geocoder not called | Automated, passes |
 | TC8 | Register with a duplicate email | 409 | Covered by `test_auth.py` |
 | TC9 | Open another user's history record | 404 | Covered by `test_history.py` |
 | TC10 | N = 115, P = 65, K = 70, pH 6.4, Pune, plant Nov, sell Apr, example weather | 7 crops ranked; Brinjal first | Verified by a real run of the model on 2026-10-16 |
 | TC11 | Soil value outside the data limits | Red message and the submit button stays disabled | Manual, not yet run |
-| TC12 | Turn off the network, change a month | Weather error with Retry and Edit manually | Manual, not yet run |
+| TC12 | Turn off the network, change a month | The weather section switches to manual entry with a message | Manual, not yet run |
 | TC13 | Choose Edit manually, type three values, submit | Result page loads | Manual, not yet run |
 
-### 16.6 Conclusion
+### 17.6 Conclusion
 
 SmartCrop AI shows that a farmer can get a field-specific crop comparison, a price estimate and a
 plain-language explanation from one simple form. By fetching the growing-period weather
@@ -1443,7 +1661,7 @@ a dependable decision-support tool for farmers.
 
 ---
 
-## 17. References, data sources and license
+## 18. References, data sources and license
 
 ### Data sources
 

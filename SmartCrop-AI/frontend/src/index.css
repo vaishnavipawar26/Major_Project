@@ -1614,7 +1614,7 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .range-fill { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: #2E8B57; opacity: 0.55; }
 .range-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: #0F4C3A; border: 2px solid #fff;
   box-shadow: 0 0 0 1px #0F4C3A; transform: translate(-50%, -50%); }
-.warn-hint { display: inline-flex; align-items: flex-start; gap: 0.3rem; font-size: 0.82rem; font-weight: 600; color: var(--warn-text); }
+.warn-hint { display: inline-flex; align-items: flex-start; gap: 0.3rem; font-size: 0.82rem; font-weight: 500; color: var(--muted); }
 .warn-hint svg { margin-top: 2px; flex-shrink: 0; }
 .fit-preview { display: flex; gap: 0.5rem; align-items: flex-start; margin: 1.1rem 0 0; padding: 0.7rem 0.9rem; border-radius: 12px;
   background: #E8F3E4; border: 1px dashed #9ccaa0; color: #0F4C3A; font-size: 0.92rem; }

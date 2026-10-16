@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60, gt=0, le=24 * 60)
 
+    # Optional. Open-Meteo commercial key: switches weather lookups to the customer archive endpoint.
+    OPEN_METEO_API_KEY: str = ""
+
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     @field_validator("CORS_ORIGINS", mode="before")

@@ -10,10 +10,10 @@ const IDLE = { state: "idle", data: null, error: null };
  * Returns { state: idle | loading | ok | error, data, error, retry }. While `enabled` is false nothing is fetched
  * and the last result is kept. Older requests are cancelled so a slow answer can never overwrite a newer one.
  */
-export function useWeather({ city, state, plantMonth, sellMonth, enabled = true }) {
+export function useWeather({ city, plantMonth, sellMonth, enabled = true }) {
   const [result, setResult] = useState(IDLE);
   const [attempt, setAttempt] = useState(0);
-  const ready = Boolean(city && state && plantMonth && sellMonth);
+  const ready = Boolean(city && plantMonth && sellMonth);
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -21,12 +21,12 @@ export function useWeather({ city, state, plantMonth, sellMonth, enabled = true 
     setResult({ state: "loading", data: null, error: null });
     const ctrl = new AbortController();
     const timer = setTimeout(() => {
-      weatherService.growingPeriod({ city, state, plantMonth, sellMonth }, ctrl.signal)
-        .then((data) => setResult({ state: "ok", data, error: null }))
+      weatherService.growingPeriod({ city, plantMonth, sellMonth }, ctrl.signal)
+        .then((data) => { if (!ctrl.signal.aborted) setResult({ state: "ok", data, error: null }); })
         .catch((e) => { if (!ctrl.signal.aborted) setResult({ state: "error", data: null, error: errorMessage(e) }); });
     }, DEBOUNCE_MS);
     return () => { clearTimeout(timer); ctrl.abort(); };
-  }, [enabled, ready, city, state, plantMonth, sellMonth, attempt]);
+  }, [enabled, ready, city, plantMonth, sellMonth, attempt]);
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
   return { ...result, retry, ready };

@@ -52,7 +52,7 @@ import shap
 from app.ml.common import paths
 from app.ml.common.reference import (STATE, add_months, calendar, economics, month_label,
                                      months_between)
-from app.ml.crop_recommendation.features import FEATURES, build_features
+from app.ml.crop_recommendation.features import FEATURES, build_features, collapse_shap
 from app.ml.economics.profit import evaluate, timeline, timing_score
 from app.ml.explainability.crop_explainer import explain_crop
 from app.ml.price_prediction.monthly_forecaster import MonthlyForecastError
@@ -84,15 +84,18 @@ class CropRecommender:
         d = paths.REC_MODEL_DIR
         self.meta = json.loads((d / "metadata.json").read_text(encoding="utf-8"))
         self.model = joblib.load(d / "crop_model.joblib")
-        if hasattr(self.model, "n_jobs"):  # single-row requests: thread start-up costs more
-            self.model.set_params(n_jobs=1)
+        self.estimator = self.model.named_steps["model"]    # the XGBoost step of the pipeline
+        self.estimator.set_params(n_jobs=1)    # single-row requests: thread start-up costs more
+        # min/max of every numeric input in the training data (feature_ranges.json, written by training)
+        self.input_ranges: dict[str, dict] = json.loads(
+            paths.REC_FEATURE_RANGES_PATH.read_text(encoding="utf-8"))["numeric"]
         self.label_encoder = joblib.load(d / "label_encoder.joblib")
         self.features: list[str] = self.meta["features"]
         assert self.features == FEATURES, "model was trained with a different feature set"
         self.cities: list[str] = self.meta["cities"]
         self.classes: list[str] = list(self.label_encoder.classes_)
         self.ranges = self.meta["feature_ranges_by_crop"]
-        self.explainer = shap.TreeExplainer(self.model)
+        self.explainer = shap.TreeExplainer(self.estimator)
         self.version = self.meta["version"]
         self.calendar = calendar()
         self.economics = economics()
@@ -104,10 +107,11 @@ class CropRecommender:
 
     def _shap(self, X: pd.DataFrame) -> np.ndarray:
         """SHAP values (features, classes) for one row, log-odds space."""
-        sv = np.asarray(self.explainer.shap_values(X))
+        Xt = self.model[:-1].transform(X)      # one-hot soil columns
+        sv = np.asarray(self.explainer.shap_values(Xt))
         if sv.ndim == 3 and sv.shape[0] == len(self.classes) and sv.shape[1] == 1:
             sv = np.transpose(sv, (1, 2, 0))
-        return sv[0]
+        return collapse_shap(sv[0], list(Xt.columns))    # soil_type columns summed back into one feature
 
     def _base_values(self) -> np.ndarray:
         return np.atleast_1d(self.explainer.expected_value).astype(float)
@@ -307,7 +311,7 @@ class CropRecommender:
         X = self._frame(row)
         i = self.classes.index(crop)
         sv = self._shap(X)
-        margin = float(self.model.predict(X, output_margin=True)[0][i])
+        margin = float(self.estimator.predict(self.model[:-1].transform(X), output_margin=True)[0][i])
         exp = explain_crop(crop, dict(zip(self.features, map(float, sv[:, i]))),
                            {**row, "growing_months": months_between(planting_month, selling_month)},
                            self.ranges[crop], self.calendar[crop])

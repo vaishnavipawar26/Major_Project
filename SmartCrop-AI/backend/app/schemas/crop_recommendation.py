@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.ml.crop_recommendation.features import normalize_soil_type
+
 
 class SoilWeatherInputs(BaseModel):
     """Physical validity limits; values outside the training data range are accepted
@@ -21,9 +23,20 @@ class SoilWeatherInputs(BaseModel):
 
 
 class TimingInputs(SoilWeatherInputs):
+    soil_type: Literal["sandy_loam", "loam", "clay_loam", "alluvial", "unknown"] = Field(
+        default="unknown", description="Missing / 'Not sure / skip' is sent as 'unknown'")
     city: str = Field(min_length=2, max_length=60)
     planting_month: int = Field(ge=1, le=12)
     selling_month: int = Field(ge=1, le=12, description="Intended selling month")
+
+    @field_validator("soil_type", mode="before")
+    @classmethod
+    def soil(cls, v):
+        return normalize_soil_type(v)
+
+    def recommender_inputs(self) -> dict:
+        """The 7 numeric inputs plus soil type, as the model pipeline expects them."""
+        return {**self.model_inputs(), "soil_type": self.soil_type}
 
     @field_validator("city")
     @classmethod
@@ -37,8 +50,6 @@ class CropRequest(TimingInputs):
     planting_year: int | None = Field(default=None, ge=2024, le=2035,
                                       description="Defaults to the next occurrence of the "
                                                   "planting month")
-    soil_type: str | None = Field(default=None, max_length=50,
-                                  description="Recorded only; the model does not use soil type")
 
 
 class CropExplainRequest(TimingInputs):
@@ -216,12 +227,15 @@ class RecommendationOptions(BaseModel):
     calendar: dict[str, dict]
     economics: dict[str, dict]
     input_ranges: dict[str, list[float]]
+    soil_types: list[str]
     price_data_end: str
     inflation_annual_pct: float
 
 
 class FeatureRange(BaseModel):
-    """Allowed limits across the whole dataset and the usual (5th-95th percentile) range per crop."""
+    """Dataset min/max, the API validity limits (hardMin/hardMax) and the usual (5th-95th percentile) range per crop."""
     min: float
     max: float
+    hardMin: float
+    hardMax: float
     perCrop: dict[str, list[float]]

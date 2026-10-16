@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Check, CircleCheck, CircleX, Clock3, CloudSun, Lightbulb, Lock, MapPin, Minus, Package, Pencil, Plus, Sprout, TrendingUp, Wand2,
+  Check, CircleAlert, CircleCheck, CircleX, CloudSun, Lightbulb, Lock, MapPin, Minus, Package, Pencil, Plus, Sprout, TrendingUp, Wand2,
 } from "lucide-react";
 import Alert from "../components/Alert";
 import CropArt from "../components/CropArt";
@@ -10,7 +10,6 @@ import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import SproutSpinner from "../components/SproutSpinner";
 import CitySelect from "../components/crop/CitySelect";
-import MonthTimeline from "../components/crop/MonthTimeline";
 import RangeField from "../components/crop/RangeField";
 import WeatherCards from "../components/crop/WeatherCards";
 import fieldPhoto from "../assets/photos/field.webp";
@@ -19,13 +18,13 @@ import { useWeather } from "../hooks/useWeather";
 import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { cropService } from "../services/cropService";
-import { FALLBACK, buildRanges, fieldStatus, likelyFits } from "../utils/featureRanges";
-import { cropName, monthLong, monthShort } from "../utils/format";
+import { buildRanges, fieldStatus, fmtRange, likelyFits } from "../utils/featureRanges";
+import { cropName, monthLong } from "../utils/format";
 import { numberInRange } from "../utils/validation";
 
 export const LAST_CROP_RESULT_KEY = "smartcrop_last_crop_result";
 
-// min/max/usual ranges come from the API (see utils/featureRanges.js); the rest is display only.
+// min/max/usual ranges come from the API (see utils/featureRanges.js), never from numbers in this file; the rest is display only.
 // `label` is the original English field name; the on-screen label, unit, help and validation wording come from the dictionary.
 const FIELDS = [
   { key: "nitrogen", label: "Nitrogen (N)", step: "1", group: "soil", unit: "kg/ha", sample: "80" },
@@ -38,12 +37,13 @@ const FIELDS = [
 ];
 const SOIL_KEYS = FIELDS.filter((f) => f.group === "soil").map((f) => f.key);
 const WEATHER_KEYS = FIELDS.filter((f) => f.group === "weather").map((f) => f.key);
-const FIELD_ORDER = [...SOIL_KEYS, "area_acres", ...WEATHER_KEYS];
+const FIELD_ORDER = [...SOIL_KEYS, "area_acres", "selling_month", ...WEATHER_KEYS];
 const STATE = "Maharashtra";
 const MONTH_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 // stored (and sent) in English; shown in the chosen language
-const SOILS = ["Black cotton", "Red", "Laterite", "Alluvial", "Sandy loam", "Other"];
-const AREA_MIN = 0.1, AREA_MAX = 1000, GUNTHA_PER_ACRE = 40;
+// Soil types the model knows (the value sent to the API), in display order; "unknown" = "Not sure / skip" (the default).
+export const SOILS = ["sandy_loam", "loam", "clay_loam", "alluvial", "unknown"];
+const AREA_MIN = 0.1, AREA_MAX = 1000;
 
 const EXAMPLES = {
   "Onion field, Nashik": { nitrogen: 80, phosphorus: 45, potassium: 85, ph: 6.8, temperature: 23, humidity: 58, rainfall: 70, city: "Nashik", planting_month: 11, selling_month: 3 },
@@ -82,7 +82,7 @@ const focusFirstError = (errs) => {
 const blankForm = (thisMonth) => ({
   nitrogen: "", phosphorus: "", potassium: "", ph: "", temperature: "", humidity: "", rainfall: "",
   city: "Pune", planting_month: thisMonth, selling_month: ((thisMonth + 3) % 12) + 1,
-  area_acres: "1", soil_type: "",
+  area_acres: "1", soil_type: "unknown",
 });
 
 /** Progress step: a number, the current step highlighted, a green check once the section is valid. */
@@ -124,43 +124,52 @@ export default function CropRecommendation() {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const touch = (k) => () => setTouched((x) => ({ ...x, [k]: true }));
   const plant = Number(form.planting_month), sell = Number(form.selling_month);
-  const growMonths = monthsBetween(plant, sell);
   const crops = useMemo(() => readyCrops(opts?.calendar, plant, sell), [opts, plant, sell]);
 
   // Weather comes from the city and months (debounced); typing it by hand is the fallback.
-  const weather = useWeather({ city: form.city, state: STATE, plantMonth: plant, sellMonth: sell, enabled: !manual });
+  const weather = useWeather({ city: form.city, plantMonth: plant, sellMonth: sell });
+  const [weatherFailed, setWeatherFailed] = useState(false);
+  // A new answer only arrives when city, planting month or selling month change (or on Retry), so values the farmer typed by hand
+  // are never overwritten in between. The real fetched numbers are shown; the API clips them to the dataset range for the model.
   useEffect(() => {
-    if (manual) return;
-    const v = weather.state === "ok"
-      ? { temperature: String(weather.data.avgTemperature), humidity: String(weather.data.avgHumidity), rainfall: String(weather.data.avgRainfall) }
-      : { temperature: "", humidity: "", rainfall: "" };
-    setForm((f) => ({ ...f, ...v }));
+    if (weather.state === "ok") {
+      setForm((f) => ({ ...f, temperature: String(weather.data.temperature), humidity: String(weather.data.humidity), rainfall: String(weather.data.rainfall) }));
+      if (weatherFailed) { setWeatherFailed(false); setManual(false); }   // back to automatic after a failed attempt
+    } else if (weather.state === "error") {
+      setWeatherFailed(true);
+      setManual(true);
+    } else if (!manual) {
+      setForm((f) => ({ ...f, temperature: "", humidity: "", rainfall: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manual, weather.state, weather.data]);
 
-  // The year the crop is planted in is the next occurrence of the planting month; selling rolls into the next year when it is not later.
-  const now = new Date();
-  const plantYear = plant >= now.getMonth() + 1 ? now.getFullYear() : now.getFullYear() + 1;
-  const sellYear = plantYear + (sell > plant ? 0 : 1);
 
-  // Hard limits: the dataset's min/max for typed values; automatic weather only has to be a plausible number (the API's own limits).
-  const limitsOf = (key) => (manual || SOIL_KEYS.includes(key) ? ranges[key] : { ...ranges[key], min: FALLBACK[key].min, max: FALLBACK[key].max });
+  // Selling in the planting month itself leaves no growing time (the month count would wrap to 12), so ask for another month.
+  const monthsError = plant === sell ? t("crop.form.sameMonth") : null;
 
   // every error, whether shown yet or not
   const errors = useMemo(() => {
     const errs = {};
     FIELDS.forEach((f) => {
-      const r = limitsOf(f.key), label = t(`crop.form.validLabel.${f.key}`);
+      const r = ranges[f.key], label = t(`crop.form.validLabel.${f.key}`);
       const { state } = fieldStatus(form[f.key], r);
       if (state === "required") errs[f.key] = t("valid.required", { label });
-      else if (state === "invalid") errs[f.key] = Number.isNaN(Number(form[f.key])) ? t("valid.number", { label }) : t("crop.form.between", { min: r.min, max: r.max });
+      else if (state === "invalid") errs[f.key] = Number.isNaN(Number(form[f.key])) ? t("valid.number", { label }) : t("crop.form.between", { min: r.hardMin, max: r.hardMax });
     });
     const areaErr = numberInRange(form.area_acres, AREA_MIN, AREA_MAX, t("crop.form.validLabel.area_acres"), t);
     if (areaErr) errs.area_acres = areaErr;
+    if (monthsError) errs.selling_month = monthsError;
     return errs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, ranges, t, manual]);
+  }, [form, ranges, t, manual, monthsError]);
   const shown = (k) => (submitted || touched[k] ? errors[k] : undefined);
-  const warnOf = (f) => ((submitted || touched[f.key]) && !errors[f.key] && fieldStatus(form[f.key], ranges[f.key]).state === "outside" ? t("crop.form.fewCrops") : undefined);
+  // Soft note (never blocks): the value is outside the dataset's min/max, so the model extrapolates. Automatic weather shows it at once.
+  const warnOf = (f) => {
+    const auto = !manual && WEATHER_KEYS.includes(f.key);
+    return (auto || submitted || touched[f.key]) && !errors[f.key] && fieldStatus(form[f.key], ranges[f.key]).state === "outside"
+      ? t(WEATHER_KEYS.includes(f.key) ? "crop.form.outsideWeather" : "crop.form.outsideData", { range: fmtRange(ranges[f.key].min, ranges[f.key].max) }) : undefined;
+  };
 
   const soilDone = SOIL_KEYS.every((k) => !errors[k]);
   const placeDone = Boolean(form.city) && !errors.area_acres;
@@ -191,7 +200,7 @@ export default function CropRecommendation() {
       ...Object.fromEntries(FIELDS.map((f) => [f.key, Number(form[f.key])])),
       city: form.city, planting_month: plant,
       selling_month: sell, area_acres: Number(form.area_acres),
-      state: STATE, soil_type: form.soil_type.trim() || null,
+      state: STATE, soil_type: form.soil_type,
     };
     setSubmitting(true);
     setApiError(null);
@@ -218,8 +227,6 @@ export default function CropRecommendation() {
   if (optsError) return <Alert type="error" action={<button className="btn btn-secondary" onClick={reload}>{t("common.retry")}</button>}>{optsError}</Alert>;
 
   const errorCount = submitted ? Object.keys(errors).length : 0;
-  const acres = Number(form.area_acres);
-  const guntha = Number.isFinite(acres) ? Math.round(acres * GUNTHA_PER_ACRE * 10) / 10 : 0;
 
   return (
     <>
@@ -267,7 +274,7 @@ export default function CropRecommendation() {
                 <span className="label-like" id="state-label">{t("crop.form.state")}</span>
                 <span className="state-chip" aria-labelledby="state-label"><Lock size={14} aria-hidden="true" />{cropName(t, STATE, "state")}</span>
               </div>
-              <FormField id="city" label={t("crop.form.city")} required help={t("crop.form.cityHelp")}>
+              <FormField id="city" label={t("crop.form.city")} required>
                 <CitySelect id="city" value={form.city} cities={opts.cities} onChange={(c) => setForm((f) => ({ ...f, city: c }))} />
               </FormField>
               <div className="grid grid-cols-2 gap-3">
@@ -282,17 +289,10 @@ export default function CropRecommendation() {
                   </select>
                 </FormField>
               </div>
-              <div className="duration-pill" role="status">
-                <Clock3 size={15} aria-hidden="true" />
-                <div>
-                  <span>{t(growMonths > 1 ? "crop.form.monthsToSell" : "crop.form.monthToSell", { n: growMonths })}</span>
-                  <small>{t("crop.form.sellingIn", { month: `${monthShort(sell)} ${sellYear}` })}</small>
-                  <MonthTimeline plant={plant} sell={sell} />
-                </div>
-              </div>
+              {monthsError && <span className="error !mt-[-0.5rem]" id="months-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{monthsError}</span>}
 
               <FormField id="area_acres" label={t("crop.form.area")} unit={t("crop.form.areaUnit")} required
-                hint={t("crop.form.areaConvert", { acres: Number.isFinite(acres) ? acres : 0, guntha })} error={shown("area_acres")}>
+                error={shown("area_acres")}>
                 <div className="stepper">
                   <button type="button" onClick={() => bumpArea(-0.5)} aria-label={t("crop.form.areaLess")}><Minus size={16} aria-hidden="true" /></button>
                   <input id="area_acres" type="number" inputMode="decimal" step="0.1" min={AREA_MIN} max={AREA_MAX} value={form.area_acres}
@@ -304,7 +304,6 @@ export default function CropRecommendation() {
 
               <FormField id="soil_type" label={t("crop.form.soilType")}>
                 <select id="soil_type" value={form.soil_type} onChange={set("soil_type")}>
-                  <option value="">{t("crop.form.soilNone")}</option>
                   {SOILS.map((s) => <option key={s} value={s}>{t(`crop.form.soil.${s}`)}</option>)}
                 </select>
               </FormField>
@@ -312,7 +311,7 @@ export default function CropRecommendation() {
           </section>
 
           <section className="cf-card cf-weather" aria-labelledby="weather-title">
-            <SectionHead id="weather-title" icon={CloudSun} title={t("crop.form.weatherTitle")} note={t(manual ? "crop.form.weatherNoteManual" : "crop.form.weatherNote")}
+            <SectionHead id="weather-title" icon={CloudSun} title={t("crop.form.weatherTitle")} note={manual ? t("crop.form.weatherNoteManual") : ""}
               action={(
                 <button type="button" className="wx-toggle" onClick={() => setManual((m) => !m)} aria-pressed={manual}>
                   {manual ? <Wand2 size={14} aria-hidden="true" /> : <Pencil size={14} aria-hidden="true" />}
@@ -320,7 +319,13 @@ export default function CropRecommendation() {
                 </button>
               )} />
             {manual
-              ? <div className="cf-grid cf-grid-1">{FIELDS.filter((f) => f.group === "weather").map(renderField)}</div>
+              ? (
+                <>
+                  {weatherFailed && <div className="mb-3"><Alert type="warn">{t("crop.form.weatherFallback")}</Alert></div>}
+                  {!weatherFailed && weather.state === "loading" && <p className="muted small" role="status">{t("crop.form.weatherLoading")}</p>}
+                  <div className="cf-grid cf-grid-1">{FIELDS.filter((f) => f.group === "weather").map(renderField)}</div>
+                </>
+              )
               : <WeatherCards weather={weather} onRetry={weather.retry} onManual={() => setManual(true)} city={form.city} ranges={ranges} />}
             {fits && (
               <div className="fit-preview" role="status">

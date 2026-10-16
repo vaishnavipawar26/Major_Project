@@ -1,0 +1,40 @@
+{
+  "numeric": {
+    "N": {
+      "min": 1.0,
+      "max": 140.0
+    },
+    "P": {
+      "min": 5.0,
+      "max": 145.0
+    },
+    "K": {
+      "min": 5.0,
+      "max": 205.0
+    },
+    "temperature": {
+      "min": 8.0,
+      "max": 45.0
+    },
+    "humidity": {
+      "min": 14.0,
+      "max": 100.0
+    },
+    "ph": {
+      "min": 4.5,
+      "max": 9.0
+    },
+    "rainfall": {
+      "min": 0.0,
+      "max": 300.0
+    }
+  },
+  "soil_types": [
+    "sandy_loam",
+    "loam",
+    "clay_loam",
+    "alluvial",
+    "unknown"
+  ],
+  "dataset": "crop_dataset_extended.csv"
+}

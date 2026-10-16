@@ -1,26 +1,23 @@
-// Ranges for the "Compare crops" form. The real numbers come from GET /api/crop-recommendation/feature-ranges
-// (computed from the training data); FALLBACK is only used if that request fails.
+// Ranges for the "Compare crops" form. Every number comes from GET /api/crop-recommendation/feature-ranges, which reads
+// the dataset min/max from the trained model's feature_ranges.json. Nothing is hard-coded here: until the request
+// succeeds (or if it fails) the ranges are empty (all null), so no hint, limit or out-of-range note is shown.
 // Form field key -> feature name used by the model and the API.
 export const FEATURE_OF = { nitrogen: "N", phosphorus: "P", potassium: "K", ph: "ph", temperature: "temperature", humidity: "humidity", rainfall: "rainfall" };
 
-// Previous hard-coded values: min/max = what the API accepts, usual = range of the whole dataset.
-export const FALLBACK = {
-  nitrogen: { min: 0, max: 300, usual: [0, 140] },
-  phosphorus: { min: 0, max: 300, usual: [5, 145] },
-  potassium: { min: 0, max: 400, usual: [5, 205] },
-  ph: { min: 0, max: 14, usual: [3.5, 9.9] },
-  temperature: { min: -10, max: 55, usual: [8.8, 43.7] },
-  humidity: { min: 0, max: 100, usual: [14, 100] },
-  rainfall: { min: 0, max: 3000, usual: [20, 299] },
-};
+const EMPTY = { min: null, max: null, hardMin: null, hardMax: null, perCrop: {}, live: false };
+export const hasRange = (r) => Number.isFinite(r?.min) && Number.isFinite(r?.max);
 
-/** Per field key: { min, max, perCrop } from the API response, or the fallback (no per-crop data) when it is missing. */
+/**
+ * Per field key: { min, max, hardMin, hardMax, perCrop } from the API response, or EMPTY when it is missing.
+ * min/max = the training dataset's range (outside it only a soft note is shown); hardMin/hardMax = what the API accepts.
+ */
 export function buildRanges(api) {
   return Object.fromEntries(Object.entries(FEATURE_OF).map(([key, feature]) => {
     const r = api?.[feature];
-    if (r && Number.isFinite(r.min) && Number.isFinite(r.max) && r.perCrop) return [key, { min: r.min, max: r.max, perCrop: r.perCrop, live: true }];
-    const fb = FALLBACK[key];
-    return [key, { min: fb.min, max: fb.max, perCrop: { "": fb.usual }, live: false }];
+    if (r && Number.isFinite(r.min) && Number.isFinite(r.max) && r.perCrop) {
+      return [key, { min: r.min, max: r.max, hardMin: r.hardMin ?? null, hardMax: r.hardMax ?? null, perCrop: r.perCrop, live: true }];
+    }
+    return [key, EMPTY];
   }));
 }
 
@@ -43,15 +40,14 @@ export function coverage(perCrop) {
 export const cropsFitting = (value, perCrop) => Object.entries(perCrop).filter(([, [a, b]]) => value >= a && value <= b).map(([c]) => c);
 
 /**
- * "ok" | "required" | "invalid" | "outside" (inside the hard limits but outside the usual range of most crops)
- * for one typed value. `outside` only warns; it never blocks.
+ * "ok" | "required" | "invalid" | "outside" for one typed value. `invalid` = outside what the API accepts (blocks submit);
+ * `outside` = inside those limits but outside the training dataset's min/max, so the model extrapolates (soft note, never blocks).
  */
 export function fieldStatus(raw, range) {
   if (raw === "" || raw == null) return { state: "required" };
   const n = Number(raw);
-  if (Number.isNaN(n) || n < range.min || n > range.max) return { state: "invalid" };
-  const crops = Object.keys(range.perCrop).filter(Boolean);
-  if (crops.length && cropsFitting(n, range.perCrop).length * 2 < crops.length) return { state: "outside" };
+  if (Number.isNaN(n) || (range.hardMin != null && n < range.hardMin) || (range.hardMax != null && n > range.hardMax)) return { state: "invalid" };
+  if (hasRange(range) && (n < range.min || n > range.max)) return { state: "outside" };
   return { state: "ok" };
 }
 
@@ -66,7 +62,7 @@ export function likelyFits(form, ranges, max = 3) {
   for (const k of keys) {
     const raw = form[k];
     const n = Number(raw);
-    if (raw === "" || Number.isNaN(n) || n < ranges[k].min || n > ranges[k].max) return null;
+    if (raw === "" || Number.isNaN(n) || fieldStatus(raw, ranges[k]).state === "invalid") return null;
     values[k] = n;
   }
   const crops = Object.keys(ranges[keys[0]].perCrop).filter(Boolean);

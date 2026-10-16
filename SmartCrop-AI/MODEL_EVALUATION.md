@@ -190,36 +190,37 @@ indicative (`reliability.beats_baseline = false`).
 ## 3. Crop recommendation — suitability classifier (XGBoost)
 
 ### 3.1 Set-up
-* Data: synthetic Maharashtra dataset (see DATASET.md §2) — 4,550 rows, 7 crops × 650.
-* Features: N, P, K, temperature, humidity, pH, rainfall, city (code), planting month,
-  selling month, growing months (derived).
-* Split: stratified 80/20 hold-out (910 test rows); model comparison by 5-fold CV on the
-  training part only. XGBoost is deployed (the project's chosen model family); the
-  comparison is reported so the choice can be checked.
+* Data: `crop_dataset_extended.csv` — 8,400 rows, 7 crops × 1,200: the 4,550 original simulated rows
+  (`source = original`, no soil type → `unknown`) plus 3,850 synthetic rows (`source = synthetic`) covering the
+  app's full input ranges and the soil types, see README §6.2.1. Both are simulated, not measured on farms.
+* Features: N, P, K, temperature, humidity, pH, rainfall, soil type (one-hot inside the pipeline), city (code),
+  planting month, selling month, growing months (derived).
+* Split: stratified 80/20 hold-out of the **original rows only** (910 test rows); synthetic rows are used for
+  training only. Model comparison by 5-fold CV on the training part (3,640 original + 3,850 synthetic rows).
 
 ### 3.2 Model comparison (5-fold CV, mean ± std)
 
 | Model | Accuracy | F1 (macro) |
 |---|---|---|
-| Logistic regression (baseline) | 0.849 ± 0.003 | 0.849 ± 0.003 |
-| Random Forest | 0.836 ± 0.015 | 0.836 ± 0.015 |
-| **XGBoost (deployed)** | 0.846 ± 0.011 | 0.847 ± 0.011 |
+| Logistic regression (baseline) | 0.834 ± 0.009 | 0.833 ± 0.009 |
+| Random Forest | 0.838 ± 0.011 | 0.836 ± 0.011 |
+| **XGBoost (deployed)** | 0.859 ± 0.009 | 0.859 ± 0.009 |
 
-The three are within noise of each other: the generated classes are roughly Gaussian, so a
-linear model does as well. XGBoost is kept for exact SHAP TreeExplainer attributions and
-consistency with the price model.
+### 3.3 Hold-out test set (910 original rows), before vs after adding synthetic rows
 
-### 3.3 Hold-out test set (910 rows)
+| XGBoost trained on | Accuracy | Precision (macro) | Recall (macro) | F1 (macro) |
+|---|---|---|---|---|
+| Original training rows only (before) | 0.851 | 0.851 | 0.851 | 0.851 |
+| Original + synthetic rows (after, deployed) | 0.851 | 0.850 | 0.851 | 0.850 |
 
-Accuracy **0.851**, macro-F1 **0.850**. Per crop F1: Wheat 0.996, Potato 0.989, Onion 0.935,
-Brinjal 0.837, Tomato 0.809, Cauliflower 0.710, Cabbage 0.677. Cabbage and cauliflower are
-confused with each other (similar cool-season brassicas) — an intended, realistic overlap,
-which is where the profit score decides. This accuracy describes separability of the
-synthetic data, **not field accuracy**.
+Per crop F1 (after): Wheat 0.981, Potato 0.961, Onion 0.911, Brinjal 0.841, Tomato 0.786, Cauliflower 0.773, Cabbage 0.698. The metrics are unchanged within noise: the test rows come from the old simulator, which
+the synthetic rows do not try to imitate, so this shows the extension did not hurt there. It says nothing about
+dry-season or soil-type accuracy on real farms (no real data). Confusion matrices: `confusion_matrix.csv` (after),
+`confusion_matrix_before.csv`. This accuracy describes separability of simulated data, **not field accuracy**.
 
-Global SHAP importance (mean |SHAP|, log-odds): K 1.57, P 0.99, N 0.82, pH 0.76, growing
-months 0.61, temperature 0.61, rainfall 0.54, humidity 0.48, city 0.40, planting month 0.37,
-selling month 0.13.
+Global SHAP importance (mean |SHAP|, log-odds): K 1.38, P 0.95, N 0.79, pH 0.70, growing
+months 0.80, temperature 0.52, humidity 0.50, planting month 0.49, city 0.36, rainfall 0.31,
+soil type 0.17, selling month 0.11.
 
 ---
 

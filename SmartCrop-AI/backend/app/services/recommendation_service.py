@@ -16,16 +16,43 @@ FEATURE_NAMES = {"N": "nitrogen", "P": "phosphorus", "K": "potassium",
                  "rainfall": "rainfall"}
 
 
+# Model feature -> SoilWeatherInputs field, so the API's own validity limits can be published to the form.
+FIELD_OF = {"N": "nitrogen", "P": "phosphorus", "K": "potassium", "temperature": "temperature",
+            "humidity": "humidity", "ph": "ph", "rainfall": "rainfall"}
+
+
+def hard_limits(feature: str) -> tuple[float, float]:
+    """Physical validity limits (ge/le) declared on SoilWeatherInputs - the single source for the form."""
+    meta = SoilWeatherInputs.model_fields[FIELD_OF[feature]].metadata
+    return (next(m.ge for m in meta if hasattr(m, "ge")), next(m.le for m in meta if hasattr(m, "le")))
+
+
+WEATHER_FEATURES = ("temperature", "humidity", "rainfall")
+
+
 def range_warnings(rec: CropRecommender, body: SoilWeatherInputs) -> list[str]:
-    """Inputs outside the training data range mean the model is extrapolating."""
-    summary = rec.meta["data_quality"]["feature_summary"]
+    """Inputs outside the training data range mean the model is extrapolating. Weather values (often fetched
+    automatically) are limited to the range instead, see model_inputs()."""
     out = []
     for f, v in body.model_inputs().items():
-        lo, hi = summary[f]["min"], summary[f]["max"]
-        if not lo <= v <= hi:
-            out.append(f"Your {FEATURE_NAMES[f]} value ({v:g}) is outside the range in the "
-                       f"training data ({lo:g}–{hi:g}); the result is less reliable.")
+        lo, hi = rec.input_ranges[f]["min"], rec.input_ranges[f]["max"]
+        if lo <= v <= hi:
+            continue
+        tail = (f"it was limited to {min(max(v, lo), hi):g} for the calculation." if f in WEATHER_FEATURES
+                else "the result is less reliable.")
+        out.append(f"Your {FEATURE_NAMES[f]} value ({v:g}) is outside the range in the "
+                   f"training data ({lo:g}–{hi:g}); {tail}")
     return out
+
+
+def model_inputs(rec: CropRecommender, body: SoilWeatherInputs) -> dict:
+    """What the model receives: the request's values, with temperature, humidity and rainfall clipped to the
+    training data's min/max. The saved request and the UI keep the real values."""
+    inputs = body.recommender_inputs()
+    for f in WEATHER_FEATURES:
+        r = rec.input_ranges[f]
+        inputs[f] = min(max(inputs[f], r["min"]), r["max"])
+    return inputs
 
 
 def _check_city(rec: CropRecommender, city: str) -> str:
@@ -38,13 +65,10 @@ def _check_city(rec: CropRecommender, city: str) -> str:
 
 def analyze(rec: CropRecommender, body: CropRequest) -> dict:
     city = _check_city(rec, body.city)
-    out = rec.analyze(body.model_inputs(), city=city, planting_month=body.planting_month,
+    out = rec.analyze(model_inputs(rec, body), city=city, planting_month=body.planting_month,
                       selling_month=body.selling_month, area_acres=body.area_acres,
                       planting_year=body.planting_year)
     warnings = range_warnings(rec, body)
-    if body.soil_type:
-        warnings.append("Soil type was saved with your request but is not used by the model "
-                        "(the training dataset has no soil-type column).")
     if not any(r["recommended"] for r in out["results"]):
         warnings.append("No crop is a good match for your field, sellable in the chosen month "
                         "and expected to make a profit. Try a different selling month or "
@@ -96,24 +120,25 @@ def explain(rec: CropRecommender, body: CropExplainRequest) -> dict:
                             f"'{body.crop_name}' is not a supported crop. "
                             f"Supported: {', '.join(rec.classes)}")
     city = _check_city(rec, body.city)
-    return rec.explain(body.model_inputs(), city, body.planting_month, body.selling_month, crop)
+    return rec.explain(model_inputs(rec, body), city, body.planting_month, body.selling_month, crop)
 
 
 def options(rec: CropRecommender) -> dict:
-    summary = rec.meta["data_quality"]["feature_summary"]
     return {"state": STATE, "crops": rec.classes, "cities": rec.cities,
             "calendar": {k: asdict(v) for k, v in rec.calendar.items()},
             "economics": {k: asdict(v) for k, v in rec.economics.items()},
-            "input_ranges": {f: [summary[f]["min"], summary[f]["max"]] for f in summary},
+            "input_ranges": {f: [r["min"], r["max"]] for f, r in rec.input_ranges.items()},
+            "soil_types": rec.meta["soil_types"],
             "price_data_end": rec.forecaster.meta["data_end"],
             "inflation_annual_pct": rec.forecaster.inflation * 100}
 
 
 def feature_ranges(rec: CropRecommender) -> dict:
-    """Single source of truth for the form's ranges, all read from the trained model's metadata:
-    min/max = the dataset's overall minimum/maximum (hard limits), perCrop = each crop's 5th-95th
+    """Single source of truth for the form's ranges. min/max come from feature_ranges.json (written by
+    training from the dataset): outside them the model extrapolates -> soft note;
+    hardMin/hardMax = the API's validity limits (outside them the request is rejected), perCrop = each crop's 5th-95th
     percentile (the same numbers behind "usual range" on the result page)."""
-    summary = rec.meta["data_quality"]["feature_summary"]
-    return {f: {"min": summary[f]["min"], "max": summary[f]["max"],
-                "perCrop": {crop: [r[f]["p05"], r[f]["p95"]] for crop, r in rec.ranges.items()}}
-            for f in summary}
+    return {f: {"min": lim["min"], "max": lim["max"],
+                "hardMin": hard_limits(f)[0], "hardMax": hard_limits(f)[1],
+                "perCrop": {crop: [cr[f]["p05"], cr[f]["p95"]] for crop, cr in rec.ranges.items()}}
+            for f, lim in rec.input_ranges.items()}

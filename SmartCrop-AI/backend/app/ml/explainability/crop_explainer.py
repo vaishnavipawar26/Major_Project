@@ -10,7 +10,7 @@ in the (synthetic) training dataset — a statement about the data, not agronomi
 from __future__ import annotations
 
 from app.ml.common.reference import CropCalendar
-from app.ml.crop_recommendation.features import FEATURE_GROUPS, GROUP_LABELS
+from app.ml.crop_recommendation.features import FEATURE_GROUPS, GROUP_LABELS, SOIL_LABELS
 
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December"]
@@ -18,7 +18,7 @@ FEATURE_LABELS = {
     "N": ("Nitrogen (N)", ""), "P": ("Phosphorus (P)", ""), "K": ("Potassium (K)", ""),
     "temperature": ("Temperature", " °C"), "humidity": ("Humidity", " %"),
     "ph": ("Soil pH", ""), "rainfall": ("Rainfall", " mm"),
-    "city_code": ("City", ""), "planting_month": ("Planting month", ""),
+    "soil_type": ("Soil type", ""), "city_code": ("City", ""), "planting_month": ("Planting month", ""),
     "selling_month": ("Selling month", ""), "growing_months": ("Months to selling", ""),
 }
 PHRASES = {"N": "nitrogen level", "P": "phosphorus level", "K": "potassium level",
@@ -33,6 +33,8 @@ def _fmt(v: float) -> str:
 def _display_value(f: str, inputs: dict) -> str:
     if f == "city_code":
         return inputs["city"]
+    if f == "soil_type":
+        return SOIL_LABELS.get(inputs.get("soil_type", "unknown"), "Not specified")
     if f in ("planting_month", "selling_month"):
         return MONTHS[int(inputs[f]) - 1]
     if f == "growing_months":
@@ -52,6 +54,11 @@ def _sentence(f: str, crop: str, s: float, inputs: dict, ranges: dict, cal: Crop
                     f"{crop} (typical {rng}).")
         return (f"Your {PHRASES[f]} ({val}) is {'within' if within else 'outside'} the typical "
                 f"{crop} range ({rng}) but counts against it compared with other crops.")
+    if f == "soil_type":
+        if inputs.get("soil_type", "unknown") == "unknown":
+            return f"You did not give a soil type, so it played little part in the result for {crop}."
+        return (f"{SOIL_LABELS[inputs['soil_type']]} soil is {'a common' if sup else 'a less common'} "
+                f"soil for {crop} in the training data.")
     if f == "city_code":
         share = ranges.get("_cities", {}).get(inputs["city"], 0) * 100
         return (f"{inputs['city']} is {'a common' if share >= 10 else 'a less common'} growing area "

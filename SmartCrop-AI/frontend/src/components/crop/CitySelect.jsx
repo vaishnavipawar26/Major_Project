@@ -30,7 +30,7 @@ export default function CitySelect({ id, value, cities, onChange }) {
     <div className="city-select" ref={root}>
       <div className="input-unit">
         <input id={id} role="combobox" aria-expanded={open} aria-controls={`${id}-list`} aria-autocomplete="list" autoComplete="off"
-          value={open ? query : cropName(t, value, "city")} placeholder={cropName(t, value, "city")}
+          value={open ? query : cropName(t, value, "city")} placeholder={t("crop.form.cityPlaceholder")}
           onFocus={() => { setOpen(true); setQuery(""); setActive(0); }}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); setActive(0); }} onKeyDown={onKey} />
         <span className="input-unit-text" aria-hidden="true">{open ? <Search size={16} /> : <ChevronDown size={16} />}</span>

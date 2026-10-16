@@ -17,7 +17,7 @@ import { errorMessage } from "../services/api";
 import { cropService } from "../services/cropService";
 import { historyService } from "../services/historyService";
 import { cropName, fmtDateTime, titleCase } from "../utils/format";
-import { LAST_CROP_RESULT_KEY } from "./CropRecommendation";
+import { LAST_CROP_RESULT_KEY, SOILS } from "./CropRecommendation";
 
 const INPUT_KEYS = ["nitrogen", "phosphorus", "potassium", "temperature", "humidity", "ph", "rainfall"];
 
@@ -28,7 +28,7 @@ async function loadFromHistory(id) {
   const req = {
     ...Object.fromEntries(INPUT_KEYS.map((k) => [k, rec[k]])),
     city: rec.city, planting_month: rec.month, selling_month: rec.selling_month,
-    area_acres: rec.area_acres || 1, state: "Maharashtra", soil_type: rec.soil_type,
+    area_acres: rec.area_acres || 1, state: "Maharashtra", soil_type: SOILS.includes(rec.soil_type) ? rec.soil_type : "unknown",   // older records may hold free text
     planting_year: rec.planting_date ? Number(rec.planting_date.slice(0, 4)) : null,
   };
   const response = await cropService.analyze(req);
@@ -100,7 +100,7 @@ export default function CropResult() {
       </div>
 
       {response.warnings.length > 0 && (
-        <div className="stack mb-4">{response.warnings.map((w) => <Alert key={w} type="warn"><ServerText>{w}</ServerText></Alert>)}</div>
+        <div className="stack mb-4">{response.warnings.map((w) => <Alert key={w} type={/is outside the range in the training data/.test(w) ? "info" : "warn"}><ServerText>{w}</ServerText></Alert>)}</div>
       )}
 
       <div className="stack">
