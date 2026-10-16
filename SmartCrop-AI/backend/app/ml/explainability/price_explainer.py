@@ -1,4 +1,4 @@
-"""Turn SHAP values of the price model into farmer-friendly and technical explanations.
+"""Turn SHAP values of the price model into farmer-friendly explanations.
 
 The model predicts log(price[t+h] / price[t]); SHAP values are additive in that space.
 A SHAP value s therefore corresponds to roughly (e^s - 1) x 100 % change in the forecast.
@@ -14,35 +14,10 @@ import math
 
 import numpy as np
 
+from app.ml.explainability.simple_factors import group_simple_factors
+
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December"]
-
-TECHNICAL_LABELS = {
-    "log_price": "Current price level (log)",
-    "lag_1_change": "Price change vs 1 day ago",
-    "lag_3_change": "Price change vs 3 days ago",
-    "lag_7_change": "Price change vs 7 days ago (Modal_Price lag 7)",
-    "lag_14_change": "Price change vs 14 days ago (Modal_Price lag 14)",
-    "lag_30_change": "Price change vs 30 days ago (Modal_Price lag 30)",
-    "roll_mean_7_gap": "Price vs 7-day rolling mean",
-    "roll_mean_14_gap": "Price vs 14-day rolling mean",
-    "roll_mean_30_gap": "Price vs 30-day rolling mean",
-    "volatility_30": "30-day rolling std of daily returns",
-    "momentum_7_30": "Momentum (7-day mean vs 30-day mean)",
-    "pct_change_7": "7-day percentage change",
-    "spread_ratio": "Max/Min price spread",
-    "log_arrivals": "Arrivals (log)",
-    "arrivals_vs_30d": "Arrivals vs 30-day average",
-    "state_price_gap": "Market price vs state median",
-    "state_change_7": "State median 7-day change",
-    "month": "Month", "week_of_year": "Week of year", "day_of_week": "Day of week",
-    "season_code": "Season (Kharif/Rabi/Zaid)", "doy_sin": "Day-of-year (sin)",
-    "doy_cos": "Day-of-year (cos)",
-    "commodity_code": "Crop encoding", "market_code": "Market encoding",
-    "variety_code": "Variety encoding",
-    "horizon_days": "Days between forecast date and target date",
-    "target_doy_sin": "Target day-of-year (sin)", "target_doy_cos": "Target day-of-year (cos)",
-}
 
 # Farmer-facing factor -> technical features it aggregates
 FACTOR_GROUPS = {
@@ -164,14 +139,6 @@ def explain_price(shap_row: np.ndarray, base_value: float, feature_values: dict,
             farmer.append(f"{f['observation']} The model links this to a {f['impact']} "
                           f"predicted price (about {f['effect_pct']:+.1f}%).")
 
-    technical = sorted(
-        ({"feature": n, "label": TECHNICAL_LABELS.get(n, n),
-          "value": None if feature_values.get(n) is None or
-          (isinstance(feature_values.get(n), float) and math.isnan(feature_values[n]))
-          else round(float(feature_values[n]), 5),
-          "shap_value": round(v, 5)} for n, v in contrib.items()),
-        key=lambda t: abs(t["shap_value"]), reverse=True)
-
     total = sum(contrib.values())
     return {
         "method": "SHAP TreeExplainer (exact, tree-path-dependent)",
@@ -182,5 +149,5 @@ def explain_price(shap_row: np.ndarray, base_value: float, feature_values: dict,
         "all_small": all(f["impact"] == "small" for f in factors[:top_k]),
         "farmer_explanation": farmer,
         "factors": factors,
-        "technical": technical,
+        "simple": group_simple_factors(contrib),
     }

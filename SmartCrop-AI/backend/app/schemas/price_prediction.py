@@ -165,11 +165,19 @@ class PriceFactor(BaseModel):
     observation: str
 
 
-class TechnicalFeature(BaseModel):
-    feature: str
+class SimpleFactor(BaseModel):
+    factor: str
     label: str
-    value: float | None
+    meaning: str
     shap_value: float
+    effect_pct: float
+    direction: str
+    small: bool
+
+
+class SimpleFactors(BaseModel):
+    factors: list[SimpleFactor]
+    other: SimpleFactor
 
 
 class PriceExplanation(BaseModel):
@@ -183,7 +191,7 @@ class PriceExplanation(BaseModel):
     all_small: bool
     farmer_explanation: list[str]
     factors: list[PriceFactor]
-    technical: list[TechnicalFeature]
+    simple: SimpleFactors | None = None
 
 
 class PriceExplainResponse(BaseModel):

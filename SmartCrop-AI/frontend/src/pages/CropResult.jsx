@@ -5,7 +5,6 @@ import Alert from "../components/Alert";
 import EmptyState from "../components/EmptyState";
 import Loader from "../components/Loader";
 import ServerText from "../components/ServerText";
-import AdvancedDetails from "../components/crop/AdvancedDetails";
 import BestCropCard from "../components/crop/BestCropCard";
 import CropCompare from "../components/crop/CropCompare";
 import CropPicker from "../components/crop/CropPicker";
@@ -112,7 +111,6 @@ export default function CropResult() {
         <SuitabilitySection result={current} response={response} inputs={inputs} />
         <Financials result={current} response={response} />
         <TimelineSection result={current} />
-        <AdvancedDetails result={current} response={response} req={data.req} />
         <p className="cr-disclaimer">{tr("cr.disclaimer")}</p>
       </div>
     </div>

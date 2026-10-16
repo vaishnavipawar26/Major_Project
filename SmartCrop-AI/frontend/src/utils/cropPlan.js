@@ -1,7 +1,7 @@
 // Pure helpers for the crop result page: they turn the API response into the short, farmer-facing
 // facts the page shows. No React and no calculations of money here - prices, profit and scores are
 // always the API's own numbers; these helpers only classify and phrase them.
-import { cropName, monthLabel, monthLong, rupees, signedRupees } from "./format";
+import { cropName, monthLabel, monthLong, rupees } from "./format";
 
 const INPUT_OF = { N: "nitrogen", P: "phosphorus", K: "potassium", ph: "ph", temperature: "temperature", humidity: "humidity", rainfall: "rainfall" };
 export const SOIL = ["N", "P", "K", "ph"];
@@ -81,35 +81,6 @@ export function compareRows(results, response, t) {
   });
 }
 
-/** One indicator line: tone is "up" (helps), "down" (may reduce returns) or "flat" (limited effect). */
-const item = (tone, text) => ({ tone, text });
-
-/** Price, profit and (if the data supports it) one seasonal trend for the "market" card. */
-export function marketFacts(r, response, t) {
-  const e = r.economics, m = r.market;
-  const crop = cropName(t, r.crop_name), sell = monthLabel(response.selling_date);
-  if (!e || !m) return [item("flat", t("cr.mkt.noForecast", { crop }))];
-  const ref = t("cr.mkt.reference", { month: monthLabel(m.latest_month), price: rupees(m.latest_price) });
-  const change = m.change_pct;
-  const out = [Math.abs(change) < FLAT_PCT
-    ? item("flat", t("cr.mkt.priceFlat", { month: sell, price: rupees(e.selling_price), ref }))
-    : item(change > 0 ? "up" : "down", t(change > 0 ? "cr.mkt.priceUp" : "cr.mkt.priceDown",
-      { month: sell, price: rupees(e.selling_price), pct: Math.abs(Math.round(change)), ref }))];
-  out.push(e.net_profit > 0
-    ? item("up", t("cr.mkt.profitPos", { profit: signedRupees(e.net_profit), roi: Math.round(e.roi_pct) }))
-    : item("down", t("cr.mkt.profitNeg", { loss: rupees(Math.abs(e.net_profit)), breakEven: rupees(e.break_even_price) })));
-  const s = m.explanation?.seasonal;
-  if (s) {
-    const month = monthLong(s.month);
-    if (s.price_vs_avg_pct <= -FLAT_PCT) out.push(item("down", t("cr.mkt.seasonLow", { crop, month })));
-    else if (s.price_vs_avg_pct >= FLAT_PCT) out.push(item("up", t("cr.mkt.seasonHigh", { crop, month })));
-    else if (s.arrivals_vs_avg_pct != null && Math.abs(s.arrivals_vs_avg_pct) >= FLAT_PCT) {
-      out.push(item("flat", t(s.arrivals_vs_avg_pct > 0 ? "cr.mkt.arrivalsHigh" : "cr.mkt.arrivalsLow", { crop, month })));
-    }
-  }
-  return out;
-}
-
 /**
  * Soil or weather inputs as simple rows. "ok" only means the value lies in the crop's usual range in the
  * dataset; it never claims the value is optimal, and a value is not called harmful because another crop
@@ -121,25 +92,82 @@ export function indicatorRows(r, features, inputs, t) {
     const fa = byFeature[f];
     const v = inputs[INPUT_OF[f]];
     const unit = fa.unit ? ` ${fa.unit}` : "";
-    const state = fa.within_typical_range ? "ok" : v < fa.typical_low ? "low" : "high";
+    const n = v === "" || v == null ? NaN : Number(v);
+    const known = !Number.isNaN(n) && fa.typical_low != null && fa.typical_high != null;
+    const state = !known ? "unknown" : n < fa.typical_low ? "low" : n > fa.typical_high ? "high" : "ok";
     return {
-      feature: f, label: t(`feature.${f}`), value: fa.value, ok: state === "ok",
-      status: t(`cr.ind.${state}`), range: t("cr.ind.range", { low: fa.typical_low, high: fa.typical_high, unit }),
+      feature: f, label: t(`feature.${f}`), value: fa.value, ok: state === "ok", state,
+      num: known ? n : null, low: fa.typical_low, high: fa.typical_high, unit: fa.unit || "",
+      status: state === "unknown" ? t("score.notAvailable") : t(`cr.ind.${state}`),
+      range: t("cr.ind.range", { low: fa.typical_low, high: fa.typical_high, unit }),
     };
   });
 }
 
-/** Planting window, expected harvest and whether the selling month fits the crop cycle. */
-export function plantingFacts(r, t) {
-  const tl = r.timeline, crop = cropName(t, r.crop_name);
-  const args = {
-    crop, grow: tl.growth_months_min === tl.growth_months_max ? `${tl.growth_months_min}` : `${tl.growth_months_min}–${tl.growth_months_max}`,
-    plant: monthLabel(tl.planting), sell: monthLabel(tl.selling), n: tl.months_stored, harvest: harvestSpan(tl),
-    month: monthLong(monthNo(tl.planting)), usual: tl.planting_months.map(monthLong).join(", "),
-  };
-  return [
-    item(tl.planting_in_window ? "up" : "down", t(tl.planting_in_window ? "cr.time.plantOk" : "cr.time.plantOut", args)),
-    item("flat", t("cr.time.ready", args)),
-    item({ fresh: "up", stored: "flat", not_ready: "down", spoiled: "down" }[tl.status], t(`timeline.concl.${tl.status}`, args)),
-  ];
+// Presentation bands for the overall 0-100 score; they only label the number, they do not change it.
+const GOOD_SCORE = 70, OK_SCORE = 50;
+
+/** "good" | "moderate" | "weak" | "notFeasible" - the band shown beside the overall score. */
+export function fitBand(r) {
+  if (!r.feasible) return "notFeasible";
+  if (r.recommendation_score >= GOOD_SCORE) return "good";
+  return r.recommendation_score >= OK_SCORE ? "moderate" : "weak";
+}
+
+/** The soil or weather value furthest from helping: the first outside-the-usual-range factor, in the API's importance order. */
+export function mainConcern(r, inputs, t) {
+  const rows = indicatorRows(r, [...SOIL, ...WEATHER], inputs, t);
+  const byFeature = Object.fromEntries(r.important_factors.map((f) => [f.feature, f]));
+  const order = r.important_factors.map((f) => f.feature);
+  const bad = rows.filter((x) => x.state === "low" || x.state === "high").sort((a, b) => order.indexOf(a.feature) - order.indexOf(b.feature));
+  if (!bad.length) return null;
+  const x = bad[0], fa = byFeature[x.feature];
+  return { feature: x.feature, label: x.label, low: x.state === "low", value: fa.value,
+    range: `${fa.typical_low}–${fa.typical_high}${fa.unit ? ` ${fa.unit}` : ""}` };
+}
+
+/** One or two plain sentences on why the crop got its score, built from the three part scores. */
+export function fitSummary(r, inputs, t) {
+  const crop = cropName(t, r.crop_name);
+  const parts = [
+    { key: "field", score: r.agronomic_score },
+    { key: "plan", score: r.timing_score },
+    { key: "profit", score: r.profit_score },
+  ].filter((p) => p.score != null);
+  const strong = parts.filter((p) => p.score >= GOOD_SCORE).map((p) => t(`cr.sum.strong.${p.key}`));
+  const weak = parts.filter((p) => p.score < OK_SCORE).map((p) => t(`cr.sum.weak.${p.key}`));
+  const out = [strong.length
+    ? t("cr.sum.matches", { crop, list: strong.join(t("cr.sum.and")) })
+    : t("cr.sum.partly", { crop })];
+  if (weak.length) out.push(t("cr.sum.weakPart", { list: weak.join(t("cr.sum.and")) }));
+  const c = mainConcern(r, inputs, t);
+  if (c) out.push(t("cr.sum.attention", { factor: c.label }));
+  return out.join(" ");
+}
+
+/** The three default points: profit outlook, field conditions, planting and harvest. Each has a tone for the icon. */
+export function keyPoints(r, response, inputs, t) {
+  const e = r.economics, tl = r.timeline;
+  const crop = cropName(t, r.crop_name), month = monthYear(response.selling_date);
+  let profit;
+  if (!e) profit = { tone: "flat", text: t("cr.pts.noForecast", { crop }) };
+  else {
+    const rough = reliabilityOf(r) !== "tested" ? ` ${t("cr.pts.roughPrice")}` : "";
+    profit = e.net_profit > 0
+      ? { tone: "good", text: t("cr.pts.profitPos", { price: rupees(e.selling_price), month, profit: rupees(e.net_profit) }) + rough }
+      : { tone: "warn", text: t("cr.pts.profitNeg", { price: rupees(e.selling_price), month, loss: rupees(Math.abs(e.net_profit)),
+        breakEven: rupees(e.break_even_price) }) + rough };
+  }
+  const c = mainConcern(r, inputs, t);
+  const field = c
+    ? { tone: "warn", text: t(c.low ? "cr.pts.fieldLow" : "cr.pts.fieldHigh", { label: c.label, crop, value: c.value, range: c.range })
+      + (c.feature === "rainfall" && c.low ? ` ${t("cr.pts.irrigation")}` : "") }
+    : { tone: "good", text: t("cr.pts.fieldOk", { crop }) };
+  const plant = monthLong(monthNo(tl.planting)), harvest = harvestSpan(tl);
+  let timing = tl.planting_in_window
+    ? t("cr.pts.plantOk", { plant, harvest })
+    : t("cr.pts.plantOut", { plant, harvest });
+  const bad = tl.status === "not_ready" || tl.status === "spoiled";
+  if (bad) timing += ` ${t(`timeline.concl.${tl.status}`, { crop, sell: monthLabel(tl.selling), harvest, n: tl.months_stored })}`;
+  return { profit, field, timing: { tone: tl.planting_in_window && !bad ? "good" : "warn", text: timing } };
 }

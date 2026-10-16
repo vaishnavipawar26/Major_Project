@@ -145,3 +145,19 @@ def test_peak_is_the_same_highest_validated_price_everywhere():
     a = advise(None, 5, path=path)
     assert reliable_peak(path)["horizon_days"] == 12
     assert a["peak"]["date"] == a["recommended_date"] == path[11]["date"]
+
+
+def test_simple_factors_grouping():
+    import math
+    from app.ml.explainability.simple_factors import group_simple_factors
+    contrib = {"log_price": -0.07, "doy_sin": 0.03, "doy_cos": 0.02, "week_of_year": 0.0,
+               "roll_mean_7_gap": -0.01, "roll_mean_30_gap": -0.005, "horizon_days": -0.005,
+               "volatility_30": 0.001, "log_arrivals": -0.002, "mystery_feature": 0.003}
+    out = group_simple_factors(contrib, top_k=3)
+    fs = out["factors"]
+    assert [f["factor"] for f in fs] == ["price_level", "seasonal", "vs_average"]
+    assert fs[1]["shap_value"] == 0.05 and fs[1]["direction"] == "up"
+    assert abs(fs[0]["effect_pct"] - (math.exp(-0.07) - 1) * 100) < 0.01
+    # everything not shown (incl. unknown features) lands in "other"; nothing is lost
+    assert abs(sum(f["shap_value"] for f in fs) + out["other"]["shap_value"]
+               - sum(contrib.values())) < 1e-4

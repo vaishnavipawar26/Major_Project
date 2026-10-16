@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, ChartNoAxesCombined, CircleCheck, History, Lightbulb, Minus, TrendingDown, TrendingUp,
-  TriangleAlert, Warehouse,
+  Activity, ArrowLeft, CalendarDays, ChartNoAxesCombined, CircleCheck, CloudSun, Coins, History, Lightbulb, Map, Minus, MoveRight, Plus, Scale, TrendingDown, TrendingUp, TriangleAlert, Truck, Warehouse, Wheat,
 } from "lucide-react";
 import Alert from "../components/Alert";
 import CropArt from "../components/CropArt";
@@ -11,7 +10,6 @@ import Loader from "../components/Loader";
 import ResultStep from "../components/ResultStep";
 import ServerText from "../components/ServerText";
 import Tip from "../components/Tip";
-import TechnicalDetails from "../components/TechnicalDetails";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
 import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
@@ -23,11 +21,6 @@ import { LAST_PRICE_REQUEST_KEY } from "./PricePrediction";
 
 const ALGORITHMS = { random_forest: "Random Forest", xgboost: "XGBoost" };
 const algorithmName = (a) => a.replace(/^(random_forest|xgboost)/, (m) => ALGORITHMS[m]);
-const IMPACT = {
-  higher: { cls: "impact-up", icon: TrendingUp, text: "price.why.impactHigher" },
-  lower: { cls: "impact-down", icon: TrendingDown, text: "price.why.impactLower" },
-  small: { cls: "impact-small", icon: Minus, text: "price.why.impactSmall" },
-};
 /** Translated label for a backend key, or the backend's own English label when the dictionary has none. */
 const labelFor = (t, key, fallback) => { const v = t(key); return v === key ? fallback : v; };
 /** "1 day" / "30 days" in the display language */
@@ -60,13 +53,6 @@ function useResultSource() {
     })).catch((e) => setError(errorMessage(e)));
   }, [id, source]);
   return { source, error, missing: !source && !id };
-}
-
-function ImpactPill({ impact }) {
-  const t = useT();
-  const m = IMPACT[impact] || IMPACT.small;
-  const Icon = m.icon;
-  return <span className={`impact ${m.cls}`}><Icon size={13} aria-hidden="true" />{t(m.text)}</span>;
 }
 
 /** Optional cost check: the farmer's own storage and selling costs against the extra income before costs. */
@@ -300,63 +286,103 @@ function WhyFactors({ explain, error, forecast, which, setWhich }) {
   );
 }
 
-/** Step 6 — every factor with its SHAP value, the raw model inputs and the model/validation details (collapsed). */
+const FLAT_PCT = 1;   // changes within +/-1% are described as "about the same"
+const SMALL_PCT = 3;  // up to this a change is "a tiny bit"
+const BIG_PCT = 8;    // from this a change is "a lot"
+const REASON_ICON = {
+  price_level: Coins, seasonal: CloudSun, vs_average: Scale, movement: TrendingUp, crop_market: Wheat,
+  horizon: CalendarDays, volatility: Activity, supply: Truck, statewide: Map, other: Plus,
+};
+
+/** Headline key, tone and arrow for an expected price change in percent. */
+function changeStyle(change) {
+  const a = Math.abs(change);
+  if (a < FLAT_PCT) return { tone: "flat", Arrow: MoveRight, headline: "price.kid.flat" };
+  const size = a < SMALL_PCT ? "Tiny" : a >= BIG_PCT ? "Lot" : "Some";
+  return change > 0
+    ? { tone: "up", Arrow: TrendingUp, headline: `price.kid.up${size}` }
+    : { tone: "down", Arrow: TrendingDown, headline: `price.kid.down${size}` };
+}
+
+const localToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+/** Big number, a plain headline and "today -> that day" prices. */
+function SummaryCard({ exp, forecast }) {
+  const tr = useT();
+  const { tone, Arrow, headline } = changeStyle(exp.prediction_change_pct);
+  const point = forecast.path.find((p) => p.horizon_days === exp.horizon_days);
+  const origin = forecast.forecast_origin_date;
+  return (
+    <div className={`kid-summary is-${tone}`}>
+      <div className="kid-summary-top">
+        <span className="kid-summary-num"><Arrow size={30} aria-hidden="true" />{Math.round(exp.prediction_change_pct) === 0 ? "0%" : pct(exp.prediction_change_pct, 0)}</span>
+        <span className="kid-summary-title">{tr(headline)}</span>
+      </div>
+      {point && (
+        <p className="kid-summary-line">
+          {origin === localToday() ? tr("price.kid.today") : fmtDate(origin)}: <strong>{rupees(forecast.current_price)}</strong>
+          {" \u2192 "}{fmtDate(exp.date)}: {tr("price.kid.about")} <strong>{rupees(point.predicted_price)}</strong>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** One reason: emoji, short title, one easy line, and the effect as a coloured pill. */
+function Reason({ f }) {
+  const tr = useT();
+  const tone = f.factor === "other" ? "flat" : f.effect_pct > 0 ? "up" : f.effect_pct < 0 ? "down" : "flat";
+  const Icon = REASON_ICON[f.factor] || Plus;
+  const line = f.factor === "other" ? tr("price.kid.other.line") : tr(`price.kid.${f.factor}.${f.direction}`);
+  return (
+    <li className="kid-row">
+      <span className="kid-icon" aria-hidden="true"><Icon size={22} /></span>
+      <span className="kid-text">
+        <strong>{tr(`price.kid.${f.factor}.title`)}</strong>
+        <span>{line}</span>
+      </span>
+      <span className={`kid-pill is-${tone}`}>{pct(f.effect_pct)}</span>
+    </li>
+  );
+}
+
+/** Step 6: why the price moves, in plain words. */
 function AdvancedDetails({ explain, forecast, which }) {
   const tr = useT();
   const exps = explain?.explanations || [];
   const exp = exps[Math.min(which, exps.length - 1)];
-  const t = forecast.target;
-  const crop = cropName(tr, forecast.series.commodity);
   const validated = forecast.path.filter((p) => p.beats_baseline).map((p) => p.horizon_days);
+  const simple = exp?.simple;
+  const rows = simple ? [...simple.factors, simple.other] : [];
+  const change = exp?.prediction_change_pct ?? 0;
+  const pushUp = rows.some((f) => f.factor !== "other" && f.effect_pct > 0);
+  const pushDown = rows.some((f) => f.factor !== "other" && f.effect_pct < 0);
+  const word = Math.abs(change) < FLAT_PCT ? "flat" : change > 0 ? "up" : "down";
+  const total = word === "flat" ? tr("price.kid.sumFlat") : tr(`price.kid.sum${word === "up" ? "Up" : "Down"}`, { pct: Math.abs(change).toFixed(0) });
+  const closing = pushUp && pushDown ? tr("price.kid.mixed", { total }) : tr("price.kid.same", { total });
   return (
-    <TechnicalDetails title={tr("price.steps.advancedToggle")}>
-      {exp && (
+    <div className="kid">
+      {exp && <SummaryCard exp={exp} forecast={forecast} />}
+      {simple && (
         <>
-          <h3 className="tech-subtitle">{tr("tech.factorsTitle")}</h3>
-          <p className="small text-2">{tr("price.why.tech.intro")}</p>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>{tr("table.factor")}</th><th>{tr("table.effect")}</th><th className="num">{tr("table.effectPct")}</th><th className="num">SHAP</th></tr></thead>
-              <tbody>
-                {exp.factors.map((f) => (
-                  <tr key={f.factor}>
-                    <td>{labelFor(tr, `price.factor.${f.factor}`, f.title)}</td>
-                    <td><ImpactPill impact={f.impact} /></td>
-                    <td className="num">{pct(f.effect_pct)}</td>
-                    <td className="num">{f.shap_value > 0 ? "+" : ""}{f.shap_value.toFixed(4)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {exp.technical?.length > 0 && (
-            <div className="table-wrap mt-3">
-              <table>
-                <thead><tr><th>{tr("table.feature")}</th><th className="num">{tr("table.value")}</th><th className="num">SHAP</th></tr></thead>
-                <tbody>
-                  {exp.technical.map((r) => (
-                    <tr key={r.feature}><td>{r.label}</td><td className="num">{r.value ?? "—"}</td>
-                      <td className="num">{r.shap_value > 0 ? "+" : ""}{r.shap_value.toFixed(4)}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <p className="muted small mt-2">
-            {tr("price.why.tech.method", { method: exp.method, space: exp.output_space, base: exp.base_value, baseChange: pct(exp.base_change_pct) })}
-          </p>
+          <h3 className="kid-h">{tr("price.kid.why")}</h3>
+          <ul className="kid-list">{rows.map((f) => <Reason key={f.factor} f={f} />)}</ul>
+          <p className="kid-closing">{closing}</p>
         </>
       )}
-      <h3 className="tech-subtitle mt-4">{tr("price.rel.modelTitle")}</h3>
-      <dl className="kv">
-        <dt>{tr("price.rel.yourDate")}</dt>
-        <dd>{t.beats_baseline ? tr("price.rel.validatedShort") : tr("price.rel.notValidatedShort")}</dd>
-        <dt>{tr("price.rel.validatedDays")}</dt>
-        <dd>{validated.length ? dayRanges(validated) : tr("price.rel.noneFor", { crop })}</dd>
-        <dt>{tr("price.rel.model")}</dt><dd>{tr("price.rel.modelValue", { algorithm: algorithmName(forecast.model.algorithm) })}</dd>
-      </dl>
-      <p className="muted small" style={{ margin: "10px 0 0" }}>{tr("price.rel.validatedMeaning", { crop })}</p>
-    </TechnicalDetails>
+      <details className="kid-about">
+        <summary>{tr("price.kid.aboutTitle")}</summary>
+        {forecast.target.beats_baseline && validated.length ? (
+          <p className="kid-about-line"><CircleCheck size={16} aria-hidden="true" />
+            {tr("price.kid.tested", { from: Math.min(...validated), to: Math.max(...validated) })}</p>
+        ) : (
+          <p className="kid-about-line is-warn"><TriangleAlert size={16} aria-hidden="true" />{tr("price.kid.notTested")}</p>
+        )}
+      </details>
+    </div>
   );
 }
 
@@ -479,7 +505,6 @@ export default function PriceResult() {
       </ResultStep>
 
       <ResultStep n={6} id="step-advanced" title={tr("price.steps.advanced")}>
-        <p className="small text-2 !mb-0">{tr("price.steps.advancedHint")}</p>
         <AdvancedDetails explain={explain} forecast={forecast} which={which} />
       </ResultStep>
 

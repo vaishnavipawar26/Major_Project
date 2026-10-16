@@ -97,7 +97,9 @@ def test_shap_values_add_up_to_prediction(client, user):
     exps = e.json()["explanations"]
     assert exps[0]["date"] == STATE_REQ["target_date"]
     for exp in exps:
-        total = exp["base_value"] + sum(f["shap_value"] for f in exp["technical"])
+        simple = exp["simple"]
+        total = (exp["base_value"] + simple["other"]["shap_value"]
+                 + sum(f["shap_value"] for f in simple["factors"]))
         f = next(x for x in t["path"] if x["horizon_days"] == exp["horizon_days"])
         assert abs(total - math.log(f["predicted_price"] / t["current_price"])) < 2e-3
         assert len(exp["farmer_explanation"]) == 3
