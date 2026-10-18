@@ -184,7 +184,7 @@ export default function PriceTrendChart({
                   <td className="num">{f.horizon_days}</td>
                   <td className="num">{rupees(f.predicted_price)}</td>
                   <td className="num">{rupees(f.lower)} – {rupees(f.upper)}</td>
-                  <td>{f.beats_baseline ? t("table.validated") : t("table.lessReliable")}</td>
+                  <td>{f.beats_baseline ? "" : t("table.lessReliable")}</td>
                   {actualAfter.length > 0 && <td className="num">{f.actual_price == null ? "—" : rupees(f.actual_price)}</td>}
                 </tr>
               ))}

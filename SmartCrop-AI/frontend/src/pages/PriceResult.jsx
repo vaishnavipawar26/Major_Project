@@ -373,15 +373,13 @@ function AdvancedDetails({ explain, forecast, which }) {
           <p className="kid-closing">{closing}</p>
         </>
       )}
-      <details className="kid-about">
-        <summary>{tr("price.kid.aboutTitle")}</summary>
-        {forecast.target.beats_baseline && validated.length ? (
-          <p className="kid-about-line"><CircleCheck size={16} aria-hidden="true" />
-            {tr("price.kid.tested", { from: Math.min(...validated), to: Math.max(...validated) })}</p>
-        ) : (
+      {/* only the caution is shown; "tested and checked" is not useful to a farmer */}
+      {!(forecast.target.beats_baseline && validated.length) && (
+        <details className="kid-about">
+          <summary>{tr("price.kid.aboutTitle")}</summary>
           <p className="kid-about-line is-warn"><TriangleAlert size={16} aria-hidden="true" />{tr("price.kid.notTested")}</p>
-        )}
-      </details>
+        </details>
+      )}
     </div>
   );
 }
@@ -452,11 +450,10 @@ export default function PriceResult() {
             <div><span className="stat-label">{tr("price.result.daysAhead")}</span><strong>{t.horizon_days}</strong></div>
           </div>
           {sourceKey && <p className="price-source">{tr(sourceKey)}</p>}
-          <span className={`reliability ${validated ? "ok" : "weak"}`}>
-            {validated
-              ? <><CircleCheck size={15} aria-hidden="true" />{tr("price.result.validated")}</>
-              : <><TriangleAlert size={15} aria-hidden="true" />{tr("price.result.roughGuide")}</>}
-          </span>
+          {/* only the caution is shown; a forecast that passed testing needs no label */}
+          {!validated && (
+            <span className="reliability weak"><TriangleAlert size={15} aria-hidden="true" />{tr("price.result.roughGuide")}</span>
+          )}
           {t.actual_price != null && (
             <p className="small" style={{ margin: "8px 0 0" }}>
               {tr("price.result.actualThatDay")} <strong>{rupees(t.actual_price)}</strong>

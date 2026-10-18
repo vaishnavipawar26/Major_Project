@@ -1568,6 +1568,28 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 }
 @media (prefers-reduced-motion: reduce) { .footer-links a { transition: none; } .footer-links a:hover { transform: none; } }
 
+/* ---------- original crop growing timeline (typical biological cycle) ---------- */
+.gc { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed var(--border); }
+.gc-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 1rem; }
+.gc-title { margin: 0; font-size: 1.05rem; color: var(--forest); }
+.gc-chip { font-size: 0.74rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 999px; background: var(--harvest-soft); border: 1px solid var(--harvest-line); color: var(--harvest-text); }
+.gc-stages { list-style: none; margin: 0 0 0.75rem; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.gc-stage { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding-right: 0.5rem; }
+.gc-stage::before { content: ""; position: absolute; top: 15px; left: 32px; right: 0; height: 2px; background: var(--border); }
+.gc-stage:last-child::before { display: none; }
+.gc-dot { position: relative; z-index: 1; display: inline-flex; width: 32px; height: 32px; border-radius: 50%; align-items: center; justify-content: center;
+  background: var(--brand-soft); color: var(--forest); border: 2px solid #9fcaa9; }
+.gc-stage.is-pre .gc-dot { background: var(--surface-2); color: var(--muted); border-color: var(--border); }
+.gc-stage.is-harvest .gc-dot { background: var(--leaf); color: #fff; border-color: var(--leaf); }
+.gc-text { display: flex; flex-direction: column; min-width: 0; }
+.gc-label { font-size: 0.74rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.gc-value { font-size: 0.92rem; color: var(--text); line-height: 1.3; }
+@media (max-width: 760px) {
+  .gc-stages { grid-auto-flow: row; grid-auto-columns: auto; gap: 0.2rem; }
+  .gc-stage { flex-direction: row; align-items: flex-start; gap: 0.8rem; padding-bottom: 0.9rem; }
+  .gc-stage::before { top: 32px; bottom: 0; left: 15px; right: auto; width: 2px; height: auto; }
+}
+
 @tailwind components;
 @tailwind utilities;
 

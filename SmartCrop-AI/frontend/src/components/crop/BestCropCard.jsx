@@ -15,7 +15,7 @@ function Stat({ icon: Icon, label, value, sub, tone, big }) {
   );
 }
 
-/** Section 2a - the recommended crop with five key facts. */
+/** Section 2a - the recommended crop with its key facts (forecast accuracy only when it is limited). */
 export default function BestCropCard({ response, onSelect }) {
   const t = useT();
   const best = response.results.find((r) => r.crop_name === response.best_overall);
@@ -55,7 +55,9 @@ export default function BestCropCard({ response, onSelect }) {
           sub={[t("cr.best.rankValue", { rank: best.rank, total: response.results.length }),
             best.profit_rank ? t("cr.best.profitRankValue", { rank: best.profit_rank }) : null].filter(Boolean).join(" · ")} />
         <Stat icon={CalendarCheck} label={t("cr.best.harvestLabel")} value={harvestSpan(tl)} sub={t("cr.best.plantSub", { month: monthLabel(tl.planting) })} />
-        <Stat icon={ShieldCheck} label={t("cr.best.reliabilityLabel")} value={t(`cr.rel.${rel}`)} sub={t(`cr.rel.${rel}Sub`)} />
+        {rel !== "tested" && (
+          <Stat icon={ShieldCheck} label={t("cr.best.reliabilityLabel")} value={t(`cr.rel.${rel}`)} sub={t(`cr.rel.${rel}Sub`)} />
+        )}
       </div>
       {rel !== "tested" && (
         <p className="best-warning"><TriangleAlert size={15} aria-hidden="true" />{t("cr.fin.limitedWarning")}</p>

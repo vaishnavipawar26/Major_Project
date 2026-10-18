@@ -81,7 +81,7 @@ export default function CropCompare({ response, selected, onSelect }) {
                   <td><Fit part={r.soil} /></td>
                   <td><Fit part={r.weather} /></td>
                   <td>{t(`cr.timing.${r.timing}`)}</td>
-                  <td>{t(`cr.rel.${r.reliability}`)}</td>
+                  <td>{r.reliability === "tested" ? "" : t(`cr.rel.${r.reliability}`)}</td>
                   <td><span className={`status-pill is-${r.status.tone}`}><Icon size={13} aria-hidden="true" />{t(`cr.status.${r.status.key}`)}</span></td>
                 </tr>
               );

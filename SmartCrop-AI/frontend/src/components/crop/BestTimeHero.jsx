@@ -26,10 +26,9 @@ export default function BestTimeHero({ result, response, reliable }) {
             <strong className="num">{rupees(b.price)}</strong>
             <span className="best-hero-label">{t("unit.perQuintal")}</span>
           </div>
-          <span className={`best-hero-badge ${reliable ? "is-ok" : "is-warn"}`}>
-            {reliable ? <CircleCheck size={14} aria-hidden="true" /> : <TriangleAlert size={14} aria-hidden="true" />}
-            {t(reliable ? "cr.hero.reliable" : "cr.hero.limited")}
-          </span>
+          {!reliable && (
+            <span className="best-hero-badge is-warn"><TriangleAlert size={14} aria-hidden="true" />{t("cr.hero.limited")}</span>
+          )}
         </div>
         {b.kind === "best" ? (
           <p className="best-hero-line is-good"><CircleCheck size={16} aria-hidden="true" />{t("cr.hero.alreadyBest")}</p>

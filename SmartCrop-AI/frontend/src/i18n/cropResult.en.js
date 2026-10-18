@@ -21,10 +21,8 @@ export default {
   "cr.best.viewDetails": "See details",
   "cr.best.none": "No crop is a good match for your field, can be sold in your chosen month and is expected to make a profit. Try a different selling month or check your inputs.",
   "cr.best.noneTop": "{crop} has the highest estimated profit ({profit}) but does not pass the other checks for your field.",
-  "cr.rel.tested": "Passed testing",
   "cr.rel.limited": "Limited accuracy",
   "cr.rel.unavailable": "Not available",
-  "cr.rel.testedSub": "More accurate than a simple baseline in past tests. Future prices can still differ.",
   "cr.rel.limitedSub": "Treat the price as a rough guide.",
   "cr.rel.unavailableSub": "No price forecast could be made.",
 
@@ -223,7 +221,6 @@ export default {
   "cr.fin.dataNote": "Recorded mandi prices end in {dataEnd}. Later months on the graph are model estimates, not recorded prices.",
   "cr.hero.label": "Best time to sell",
   "cr.hero.expected": "Expected price",
-  "cr.hero.reliable": "Reliable",
   "cr.hero.limited": "Limited accuracy",
   "cr.hero.monthlyNote": "Prices are monthly estimates, not exact daily prices.",
   "cr.hero.alreadyBest": "Your chosen month is already the best time to sell",
