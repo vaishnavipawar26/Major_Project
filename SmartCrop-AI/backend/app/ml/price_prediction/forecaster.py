@@ -25,6 +25,7 @@ from app.ml.price_prediction.features import (FEATURE_COLUMNS, HORIZONS, MAX_HOR
                                               compute_features, usable_origin_mask,
                                               with_pair_features)
 from app.ml.price_prediction.selling_advice import best_time_to_sell
+from app.ml.price_prediction.weather_features import WEATHER_FEATURES, attach
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +47,10 @@ DISCLAIMER = ("This is a model-based estimate and actual market prices may diffe
 
 class ForecastError(Exception):
     """Input is valid but a forecast cannot be produced honestly (e.g. too little data)."""
+
+
+class ModelSchemaError(RuntimeError):
+    """A model artifact does not match the feature schema it was saved with."""
 
 
 class _Unusable(ForecastError):
@@ -83,7 +88,20 @@ class PriceForecaster:
         self.rate_form = {c: self.meta["candidates"][c]["target_form"] == "rate"
                           for c in self.models}
         self.horizon_models = {int(h): c for h, c in self.meta["horizon_models"].items()}
+        self._check_schema()
         self.explainers = {c: shap.TreeExplainer(m) for c, m in self.models.items()}
+        # weather inputs exist only if the model was trained with them; then the daily weather
+        # feature table (built offline, no network at serving time) is joined at the origin day
+        self.uses_weather = any(f in WEATHER_FEATURES for f in self.feature_columns)
+        self.weather_feats = None
+        if self.uses_weather:
+            wp = paths.DATASET_DIR / "weather" / "weather_features_daily.parquet"
+            if not wp.exists():
+                raise ModelSchemaError("The model was trained with weather features but "
+                                       f"{wp} is missing; rebuild it (scripts.build_weather_features).")
+            self.weather_feats = pd.read_parquet(wp)
+        cal = d / "explanation_calibration.json"
+        self.calibration = json.loads(cal.read_text(encoding="utf-8")) if cal.exists() else None
         self.max_horizon = int(self.meta["max_horizon"])
         self.panel = pd.read_parquet(paths.PRICE_PANEL_PATH)
         for c in SERIES_KEY:
@@ -96,6 +114,7 @@ class PriceForecaster:
         # both, so neither noise nor neighbouring horizons can validate it on their own.
         pc = pd.read_csv(d / "cv_per_crop_metrics.csv").dropna(
             subset=["model_MAE", "naive_MAE", "model_MAE_unsmoothed", "naive_MAE_unsmoothed"])
+        self.crop_cv_n = {(int(r.horizon), r.commodity): int(r.n) for r in pc.itertuples()}
         self.crop_cv = {(int(r.horizon), r.commodity):
                         (float(r.model_MAE_unsmoothed), float(r.naive_MAE_unsmoothed))
                         for r in pc.itertuples()}
@@ -107,6 +126,18 @@ class PriceForecaster:
         self.data_end = date.fromisoformat(self.meta["data_end"])
         self.version = self.meta["version"]
         self.inflation = _load_inflation()
+
+    def _check_schema(self) -> None:
+        """Refuse to serve a model whose input columns differ from the saved feature list."""
+        want = self.meta.get("feature_columns") or self.feature_columns
+        if list(want) != list(self.feature_columns):
+            raise ModelSchemaError("metadata.json and price_preprocessing.joblib list different "
+                                   "feature columns; retrain with scripts.train_price_model.")
+        for c, m in self.models.items():
+            n = getattr(m, "n_features_in_", len(self.feature_columns))
+            if n != len(self.feature_columns):
+                raise ModelSchemaError(f"model {c} expects {n} inputs but the feature schema has "
+                                       f"{len(self.feature_columns)}; retrain or restore matching artifacts.")
 
     # ------------------------------------------------------------------ catalogue
     def options(self) -> dict:
@@ -316,6 +347,8 @@ class PriceForecaster:
         level = ctx.level  # price level carried from the reference year to the requested year
         series = self._get_series(ref)
         feats = compute_features(series, self.encoders, with_targets=False)
+        if self.uses_weather:
+            feats = attach(feats, self.weather_feats)
 
         # The origin is the latest day on or before the reference date on which the market reported
         # a price AND every lag / rolling feature can be computed from earlier reports. It may be
@@ -376,8 +409,9 @@ class PriceForecaster:
             hs = [target_h] + ([advice["recommended_horizon_days"]]
                                if advice["recommended_horizon_days"] not in (0, target_h) else [])
             try:
+                evidence = self._evidence_context(series, origin, ref_origin_date, ref, ref_p0)
                 explanations = self._explain(X, hs, origin, p0, ref.commodity, origin_date,
-                                             projected)
+                                             projected, evidence, path)
             except Exception:  # never fabricate reasons; the API reports "no explanation"
                 log.exception("SHAP explanation failed")
 
@@ -422,6 +456,19 @@ class PriceForecaster:
     def _window_median(dates: np.ndarray, prices: np.ndarray, centre: date) -> float | None:
         near = np.abs((dates - np.datetime64(centre)).astype(int)) <= BASELINE_WINDOW_DAYS
         return float(np.median(prices[near])) if near.sum() >= MIN_BASELINE_OBS else None
+
+    def _seasonal_ratios(self, obs: pd.DataFrame, ref_date: date, h: int) -> list[float]:
+        """The change over ``h`` days at this time of year in each earlier year (see ``_seasonal_ratio``)."""
+        dates = obs["Date"].to_numpy("datetime64[D]")
+        prices = obs["price"].to_numpy(float)
+        ratios = []
+        for k in range(1, BASELINE_SEASON_YEARS + 1):
+            then = _shift_years(ref_date, -k)
+            a = self._window_median(dates, prices, then)
+            b = self._window_median(dates, prices, then + timedelta(days=h))
+            if a and b:
+                ratios.append(b / a)
+        return ratios
 
     def _seasonal_ratio(self, obs: pd.DataFrame, ref_date: date, h: int) -> tuple[float, int]:
         """Typical price change over ``h`` days at this time of year: for each earlier year, the
@@ -523,8 +570,44 @@ class PriceForecaster:
     def _algorithm(self, h: int) -> str:
         return _algorithm_name(self.meta, self.horizon_models[h])
 
+    def _evidence_context(self, series: pd.DataFrame, origin: pd.Series, ref_origin: date,
+                          ref: SeriesRef, ref_price: float) -> dict:
+        """Measured facts for the explanation, from reports up to the origin day only
+        (reference-year values when the forecast is a projection)."""
+        cut = pd.Timestamp(ref_origin)
+        obs = series[series["observed"] & (series["Date"] <= cut)]
+        ctx: dict = {"series_is_state": ref.market == STATE_MARKET, "price_ref": ref_price}
+        last = obs[obs["Date"] > cut - pd.Timedelta(days=7)]["price"]
+        prev = obs[(obs["Date"] <= cut - pd.Timedelta(days=7))
+                   & (obs["Date"] > cut - pd.Timedelta(days=14))]["price"]
+        if len(last) >= 3 and len(prev) >= 3:
+            ctx["price_7d_avg"], ctx["price_prev_7d_avg"] = float(last.mean()), float(prev.mean())
+        year = obs[obs["Date"] > cut - pd.Timedelta(days=365)]["price"]
+        if len(year) >= 60:
+            ctx["year_median_price"] = float(year.median())
+        arr = obs[obs["Date"] > cut - pd.Timedelta(days=30)]["arrivals"].dropna()
+        if len(arr) >= 5 and pd.notna(origin.get("arrivals")):
+            ctx["arrivals_latest"], ctx["arrivals_30d_mean"] = float(origin["arrivals"]), float(arr.mean())
+        a_last = obs[obs["Date"] > cut - pd.Timedelta(days=7)]["arrivals"].dropna()
+        a_prev = obs[(obs["Date"] <= cut - pd.Timedelta(days=7)) & (obs["Date"] > cut - pd.Timedelta(days=14))]["arrivals"].dropna()
+        if len(a_last) >= 3 and len(a_prev) >= 3:
+            ctx["arrivals_7d_mean"], ctx["arrivals_prev_7d_mean"] = float(a_last.mean()), float(a_prev.mean())
+            ctx["arrivals_asof"] = cut.date().isoformat()
+        known = obs[obs["price"].notna() & (obs["price"] > 0)][["Date", "price"]].reset_index(drop=True)
+        ctx["_seasonal_obs"] = {"obs": known, "ref_date": ref_origin}
+        return ctx
+
+    def _seasonal_evidence(self, evidence: dict, h: int) -> dict:
+        s = evidence.get("_seasonal_obs")
+        if s is None or len(s["obs"]) < MIN_BASELINE_OBS:
+            return {"ratio": None, "years": 0}
+        ratio, years = self._seasonal_ratio(s["obs"], s["ref_date"], h)
+        return {"ratio": ratio if years else None, "years": years,
+                "ratios": [round(r, 4) for r in self._seasonal_ratios(s["obs"], s["ref_date"], h)]}
+
     def _explain(self, X: pd.DataFrame, horizons: list[int], origin: pd.Series, p0: float,
-                 commodity: str, origin_date: date, projected: bool) -> list[dict]:
+                 commodity: str, origin_date: date, projected: bool, evidence: dict,
+                 path: list[dict]) -> list[dict]:
         """SHAP explanation of the forecast for the given horizons."""
         out = []
         for h in horizons:
@@ -537,10 +620,25 @@ class PriceForecaster:
                 sv, base = sv * h, base * h
             values = {**origin[FEATURE_COLUMNS].to_dict(), **row.iloc[0].to_dict()}
             target = origin_date + timedelta(days=h)
+            model_mae, base_mae = self.reliability(h, commodity)
+            ctx = {**{k: v for k, v in evidence.items() if not k.startswith("_")},
+                   "data_end": self.meta["data_end"],
+                   "reliability": {"model_mae": round(model_mae, 1), "baseline_mae": round(base_mae, 1),
+                                   "validated": h in set(self.validated_horizons(commodity))},
+                   "seasonal": self._seasonal_evidence(evidence, h)}
+            weather_status = "not_used"
+            if self.uses_weather:
+                weather_status = ("used" if all(pd.notna(values.get(f)) for f in WEATHER_FEATURES)
+                                  else "unavailable")
             out.append({"horizon_days": h, "date": target.isoformat(),
+                        "algorithm": self._algorithm(h),   # the model that actually produced (and is explained for) this horizon
                         **explain_price(sv, base, values, self.feature_columns,
                                         origin_date.month, p0, commodity, horizon=h,
-                                        target_month=target.month, projected=projected)})
+                                        target_month=target.month, projected=projected,
+                                        context=ctx, calibration=self.calibration,
+                                        target_point=path[h - 1], weather_status=weather_status,
+                                        model_output=float(self._predict(row)[0]),
+                                        n_tests=self.crop_cv_n.get((h, commodity)))})
         return out
 
 

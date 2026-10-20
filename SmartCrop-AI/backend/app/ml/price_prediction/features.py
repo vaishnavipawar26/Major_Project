@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 
 from app.ml.common.seasons import SEASON_CODE, season_for_month
+from app.ml.price_prediction.weather_features import WEATHER_FEATURES
 
 MAX_HORIZON = 60
 HORIZONS = tuple(range(1, MAX_HORIZON + 1))
@@ -196,6 +197,9 @@ def with_pair_features(origins: pd.DataFrame, horizons) -> pd.DataFrame:
     X["horizon_days"] = h
     X["target_doy_sin"] = np.sin(2 * np.pi * doy / 365.25).astype("float32")
     X["target_doy_cos"] = np.cos(2 * np.pi * doy / 365.25).astype("float32")
+    for c in WEATHER_FEATURES:   # present only when weather was attached to the origins
+        if c in origins.columns:
+            X[c] = origins[c].astype("float32").to_numpy()
     return X
 
 

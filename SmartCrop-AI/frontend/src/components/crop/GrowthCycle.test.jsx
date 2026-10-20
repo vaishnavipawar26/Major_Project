@@ -27,7 +27,7 @@ describe("Original Crop Growing Timeline next to the user's timeline", () => {
     expect(c.textContent).not.toMatch(/Your schedule compared with the typical cycle|A\. Your plan|B\. Typical crop cycle/);
     expect(c.textContent).not.toMatch(/assumes planting or transplanting|month-based crop calendar|Selling does not have to happen/);
     expect(c.querySelectorAll(".tl-stages > li")).toHaveLength(5); // existing planting -> selling timeline
-    expect(c.querySelector(".tl-status")).not.toBeNull(); // its own conclusion line is untouched
+    expect(c.textContent).not.toContain("falls within the expected harvest period"); // that message was removed
     expect(c.querySelector("#gc-title").textContent).toBe("Original Crop Growing Timeline");
     expect(c.querySelectorAll(".gc-stages > li").length).toBeGreaterThan(3);
   });

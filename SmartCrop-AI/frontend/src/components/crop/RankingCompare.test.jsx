@@ -95,22 +95,16 @@ describe("RankingCompare", () => {
 });
 
 describe("CropCompare order", () => {
-  it("shows the chart, then the explanation, then the cost toggle, then the table", () => {
+  it("no longer holds the ranking explanation (it lives on the explanation page)", () => {
     const { container } = render(<CropCompare response={differ} selected="Cauliflower" onSelect={() => {}} />);
-    const at = (sel) => {
-      const el = container.querySelector(sel);
-      expect(el, sel).not.toBeNull();
-      return el;
-    };
-    const chart = at("[data-testid=chart]"), why = at(".why-box"), toggle = at("button.btn-link"), table = at("table");
-    const follows = (a, b) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(follows(chart, why)).toBe(true);
-    expect(follows(why, toggle)).toBe(true);
-    expect(follows(toggle, table)).toBe(true);
-    expect(container.querySelectorAll(".why-box")).toHaveLength(1);
+    expect(container.querySelector(".why-box")).toBeNull();
+    expect(container.textContent).not.toContain("ranks first");
+    const chart = container.querySelector("[data-testid=chart]"), toggle = container.querySelector("button.btn-link");
+    expect(container.querySelector("table")).toBeNull();
+    expect(!!(chart.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
   });
 
-  it("goes straight from the chart to the cost toggle and table when one crop wins both", () => {
+  it("goes straight from the chart to the cost toggle when one crop wins both", () => {
     const { container } = render(<CropCompare response={same} selected="Brinjal" onSelect={() => {}} />);
     expect(container.querySelector(".why-box")).toBeNull();
     const chart = container.querySelector("[data-testid=chart]"), toggle = container.querySelector("button.btn-link");

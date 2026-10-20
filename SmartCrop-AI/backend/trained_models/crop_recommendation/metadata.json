@@ -1,8 +1,8 @@
 {
   "model_type": "crop_recommendation",
   "selected_model": "xgboost",
-  "version": "202610161337",
-  "trained_at": "2026-10-16T13:37:05+00:00",
+  "version": "202610170243",
+  "trained_at": "2026-10-17T02:43:32+00:00",
   "dataset": "crop_dataset_extended.csv",
   "synthetic_dataset": true,
   "features": [

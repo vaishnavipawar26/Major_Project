@@ -32,3 +32,7 @@ httpx==0.28.1
 
 # Testing
 pytest>=8.3,<9
+
+# Optional, only for the offline data scripts (scripts/build_market_locations.py,
+# scripts/fetch_price_weather.py): lets httpx trust the OS certificate store.
+truststore>=0.10

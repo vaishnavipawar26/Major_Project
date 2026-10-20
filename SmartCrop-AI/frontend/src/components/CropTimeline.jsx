@@ -46,9 +46,12 @@ export default function CropTimeline({ timeline: t }) {
         <Stage kind="sell" icon={IndianRupee} label={tr("timeline.selling")} value={monthLabel(t.selling)} />
       </ol>
 
-      <p className={`tl-status ${st.tone}`}>
-        <st.icon size={17} aria-hidden="true" /><span>{tr(`timeline.concl.${t.status}`, args)}</span>
-      </p>
+      {/* the "within the harvest period" message is not shown; storage and not-ready cautions still are */}
+      {t.status !== "fresh" && (
+        <p className={`tl-status ${st.tone}`}>
+          <st.icon size={17} aria-hidden="true" /><span>{tr(`timeline.concl.${t.status}`, args)}</span>
+        </p>
+      )}
       {canStore && <p className="muted small !mb-0">{tr("timeline.storageGeneral")}</p>}
     </div>
   );

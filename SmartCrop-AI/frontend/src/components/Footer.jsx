@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowRight, Info, Leaf } from "lucide-react";
 import { LogoMark } from "./Logo";
 import { useT } from "../i18n/LanguageContext";
@@ -12,6 +12,8 @@ const LINKS = [
 /** Dark-green end-of-page panel that shares the sidebar colour. */
 export default function Footer() {
   const t = useT();
+  // the price form keeps its footer to links only: the forecast caveat belongs on the result page
+  const showNote = useLocation().pathname !== "/price-prediction";
   return (
     <footer className="app-footer">
       <svg className="footer-pattern" viewBox="0 0 320 240" aria-hidden="true" focusable="false">
@@ -38,10 +40,12 @@ export default function Footer() {
           </ul>
         </nav>
 
-        <div className="footer-col">
-          <h2 className="footer-heading">{t("footer.good")}</h2>
-          <p className="footer-note"><Info size={18} aria-hidden="true" /><span>{t("footer.disclaimer")}</span></p>
-        </div>
+        {showNote && (
+          <div className="footer-col">
+            <h2 className="footer-heading">{t("footer.good")}</h2>
+            <p className="footer-note"><Info size={18} aria-hidden="true" /><span>{t("footer.disclaimer")}</span></p>
+          </div>
+        )}
       </div>
 
       <div className="content footer-meta">

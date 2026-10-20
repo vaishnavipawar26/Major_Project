@@ -3,7 +3,6 @@ import {
   Area, CartesianGrid, ComposedChart, Line, ReferenceDot, ReferenceLine, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from "recharts";
-import { ChartSummary } from "../ChartIntro";
 import { useNarrow } from "../../hooks/useNarrow";
 import { useT } from "../../i18n/LanguageContext";
 import { daysBetween, fmtDate, rupees, shortDate } from "../../utils/format";
@@ -104,7 +103,6 @@ export default function PriceTrendChart({
 
   return (
     <div>
-      {historyIsReference && <p className="chart-note">{t("price.chart.referenceNote")}</p>}
       <div className="legend" style={{ marginBottom: 8 }}>
         <span>
           <span className={historyIsReference ? "swatch-dotted" : "swatch-line"} style={{ borderColor: pastColor }} />
@@ -157,15 +155,6 @@ export default function PriceTrendChart({
         </ResponsiveContainer>
       </div>
       {actualAfter.length > 0 && <p className="muted small" style={{ marginTop: 6 }}>{t("price.chart.actualAfterNote")}</p>}
-      {target && (
-        <ChartSummary>
-          {t("price.chart.summary", {
-            start: rupees(currentPrice), date: fmtDate(target.date), price: rupees(target.predicted_price),
-            low: rupees(target.lower), high: rupees(target.upper),
-          })}
-          {peak && peak.date !== target.date && <> {t("price.chart.summaryPeak", { price: rupees(peak.price), date: fmtDate(peak.date) })}</>}
-        </ChartSummary>
-      )}
       <button type="button" className="btn-link small" onClick={() => setShowTable((s) => !s)} aria-expanded={showTable}>
         {showTable ? t("price.chart.hideTable") : t("price.chart.showTable")}
       </button>

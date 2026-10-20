@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Check, CircleAlert, CircleCheck, CircleX, CloudSun, Lightbulb, Lock, MapPin, Minus, Package, Pencil, Plus, Sprout, TrendingUp, Wand2,
@@ -13,6 +13,7 @@ import CitySelect from "../components/crop/CitySelect";
 import RangeField from "../components/crop/RangeField";
 import WeatherCards from "../components/crop/WeatherCards";
 import fieldPhoto from "../assets/photos/field.webp";
+import { CROP_EXAMPLES, DEFAULT_EXAMPLE, exampleToForm } from "../data/cropExamples";
 import { useAsync } from "../hooks/useAsync";
 import { useWeather } from "../hooks/useWeather";
 import { useT } from "../i18n/LanguageContext";
@@ -45,11 +46,6 @@ const MONTH_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 export const SOILS = ["sandy_loam", "loam", "clay_loam", "alluvial", "unknown"];
 const AREA_MIN = 0.1, AREA_MAX = 1000;
 
-const EXAMPLES = {
-  "Onion field, Nashik": { nitrogen: 80, phosphorus: 45, potassium: 85, ph: 6.8, temperature: 23, humidity: 58, rainfall: 70, city: "Nashik", planting_month: 11, selling_month: 3 },
-  "Vegetable plot, Pune": { nitrogen: 115, phosphorus: 65, potassium: 70, ph: 6.4, temperature: 21, humidity: 70, rainfall: 85, city: "Pune", planting_month: 9, selling_month: 12 },
-  "Wheat field, Nagpur": { nitrogen: 90, phosphorus: 45, potassium: 40, ph: 7.4, temperature: 20, humidity: 45, rainfall: 30, city: "Nagpur", planting_month: 11, selling_month: 3 },
-};
 
 // Ready-in-time status for the crop chips (icon + colour + label, never colour alone)
 const READY = {
@@ -121,7 +117,10 @@ export default function CropRecommendation() {
   const [apiError, setApiError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    if (k === "planting_month" || k === "selling_month") exampleWeather.current = false;
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+  };
   const touch = (k) => () => setTouched((x) => ({ ...x, [k]: true }));
   const plant = Number(form.planting_month), sell = Number(form.selling_month);
   const crops = useMemo(() => readyCrops(opts?.calendar, plant, sell), [opts, plant, sell]);
@@ -129,10 +128,13 @@ export default function CropRecommendation() {
   // Weather comes from the city and months (debounced); typing it by hand is the fallback.
   const weather = useWeather({ city: form.city, plantMonth: plant, sellMonth: sell });
   const [weatherFailed, setWeatherFailed] = useState(false);
+  // An example brings its own weather, so the automatic lookup must not replace it; any change of place, month or mode lifts this.
+  const exampleWeather = useRef(false);
   // A new answer only arrives when city, planting month or selling month change (or on Retry), so values the farmer typed by hand
   // are never overwritten in between. The real fetched numbers are shown; the API clips them to the dataset range for the model.
   useEffect(() => {
     if (weather.state === "ok") {
+      if (exampleWeather.current) return;
       setForm((f) => ({ ...f, temperature: String(weather.data.temperature), humidity: String(weather.data.humidity), rainfall: String(weather.data.rainfall) }));
       if (weatherFailed) { setWeatherFailed(false); setManual(false); }   // back to automatic after a failed attempt
     } else if (weather.state === "error") {
@@ -179,13 +181,14 @@ export default function CropRecommendation() {
   const invalid = Object.keys(errors).length > 0;
   const fits = likelyFits(form, ranges);
 
+  // Fills every field of the form (weather too, in manual mode) so the numbers always match the crop on the button.
   const fill = (ex) => {
-    const { temperature, humidity, rainfall, ...rest } = ex;
-    const weatherValues = manual ? { temperature, humidity, rainfall } : {};
-    setForm((f) => ({ ...f, ...Object.fromEntries(Object.entries({ ...rest, ...weatherValues }).map(([k, v]) => [k, String(v)])) }));
+    exampleWeather.current = true;
+    setManual(true); setWeatherFailed(false); setApiError(null);
+    setForm((f) => ({ ...f, ...exampleToForm(ex) }));
     setTouched({}); setSubmitted(false);
   };
-  const clearAll = () => { setForm(blankForm(thisMonth)); setManual(false); setTouched({}); setSubmitted(false); setApiError(null); };
+  const clearAll = () => { exampleWeather.current = false; setForm(blankForm(thisMonth)); setManual(false); setTouched({}); setSubmitted(false); setApiError(null); };
   const bumpArea = (d) => setForm((f) => {
     const next = Math.round((Number(f.area_acres || 0) + d) * 10) / 10;
     return { ...f, area_acres: String(Math.min(AREA_MAX, Math.max(AREA_MIN, next))) };
@@ -236,8 +239,8 @@ export default function CropRecommendation() {
         <p className="inline-icon !mb-1 font-semibold"><Lightbulb size={17} className="text-brand" aria-hidden="true" />{t("crop.form.examplesTitle")}</p>
         <p className="muted small !mb-2">{t("crop.form.examplesNote")}</p>
         <div className="flex flex-wrap gap-2">
-          {Object.entries(EXAMPLES).map(([name, ex], i) => (
-            <button key={name} type="button" className="btn btn-secondary example-btn" onClick={() => fill(ex)}>
+          {CROP_EXAMPLES.map((ex, i) => (
+            <button key={ex.crop} type="button" className="btn btn-secondary example-btn" onClick={() => fill(ex)}>
               {t(`crop.form.example.${i}`)}
             </button>
           ))}
@@ -254,7 +257,7 @@ export default function CropRecommendation() {
         <div className="cf-toolbar">
           <p className="required-note !mb-0">{t("form.requiredNote")}</p>
           <div className="cf-toolbar-actions">
-            <button type="button" className="btn-link small" onClick={() => fill(EXAMPLES["Onion field, Nashik"])}>{t("crop.form.fillSample")}</button>
+            <button type="button" className="btn-link small" onClick={() => fill(DEFAULT_EXAMPLE)}>{t("crop.form.fillSample")}</button>
             <button type="button" className="btn-link small" onClick={clearAll}>{t("crop.form.clearAll")}</button>
           </div>
         </div>
@@ -275,7 +278,7 @@ export default function CropRecommendation() {
                 <span className="state-chip" aria-labelledby="state-label"><Lock size={14} aria-hidden="true" />{cropName(t, STATE, "state")}</span>
               </div>
               <FormField id="city" label={t("crop.form.city")} required>
-                <CitySelect id="city" value={form.city} cities={opts.cities} onChange={(c) => setForm((f) => ({ ...f, city: c }))} />
+                <CitySelect id="city" value={form.city} cities={opts.cities} onChange={(c) => { exampleWeather.current = false; setForm((f) => ({ ...f, city: c })); }} />
               </FormField>
               <div className="grid grid-cols-2 gap-3">
                 <FormField id="planting_month" label={t("crop.form.plantingMonth")} required>
@@ -313,7 +316,7 @@ export default function CropRecommendation() {
           <section className="cf-card cf-weather" aria-labelledby="weather-title">
             <SectionHead id="weather-title" icon={CloudSun} title={t("crop.form.weatherTitle")} note={manual ? t("crop.form.weatherNoteManual") : ""}
               action={(
-                <button type="button" className="wx-toggle" onClick={() => setManual((m) => !m)} aria-pressed={manual}>
+                <button type="button" className="wx-toggle" onClick={() => { exampleWeather.current = false; setManual((m) => !m); }} aria-pressed={manual}>
                   {manual ? <Wand2 size={14} aria-hidden="true" /> : <Pencil size={14} aria-hidden="true" />}
                   {t(manual ? "crop.form.weatherAuto" : "crop.form.weatherEdit")}
                 </button>

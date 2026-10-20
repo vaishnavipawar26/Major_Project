@@ -182,14 +182,101 @@ class PricePredictionResponse(PriceForecastResponse):
     id: int
 
 
+class EvidenceItem(BaseModel):
+    """One measured fact behind a factor (value, unit and the period it is compared with)."""
+    label: str
+    value: float | int
+    unit: str
+    reference: str | None = None
+    reference_value: float | int | None = None
+    change_pct: float | None = None
+    source: str
+
+
 class PriceFactor(BaseModel):
     factor: str
     title: str
-    shap_value: float
-    effect_pct: float
     direction: Literal["up", "down"]
+    strength: Literal["small", "moderate", "strong"]
     impact: Literal["higher", "lower", "small"]
-    observation: str
+    # contribution to the model output in log(price ratio) space; these add up across factors
+    shap_value: float
+    shap_scale: str
+    evidence: list[EvidenceItem]
+    evidence_available: bool
+    observation: str          # A. what the data shows
+    model_says: str           # B. which way / how strongly the model's calculation pushed
+    meaning: str              # C. practical reading and its limits
+    evidence_trend: Literal["up", "down", "flat"] | None = None
+    sentence: str
+    farmer_effect: str = ""   # plain-words sentence on what the model did with this factor
+
+
+class ExplainReason(BaseModel):
+    """A farmer-facing reason: a market category with measured evidence AND a model contribution."""
+    id: str
+    title: str
+    direction: Literal["up", "down"]
+    shap_value: float         # summed SHAP of the grouped features (log price-ratio space)
+    evidence: str
+    meaning: str
+    trend: Literal["up", "down", "flat"] | None = None
+    limited: bool = False
+
+
+class ExplainNet(BaseModel):
+    code: Literal["outweigh", "agree", "mixed", "flat"]
+    forecast_side: Literal["up", "down"] | None = None
+    higher: list[str] = []
+    lower: list[str] = []
+    up_total: float = 0.0
+    down_total: float = 0.0
+
+
+class ExplainNote(BaseModel):
+    kind: str
+    text: str
+    projected: bool | None = None
+    data_end: str | None = None
+
+
+class ExplainSummary(BaseModel):
+    reference_price: float
+    predicted_price: float
+    change_abs: float
+    change_pct: float
+    direction: str
+    horizon_days: int
+    within_typical_error: bool = False
+    typical_error_pct: float | None = None
+    headline: str
+
+
+class ExplainReliability(BaseModel):
+    basis: str
+    model_mae: float | None = None
+    baseline_mae: float | None = None
+    beats_no_change: bool | None = None
+    n_tests: int | None = None          # held-out forecasts behind the figures
+    sufficient_data: bool = False
+
+
+class ExplainRange(BaseModel):
+    basis: str
+    lower: float
+    upper: float
+
+
+class ExplainCompleteness(BaseModel):
+    basis: str
+    inputs_total: int
+    inputs_missing: int
+    missing: list[str]
+
+
+class ExplainWeather(BaseModel):
+    status: Literal["not_used", "used", "unavailable"]
+    used: bool
 
 
 class SimpleFactor(BaseModel):
@@ -216,9 +303,27 @@ class PriceExplanation(BaseModel):
     base_change_pct: float
     prediction_change_pct: float
     all_small: bool
+    summary: ExplainSummary
     farmer_explanation: list[str]
     factors: list[PriceFactor]
+    higher_factors: list[str]
+    lower_factors: list[str]
+    reliability: ExplainReliability | None = None
+    price_range: ExplainRange | None = None
+    data_completeness: ExplainCompleteness
+    data_limitations: list[str]
+    weather: ExplainWeather
+    strength_basis: str
+    technical: dict
     simple: SimpleFactors | None = None
+    algorithm: str | None = None
+    main_factors: list[str] = []
+    projected: bool = False
+    reasons: list[ExplainReason] = []
+    net_summary: ExplainNet | None = None
+    what_it_means: str | None = None
+    scope: ExplainNote | None = None
+    data_basis: ExplainNote | None = None
 
 
 class PriceExplainResponse(BaseModel):
@@ -227,6 +332,7 @@ class PriceExplainResponse(BaseModel):
     target_date: dt.date
     current_price: float
     projection: ProjectionInfo | None = None
+    model: ModelInfo | None = None
     explanations: list[PriceExplanation]
     message: str | None = None
 

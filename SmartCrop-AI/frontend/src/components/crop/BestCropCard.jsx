@@ -2,7 +2,7 @@ import { Award, CalendarCheck, Coins, Gauge, ShieldCheck, TrendingUp, TriangleAl
 import Alert from "../Alert";
 import CropArt from "../CropArt";
 import { useT } from "../../i18n/LanguageContext";
-import { harvestSpan, reliabilityOf } from "../../utils/cropPlan";
+import { harvestSpan, monthYear, reliabilityOf } from "../../utils/cropPlan";
 import { compactRupees, cropName, monthLabel, rupees, signedRupees } from "../../utils/format";
 
 function Stat({ icon: Icon, label, value, sub, tone, big }) {
@@ -10,7 +10,7 @@ function Stat({ icon: Icon, label, value, sub, tone, big }) {
     <div className={`best-stat ${big ? "is-key" : ""}`}>
       <span className="best-stat-label"><Icon size={15} aria-hidden="true" />{label}</span>
       <span className={`best-stat-value num ${tone === "neg" ? "is-neg" : ""}`}>{value}</span>
-      {sub && <span className="best-stat-sub">{sub}</span>}
+      {[].concat(sub || []).filter(Boolean).map((x) => <span key={x} className="best-stat-sub">{x}</span>)}
     </div>
   );
 }
@@ -39,7 +39,7 @@ export default function BestCropCard({ response, onSelect }) {
     <section className="card best-card" aria-labelledby="best-title">
       <h2 id="best-title" className="sr-only">{t("cr.best.title")}</h2>
       <div className="best-head">
-        <CropArt crop={best.crop_name} size={88} className="best-photo" />
+        <CropArt crop={best.crop_name} size={60} className="best-photo" />
         <div className="min-w-0">
           <span className="rank-chip"><Award size={14} aria-hidden="true" />{t("cr.best.badge")}</span>
           <p className="best-name">{cropName(t, best.crop_name)}</p>
@@ -49,11 +49,11 @@ export default function BestCropCard({ response, onSelect }) {
       <div className="best-stats">
         <Stat big icon={TrendingUp} label={t("cr.best.profit")} value={signedRupees(e.net_profit)} tone={e.net_profit < 0 ? "neg" : null}
           sub={t("cr.best.profitSub", { cost: compactRupees(e.total_cost) })} />
-        <Stat icon={Coins} label={t("cr.best.price", { month: monthLabel(response.selling_date) })} value={rupees(e.selling_price)}
-          sub={t("cr.best.priceSub")} />
+        <Stat icon={Coins} label={t("cr.best.priceLabel")} value={rupees(e.selling_price)}
+          sub={[t("cr.best.priceSub"), monthYear(response.selling_date)]} />
         <Stat icon={Gauge} label={t("cr.best.score")} value={`${Math.round(best.recommendation_score)}/100`}
           sub={[t("cr.best.rankValue", { rank: best.rank, total: response.results.length }),
-            best.profit_rank ? t("cr.best.profitRankValue", { rank: best.profit_rank }) : null].filter(Boolean).join(" · ")} />
+            best.profit_rank ? t("cr.best.profitRankValue", { rank: best.profit_rank }) : null]} />
         <Stat icon={CalendarCheck} label={t("cr.best.harvestLabel")} value={harvestSpan(tl)} sub={t("cr.best.plantSub", { month: monthLabel(tl.planting) })} />
         {rel !== "tested" && (
           <Stat icon={ShieldCheck} label={t("cr.best.reliabilityLabel")} value={t(`cr.rel.${rel}`)} sub={t(`cr.rel.${rel}Sub`)} />

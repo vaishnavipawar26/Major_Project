@@ -69,14 +69,12 @@ describe("best time to sell", () => {
   });
 });
 
-describe("crop comparison table", () => {
-  it("leaves tested rows blank in the forecast column and keeps 'Limited accuracy' for others", () => {
+describe("crop comparison section", () => {
+  it("shows no testing-success text and no comparison table (the chart remains)", () => {
     const { container } = render(<CropCompare response={response("tested", "limited")} selected="Wheat" onSelect={() => {}} />);
     expect(container.textContent).not.toMatch(/passed testing/i);
-    const rows = [...container.querySelectorAll("tbody tr")];
-    const forecastCell = (tr) => tr.querySelectorAll("td")[tr.querySelectorAll("td").length - 2].textContent;
-    expect(forecastCell(rows[0])).toBe("");
-    expect(forecastCell(rows[1])).toBe("Limited accuracy");
+    expect(container.querySelector("table")).toBeNull();
+    expect(container.querySelector("[data-testid=chart]")).not.toBeNull();
   });
 });
 

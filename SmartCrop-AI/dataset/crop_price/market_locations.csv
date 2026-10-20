@@ -1,0 +1,298 @@
+market,query,matched_name,admin1,latitude,longitude,status,ambiguous_spread_km,crosscheck_km,source,retrieved_at
+APMC Aarni,Aarni,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:50+00:00
+APMC Achalpur,Achalpur,Achalpur,Maharashtra,21.25665,77.51006,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:50+00:00
+APMC Ahilyanagar,Ahmadnagar,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:51+00:00
+APMC Ahmedpur,Ahmedpur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:51+00:00
+APMC Akhadabalapur,Akhadabalapur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:51+00:00
+APMC Akkalkot,Akkalkot,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:52+00:00
+APMC Akkalkuwa,Akkalkuwa,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:52+00:00
+APMC Akluj,Akluj,Aklūj,Maharashtra,17.89241,75.02138,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:52+00:00
+APMC Akola,Akola,Akola,Maharashtra,20.70957,76.9981,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:53+00:00
+APMC Akole,Akole,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:53+00:00
+APMC Akot,Akot,Akot,Maharashtra,21.0963,77.0588,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:53+00:00
+APMC Amalner,Amalner,Amalner,Maharashtra,21.03983,75.05887,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:54+00:00
+APMC Amarawati,Amravati,Amravati,Maharashtra,20.93333,77.75,mapped,0.0,0.3,open-meteo geocoding (GeoNames),2026-10-18T15:46:54+00:00
+APMC Ambad (Vadigodri),Ambad,Ambad,Maharashtra,19.61301,75.78906,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:54+00:00
+APMC Ambejogai,Ambejogai,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:55+00:00
+APMC Anajngaon,Anajngaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:55+00:00
+APMC Arvi,Arvi,Ārvi,Maharashtra,20.99585,78.22914,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:56+00:00
+APMC Ashti,Ashti,,,,,ambiguous,127.3,,open-meteo geocoding (GeoNames),2026-10-18T15:46:56+00:00
+APMC Ashti(Jalna),Ashti,,,,,ambiguous,127.3,,open-meteo geocoding (GeoNames),2026-10-18T15:46:56+00:00
+APMC Aurad Shahajani,Aurad Shahajani,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:56+00:00
+APMC Ausa,Ausa,Ausa,Maharashtra,18.24728,76.4993,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:57+00:00
+APMC BHOKARDAN,Bhokardan,Bhokardan,Maharashtra,20.2583,75.76997,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:57+00:00
+APMC Babhulgaon,Babhulgaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:46:57+00:00
+APMC Balapur,Balapur,Bālāpur,Maharashtra,20.66612,76.77386,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:58+00:00
+APMC Baramati,Baramati,Bārāmati,Maharashtra,18.15174,74.57767,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:58+00:00
+APMC Barshi,Barshi,Barshi,Maharashtra,18.23454,75.69275,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:58+00:00
+APMC Basmat,Basmat,Basmat,Maharashtra,19.32872,77.15746,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:59+00:00
+APMC Beed,Beed,Beed,Maharashtra,18.98921,75.75634,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:59+00:00
+APMC Bhandara,Bhandara,Bhandāra,Maharashtra,21.16817,79.64885,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:46:59+00:00
+APMC Bhivandi,Bhiwandi,Bhiwandi,Maharashtra,19.30023,73.05881,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:00+00:00
+APMC Bhiwapur,Bhiwapur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:00+00:00
+APMC Bhokar,Bhokar,,,,,ambiguous,229.9,,open-meteo geocoding (GeoNames),2026-10-18T15:47:01+00:00
+APMC Bhusaval,Bhusawal,Bhusawal,Maharashtra,21.04365,75.78506,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:01+00:00
+APMC Buldhana,Buldhana,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:01+00:00
+APMC Chakur,Chakur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:02+00:00
+APMC Chalisgaon,Chalisgaon,Chalisgaon,Maharashtra,20.45781,75.01596,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:02+00:00
+APMC Chandrapur,Chandrapur,Chandrapur,Maharashtra,19.95076,79.29523,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:02+00:00
+APMC Chandur Bazar,Chandur Bazar,Chāndūr Bāzār,Maharashtra,21.23853,77.74713,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:03+00:00
+APMC Chandur Railway,Chandur Railway,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:03+00:00
+APMC Chandwad,Chandwad,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:03+00:00
+APMC Chattrapati Sambhajinagar,Aurangabad,Aurangabad,Maharashtra,19.87757,75.34226,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:04+00:00
+APMC Chikali,Chikali,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:04+00:00
+APMC Chopda,Chopda,Chopda,Maharashtra,21.24578,75.29946,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:04+00:00
+APMC Daryapur,Daryapur,Daryāpur,Maharashtra,20.92489,77.32644,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:05+00:00
+APMC Deoulgaon Raja,Deoulgaon Raja,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:05+00:00
+APMC Devala,Devala,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:05+00:00
+APMC Dhadgaon,Dhadgaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:06+00:00
+APMC Dhamngaon-Railway,Dhamngaon-Railway,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:06+00:00
+APMC Dharangaon,Dharangaon,Dharangaon,Maharashtra,21.01187,75.27407,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:06+00:00
+APMC Dharashiv,Osmanabad,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:07+00:00
+APMC Dharni,Dharni,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:07+00:00
+APMC Dhule,Dhule,Dhule,Maharashtra,20.9013,74.77737,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:07+00:00
+APMC Digras,Digras,Digras,Maharashtra,20.1035,77.71846,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:07+00:00
+APMC Dindori,Dindori,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:08+00:00
+APMC Dondaicha,Dondaicha,Dondaicha,Maharashtra,21.3236,74.56804,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:08+00:00
+APMC Dound,Dound,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:08+00:00
+APMC Dudhani,Dudhani,Dudhani,Maharashtra,17.35792,76.36688,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:09+00:00
+APMC Fulmbri,Fulmbri,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:09+00:00
+APMC Gangakhed,Gangakhed,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:09+00:00
+APMC Gangapur,Gangapur,Gangāpur,Maharashtra,19.69718,75.01045,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:10+00:00
+APMC Gevrai,Gevrai,Gevrai,Maharashtra,19.26372,75.75007,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:10+00:00
+APMC Ghansawangi,Ghansawangi,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:10+00:00
+APMC Ghoti,Ghoti,Ghoti Budrukh,Maharashtra,19.71641,73.62821,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:10+00:00
+APMC Himayatnagar,Himayatnagar,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:11+00:00
+APMC Hinganghat,Hinganghat,Hinganghāt,Maharashtra,20.54875,78.83978,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:11+00:00
+APMC Hingna,Hingna,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:12+00:00
+APMC Hingoli,Hingoli,Hingoli,Maharashtra,19.71464,77.14238,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:12+00:00
+APMC Indapur,Indapur,,,,,ambiguous,189.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:12+00:00
+APMC Islampur,Islampur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:13+00:00
+APMC Jafrabad,Jafrabad,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:13+00:00
+APMC Jalana,Jalna,Jālna,Maharashtra,19.84102,75.88636,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:13+00:00
+APMC Jalgaon,Jalgaon,Jalgaon,Maharashtra,21.00292,75.56602,mapped,0.0,0.6,open-meteo geocoding (GeoNames),2026-10-18T15:47:13+00:00
+APMC Jalgaon(Jamod),Jalgaon,Jalgaon,Maharashtra,21.00292,75.56602,mapped,0.0,0.6,open-meteo geocoding (GeoNames),2026-10-18T15:47:13+00:00
+APMC Jamkhed,Jamkhed,,,,,ambiguous,70.8,,open-meteo geocoding (GeoNames),2026-10-18T15:47:14+00:00
+APMC Jawali,Jawali,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:14+00:00
+APMC Jintur,Jintur,Jintūr,Maharashtra,19.61186,76.6874,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:15+00:00
+APMC Junnar,Junnar,Junnar,Maharashtra,19.20815,73.8752,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:15+00:00
+APMC Kada,Kada,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:15+00:00
+APMC Kaij,Kaij,Kaij,Maharashtra,18.71364,76.06718,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:16+00:00
+APMC Kalamb,Kalamb,Kalamb,Maharashtra,19.04437,73.95554,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:16+00:00
+APMC Kalamb (Dharashiv),Kalamb,Kalamb,Maharashtra,19.04437,73.95554,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:16+00:00
+APMC Kalmeshwar,Kalmeshwar,Kalmeshwar,Maharashtra,21.23219,78.91988,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:16+00:00
+APMC Kalvan,Kalwan,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:17+00:00
+APMC Kalyan,Kalyan,Kalyān,Maharashtra,19.2437,73.13554,mapped,6.3,,open-meteo geocoding (GeoNames),2026-10-18T15:47:17+00:00
+APMC Kamthi,Kamptee,Kāmthi,Maharashtra,21.21615,79.1973,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:17+00:00
+APMC Kandhar,Kandhar,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:18+00:00
+APMC Kannad,Kannad,Kannad,Maharashtra,20.25684,75.13786,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:18+00:00
+APMC Karad,Karad,Karad,Maharashtra,17.28937,74.18183,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:18+00:00
+APMC Karanja,Karanja,Kāranja,Maharashtra,20.48273,77.48857,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:19+00:00
+APMC Karjat,Karjat,Karjat,Maharashtra,18.9107,73.32354,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:19+00:00
+APMC Karjat(Raigad),Karjat,Karjat,Maharashtra,18.9107,73.32354,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:19+00:00
+APMC Karmala,Karmala,Karmāla,Maharashtra,18.4077,75.19386,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:19+00:00
+APMC Katol,Katol,Kātol,Maharashtra,21.27388,78.5858,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:20+00:00
+APMC Khamgaon,Khamgaon,Khāmgaon,Maharashtra,20.70738,76.56827,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:20+00:00
+APMC Khed,Khed,Khed,Maharashtra,17.71888,73.39693,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:20+00:00
+APMC Kille Dharur,Kille Dharur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:21+00:00
+APMC Kinwat,Kinwat,Kinwat,Maharashtra,19.62557,78.1987,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:21+00:00
+APMC Kolhapur,Kolhapur,Kolhāpur,Maharashtra,16.69563,74.23167,mapped,0.0,1.6,open-meteo geocoding (GeoNames),2026-10-18T15:47:21+00:00
+APMC Kopargaon,Kopargaon,Kopargaon,Maharashtra,19.88239,74.47605,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:21+00:00
+APMC Kurdwadi,Kurdwadi,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:22+00:00
+APMC Lakhandur,Lakhandur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:22+00:00
+APMC Lasalgaon,Lasalgaon,Lāsalgaon,Maharashtra,20.1427,74.23946,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:22+00:00
+APMC Lasur Station,Lasur Station,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:23+00:00
+APMC Latur,Latur,Latur,Maharashtra,18.39721,76.56784,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:23+00:00
+APMC Loha,Loha,Loha,Maharashtra,18.94484,77.11553,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:24+00:00
+APMC Lonand,Lonand,Lonand,Maharashtra,18.04041,74.18719,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:24+00:00
+APMC Lonar,Lonar,Lonar,Maharashtra,19.98533,76.52046,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:24+00:00
+APMC Mahagaon,Mahagaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:25+00:00
+APMC Majalgaon,Majalgaon,Majalgaon,Maharashtra,19.15513,76.20992,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:25+00:00
+APMC Malegaon,Malegaon,Malegaon,Maharashtra,20.54966,74.53462,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:25+00:00
+APMC Malegaon(Washim),Malegaon,Malegaon,Maharashtra,20.54966,74.53462,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:25+00:00
+APMC Malkapur,Malkapur,,,,,ambiguous,501.2,,open-meteo geocoding (GeoNames),2026-10-18T15:47:26+00:00
+APMC Manchar,Manchar,Manchar,Maharashtra,19.00436,73.94346,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:26+00:00
+APMC Mandhal,Mandhal,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:26+00:00
+APMC Mangal Wedha,Mangalvedhe,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:26+00:00
+APMC Mangrulpeer,Mangrulpeer,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:27+00:00
+APMC Manmad,Manmad,Manmād,Maharashtra,20.25334,74.43755,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:27+00:00
+APMC Manora,Manora,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:27+00:00
+APMC Mantha,Mantha,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:28+00:00
+APMC Manwat,Manwat,Manwath,Maharashtra,19.30133,76.49735,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:28+00:00
+APMC Mauda,Mauda,Mauda,Maharashtra,21.14575,79.39794,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:28+00:00
+APMC Mehekar,Mehekar,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:29+00:00
+APMC Mohol,Mohol,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:29+00:00
+APMC Morshi,Morshi,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:29+00:00
+APMC Motala,Motala,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:30+00:00
+APMC Mudkhed,Mudkhed,Mudkhed,Maharashtra,19.15657,77.50304,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:30+00:00
+APMC Mukhed,Mukhed,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:30+00:00
+APMC Mumbai,Mumbai,Mumbai,Maharashtra,19.07283,72.88261,mapped,0.0,0.6,open-meteo geocoding (GeoNames),2026-10-18T15:47:31+00:00
+APMC Murbad,Murbad,Murbād,Maharashtra,19.25395,73.38993,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:31+00:00
+APMC Murtizapur,Murtizapur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:31+00:00
+APMC Murum,Murum,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:32+00:00
+APMC Nagpur,Nagpur,Nagpur,Maharashtra,21.14631,79.08491,mapped,0.0,0.3,open-meteo geocoding (GeoNames),2026-10-18T15:47:32+00:00
+APMC Nampur,Nampur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:32+00:00
+APMC Nanded,Nanded,Nanded,Maharashtra,19.16023,77.31497,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:32+00:00
+APMC Nandgaon,Nandgaon,Nāndgaon,Maharashtra,20.3068,74.65501,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:33+00:00
+APMC Nandgaon Khandeshwar,Nandgaon Khandeshwar,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:33+00:00
+APMC Nandura,Nandura,Nāndūra,Maharashtra,20.83417,76.45924,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:34+00:00
+APMC Nandurbar,Nandurbar,Nandurbar,Maharashtra,21.36671,74.24051,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:34+00:00
+APMC Nasik,Nashik,Nashik,Maharashtra,19.99727,73.79096,mapped,0.0,0.1,open-meteo geocoding (GeoNames),2026-10-18T15:47:34+00:00
+APMC Navapur,Navapur,Navāpur,Maharashtra,21.16157,73.79399,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:35+00:00
+APMC Ner Parasopant,Ner Parasopant,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:35+00:00
+APMC Newasa,Newasa,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:35+00:00
+APMC Nilanga,Nilanga,Nilanga,Maharashtra,18.11675,76.75279,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:35+00:00
+APMC Nira,Nira,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:36+00:00
+APMC Pachora,Pachora,Pāchora,Maharashtra,20.66727,75.35305,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:36+00:00
+APMC Paithan,Paithan,Paithan,Maharashtra,19.47506,75.38558,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:36+00:00
+APMC Palam,Palam,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:37+00:00
+APMC Palghar,Palghar,Pālghar,Maharashtra,19.69693,72.76543,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:37+00:00
+APMC Palus,Palus,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:37+00:00
+APMC Pandhakawada,Pandhakawada,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:38+00:00
+APMC Pandharpur,Pandharpur,Pandharpur,Maharashtra,17.67924,75.33098,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:38+00:00
+APMC Panvel,Panvel,Panvel,Maharashtra,18.98878,73.11013,mapped,0.0,0.8,open-meteo geocoding (GeoNames),2026-10-18T15:47:38+00:00
+APMC Parali Vaijyanath,Parali Vaijyanath,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:39+00:00
+APMC Paranda,Paranda,Paranda,Maharashtra,18.26321,75.46316,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:40+00:00
+APMC Parbhani,Parbhani,Parbhani,Maharashtra,19.26855,76.77081,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:40+00:00
+APMC Parner,Parner,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:40+00:00
+APMC Parola,Parola,Parola,Maharashtra,20.88098,75.11937,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:41+00:00
+APMC Parshiwani,Parshiwani,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:41+00:00
+APMC Partur,Partur,Partūr,Maharashtra,19.59925,76.21541,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:41+00:00
+APMC Patan,Patan,Pātan,Maharashtra,17.37513,73.90143,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:42+00:00
+APMC Pathardi,Pathardi,Pāthardi,Maharashtra,19.17279,75.17425,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:42+00:00
+APMC Pathari,Pathari,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:42+00:00
+APMC Patoda,Patoda,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:43+00:00
+APMC Patur,Patur,Pātūr,Maharashtra,20.46093,76.93725,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:43+00:00
+APMC Pavani,Pavani,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:43+00:00
+APMC Pen,Pen,Pen,Maharashtra,18.73734,73.09603,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:44+00:00
+APMC Phaltan,Phaltan,Phaltan,Maharashtra,17.99113,74.43177,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:44+00:00
+APMC Pimpalgaon Baswant,Pimpalgaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:44+00:00
+APMC Pulgaon,Pulgaon,Pulgaon,Maharashtra,20.72204,78.32056,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:45+00:00
+APMC Pune,Pune,Pune,Maharashtra,18.51957,73.85535,mapped,0.0,0.2,open-meteo geocoding (GeoNames),2026-10-18T15:47:45+00:00
+APMC Purna,Purna,Pūrna,Maharashtra,19.1817,77.02566,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:46+00:00
+APMC Pusad,Pusad,Pusad,Maharashtra,19.91274,77.57838,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:46+00:00
+APMC Rahata,Rahata,Rahata,Maharashtra,19.71664,74.48109,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:46+00:00
+APMC Rahuri,Rahuri,Rāhuri,Maharashtra,19.39069,74.64979,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:47+00:00
+APMC Ramtek,Ramtek,Rāmtek,Maharashtra,21.39562,79.32725,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:47+00:00
+APMC Ratnagiri (Nachane),Ratnagiri,Ratnagiri,Maharashtra,16.99154,73.31022,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:47+00:00
+APMC Raver,Raver,Rāver,Maharashtra,21.24757,76.03509,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:47+00:00
+APMC Sailu,Sailu,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:48+00:00
+APMC Sakri,Sakri,Sakri,Maharashtra,20.99104,74.31475,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:48+00:00
+APMC Samudrapur,Samudrapur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:49+00:00
+APMC Sangamner,Sangamner,Sangamner,Maharashtra,19.56784,74.21154,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:49+00:00
+APMC Sangli,Sangli,Sangli,Maharashtra,16.85438,74.56417,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:49+00:00
+APMC Satana,Satana,Satānā,Maharashtra,20.59483,74.20301,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:50+00:00
+APMC Satara,Satara,,,,,ambiguous,93.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:50+00:00
+APMC Savner,Savner,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:50+00:00
+APMC Sengoan,Sengoan,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:51+00:00
+APMC Shahada,Shahada,Shāhāda,Maharashtra,21.54538,74.47106,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:51+00:00
+APMC Shahapur,Shahapur,Shāhāpur,Maharashtra,19.45231,73.32572,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:51+00:00
+APMC Shegaon,Shegaon,Shegaon,Maharashtra,20.7932,76.69921,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:52+00:00
+APMC Shevgaon,Shevgaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:52+00:00
+APMC Shirpur,Shirpur,Shirpur,Maharashtra,21.34821,74.88035,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:53+00:00
+APMC Shirur,Shirur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:53+00:00
+APMC Shrigonda,Shrigonda,Shrīgonda,Maharashtra,18.61527,74.69895,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:53+00:00
+APMC Shrirampur,Shrirampur,Shrirampur,Maharashtra,19.62201,74.65699,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:54+00:00
+APMC Sillod,Sillod,Sillod,Maharashtra,20.30303,75.65284,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:54+00:00
+APMC Sindi,Sindi,Sindi,Maharashtra,20.74238,78.5871,mapped,32.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:54+00:00
+APMC Sindkhed Raja,Sindkhed Raja,Sindkhed Raja,Maharashtra,19.95363,76.12637,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:55+00:00
+APMC Sinner,Sinnar,Sinnar,Maharashtra,19.84505,73.99866,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:55+00:00
+APMC Solapur,Solapur,Solapur,Maharashtra,17.67152,75.91044,mapped,0.0,1.4,open-meteo geocoding (GeoNames),2026-10-18T15:47:55+00:00
+APMC Sonpeth,Sonpeth,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:56+00:00
+APMC Suragana,Suragana,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:56+00:00
+APMC Tadkalas,Tadkalas,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:47:56+00:00
+APMC Taloda,Taloda,Taloda,Maharashtra,21.56128,74.21238,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:57+00:00
+APMC Tasgaon,Tasgaon,Tāsgaon,Maharashtra,17.037,74.60171,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:57+00:00
+APMC Telhara,Telhara,Telhāra,Maharashtra,21.02694,76.83889,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:57+00:00
+APMC Tuljapur,Tuljapur,Tuljāpur,Maharashtra,18.00804,76.07011,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:58+00:00
+APMC Tumsar,Tumsar,Tumsar,Maharashtra,21.38333,79.73333,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:58+00:00
+APMC Ulhasnagar,Ulhasnagar,Ulhasnagar,Maharashtra,19.21667,73.15,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:47:59+00:00
+APMC Umared,Umared,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:00+00:00
+APMC Umarga,Umarga,Umarga,Maharashtra,17.83841,76.62331,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:00+00:00
+APMC Umari,Umari,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:01+00:00
+APMC Umarkhed,Umarkhed,Umarkhed,Maharashtra,19.60144,77.68878,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:01+00:00
+APMC Umrane,Umrane,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:01+00:00
+APMC VASAI,Vasai,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:02+00:00
+APMC Vadgaonpeth,Vadgaonpeth,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:02+00:00
+APMC Vaduj,Vaduj,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:02+00:00
+APMC Vadvani,Vadvani,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:03+00:00
+APMC Vai,Vai,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:03+00:00
+APMC Vaijpur,Vaijapur,Vaijāpur,Maharashtra,19.92672,74.7275,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:04+00:00
+APMC Vani,Vani,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:04+00:00
+APMC Varora,Varora,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:04+00:00
+APMC Varud,Varud,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:05+00:00
+APMC Vita,Vita,Vite,Maharashtra,17.27343,74.53792,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:05+00:00
+APMC Wardha,Wardha,Wardha,Maharashtra,20.73933,78.59784,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:06+00:00
+APMC Washi (Dharashiv),Washi,Wāshīm,Maharashtra,20.11128,77.133,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:06+00:00
+APMC Washim,Washim,Wāshīm,Maharashtra,20.11128,77.133,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:07+00:00
+APMC Yavatmal,Yavatmal,Yavatmal,Maharashtra,20.39324,78.13201,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:07+00:00
+APMC Yawal,Yawal,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:07+00:00
+APMC Yeola,Yeola,Yeola,Maharashtra,20.0424,74.48944,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:08+00:00
+Amrawati(Frui & Veg. Market),Amravati,Amravati,Maharashtra,20.93333,77.75,mapped,0.0,0.3,open-meteo geocoding (GeoNames),2026-10-18T15:48:08+00:00
+Ashti(Karanja),Ashti,,,,,ambiguous,127.3,,open-meteo geocoding (GeoNames),2026-10-18T15:48:08+00:00
+Barshi(Vairag),Barshi,Barshi,Maharashtra,18.23454,75.69275,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:08+00:00
+"Bhagyoday Cotton And Agri Market, Vaijapur, Chattrapati Sambhajinagar","Bhagyoday Cotton And Agri Market, Vaijapur, Chattrapati Sambhajinagar",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:08+00:00
+Bhokardan(Pimpalgaon Renu),Bhokardan,Bhokardan,Maharashtra,20.2583,75.76997,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:08+00:00
+Bori,Bori,Borī,Maharashtra,20.91208,79.0045,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:08+00:00
+"Bsk Krishi Bazar Private Limited, Mehkar, Dist Buldhana","Bsk Krishi Bazar Private Limited, Mehkar, Dist Buldhana",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Buldhana(Dhad),Buldhana,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Chandrapur(Ganjwad),Chandrapur,Chandrapur,Maharashtra,19.95076,79.29523,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Dindori(Vani),Dindori,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Dondaicha (Sindhkheda),Dondaicha,Dondaicha,Maharashtra,21.3236,74.56804,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Hingoli(Kanegoan Naka),Hingoli,Hingoli,Maharashtra,19.71464,77.14238,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Indapur(Bhigwan),Indapur,,,,,ambiguous,189.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Indapur(Nimgaon Ketki),Indapur,,,,,ambiguous,189.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+"Jai Gajanan Krushi Bazar, Washim","Jai Gajanan Krushi Bazar, Washim",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:09+00:00
+Jalgaon Jamod(Aasalgaon),Jalgaon Jamod,Jalgaon Jamod,Maharashtra,21.05194,76.53464,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:10+00:00
+Jalgaon(Masawat),Jalgaon,Jalgaon,Maharashtra,21.00292,75.56602,mapped,0.0,0.6,open-meteo geocoding (GeoNames),2026-10-18T15:48:10+00:00
+"Janata Agri Market (DLS Agro Infrastructure Pvt Ltd), Dist Dhule","Janata Agri Market , Dist Dhule",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:10+00:00
+"Jaykissan Krushi Uttpan Khajgi Bazar, Khamgaon, Dist Buldhana","Jaykissan Krushi Uttpan Khajgi Bazar, Khamgaon, Dist Buldhana",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:10+00:00
+Junnar(Alephata),Junnar,Junnar,Maharashtra,19.20815,73.8752,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:10+00:00
+Junnar(Narayangaon),Junnar,Junnar,Maharashtra,19.20815,73.8752,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:10+00:00
+Junnar(Otur),Junnar,Junnar,Maharashtra,19.20815,73.8752,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:10+00:00
+KISAN MARKET YARD,Kisan Market Yard,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Kada(Ashti),Kada,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Karjat(Rashin),Karjat,Karjat,Maharashtra,18.9107,73.32354,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Khed(Chakan),Chakan,Chākan,Maharashtra,18.76059,73.86351,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Kolhapur(Laxmipuri),Kolhapur,Kolhāpur,Maharashtra,16.69563,74.23167,mapped,0.0,1.6,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Kolhapur(Malkapur),Kolhapur,Kolhāpur,Maharashtra,16.69563,74.23167,mapped,0.0,1.6,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+"Krushna Krishi Bazar, Washim","Krushna Krishi Bazar, Washim",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Kurdwadi(Modnimb),Kurdwadi,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Lasalgaon(Niphad),Lasalgaon,Lāsalgaon,Maharashtra,20.1427,74.23946,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Lasalgaon(Vinchur),Lasalgaon,Lāsalgaon,Maharashtra,20.1427,74.23946,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+Latur(Murud),Latur,Latur,Maharashtra,18.39721,76.56784,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:11+00:00
+"Laxmi-Sopan Agriculture Produce Marketing Co Ltd, Barshi, Dist Solapur","Laxmi-Sopan Agriculture Produce Marketing Co Ltd, Barshi, Dist Solapur",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:12+00:00
+"Maharaja Agresen Pvt Krushi Utappan Bazar Samati, Dist Buldhana","Maharaja Agresen Pvt Krushi Utappan Bazar Samati, Dist Buldhana",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:12+00:00
+"Mahesh Krushi Utpanna Bazar, Digras, Dist Yeotmal","Mahesh Krushi Utpanna Bazar, Digras, Dist Yeotmal",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:12+00:00
+"Malharshree Khajgi Krushi Utpann Bajar, Chandanpuri Tal Malegaon, Nashik","Malharshree Khajgi Krushi Utpann Bajar, Chandanpuri Tal Malegaon, Nashik",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:13+00:00
+"Mankameshwr Fpc Sanchalit Mankameshwar Khajagi Krushi Utpanna Bajar Ltd, Nifad Nashik","Mankameshwr Fpc Sanchalit Mankameshwar Khajagi Krushi Utpanna Bajar Ltd, Nifad Nashik",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:13+00:00
+Mumbai-Onion & Potato Market,Mumbai-Onion & Potato Market,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:14+00:00
+Newasa(Ghodegaon),Newasa,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:14+00:00
+Nira(Saswad),Nira,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:14+00:00
+"Omchatinya Multi State Agro Purpose Co-Op Society, Dist Ahilyanagar","Omchatinya Multi State Agro Purpose Co-Op Society, Dist Ahilyanagar",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:14+00:00
+PACHORA(BHADGAON),Pachora,Pāchora,Maharashtra,20.66727,75.35305,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:14+00:00
+Pimpalgaon Baswant(Saykheda),Pimpalgaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:14+00:00
+"Pratap Nana Mahale Khajgi Krushi Uttpana Bazar, Samati-Dhule","Pratap Nana Mahale Khajgi Krushi Uttpana Bazar, Samati-Dhule",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+"Premium Krushi Utpanna Bazar, Nashik","Premium Krushi Utpanna Bazar, Nashik",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Pune(Khadiki),Pune,Pune,Maharashtra,18.51957,73.85535,mapped,0.0,0.2,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Pune(Manjri),Pune,Pune,Maharashtra,18.51957,73.85535,mapped,0.0,0.2,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Pune(Moshi),Pune,Pune,Maharashtra,18.51957,73.85535,mapped,0.0,0.2,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Pune(Pimpri),Pune,Pune,Maharashtra,18.51957,73.85535,mapped,0.0,0.2,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Rahuri(Songaon),Rahuri,Rāhuri,Maharashtra,19.39069,74.64979,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Rahuri(Vambori),Rahuri,Rāhuri,Maharashtra,19.39069,74.64979,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Raver(Savda),Raver,Rāver,Maharashtra,21.24757,76.03509,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+"Sangli(Phale, Bhajipala Market)",Sangli,Sangli,Maharashtra,16.85438,74.56417,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Sangrampur(Varvatbakal),Sangrampur,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Shevgaon(Bodhegaon),Shevgaon,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:15+00:00
+Shivsiddha Govind Producer Company Ltd Sanchalit Khajgi Krushi Utpann Bajar Samati-Abhona-Kalwan,Shivsiddha Govind Producer Company Ltd Sanchalit Khajgi Krushi Utpann Bajar Samati-Abhona-Kalwan,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:16+00:00
+"Shree Sairaj Krushi Market, Dist Ahilyanagar","Shree Sairaj Krushi Market, Dist Ahilyanagar",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:16+00:00
+"Shree Salasar Krushi Bazar, Dist Parbhani","Shree Salasar Krushi Bazar, Dist Parbhani",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:16+00:00
+"Shri Rameshwar Krushi Market, M.Nagar, Tal Deola, Dist Nashik","Shri Rameshwar Krushi Market, M.Nagar, Tal Deola, Dist Nashik",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+Shrigonda(Ghogargaon),Shrigonda,Shrīgonda,Maharashtra,18.61527,74.69895,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+Shrirampur(Belapur),Shrirampur,Shrirampur,Maharashtra,19.62201,74.65699,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+Sillod(Bharadi),Sillod,Sillod,Maharashtra,20.30303,75.65284,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+Sindi (Selu),Sindi,Sindi,Maharashtra,20.74238,78.5871,mapped,32.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+Umarked(Danki),Umarked,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+Varud(Rajura Bazar),Varud,,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+"Vitthal Krushi Utpanna Bazar Pvt Ltd, Washim","Vitthal Krushi Utpanna Bazar Pvt Ltd, Washim",,,,,not_found,,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00
+Washim(Ansing),Washim,Wāshīm,Maharashtra,20.11128,77.133,mapped,0.0,,open-meteo geocoding (GeoNames),2026-10-18T15:48:17+00:00

@@ -503,6 +503,27 @@ details > summary { cursor: pointer; font-weight: 600; color: var(--brand); padd
 .factor-say { margin: 0; font-size: 0.9rem; color: var(--text-2); }
 .factor-detail { font-weight: 600; color: var(--text); }
 .factor-seen { margin: 0; font-size: 0.8rem; color: var(--muted); }
+/* forecast explanation: three-part factor cards, evidence table, reliability */
+.xai-h { margin: 0.4rem 0 0; font-size: 1.02rem; }
+.xai-overall { padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.xai-headline { margin: 0 0 0.35rem; font-size: 1.15rem; }
+.xai-line { margin: 0 0 0.3rem; font-size: 1.05rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.xai-change { display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 700; color: var(--text); }
+.xai-caution { display: flex; gap: 0.4rem; align-items: flex-start; margin: 0.4rem 0 0; font-size: 0.88rem; color: var(--warn-text); }
+.xai-card { border-top-color: var(--axis); }
+.xai-card.push-small .factor-push { background: #eef0ea; color: var(--text-2); }
+.xai-parts { margin: 0; display: grid; gap: 0.15rem; }
+.xai-parts dt { margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
+.xai-parts dd { margin: 0; font-size: 0.88rem; color: var(--text-2); overflow-wrap: anywhere; }
+.xai-table-wrap { overflow-x: auto; }
+.xai-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.xai-table th, .xai-table td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
+.xai-table th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+.xai-rel, .xai-limits { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.5rem; }
+.xai-rel li { display: grid; gap: 0.1rem; font-size: 0.9rem; }
+.xai-rel li span { color: var(--text-2); }
+.xai-limits { list-style: disc; padding-left: 1.2rem; font-size: 0.88rem; color: var(--text-2); }
+.xai-tech .small { margin: 0 0 0.6rem; }
 @media (max-width: 960px) {
   .sell-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .factor-cards { grid-template-columns: minmax(0, 1fr); }
@@ -1950,3 +1971,58 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 
 /* small, non-blocking note on where a price forecast comes from */
 .price-source { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--muted); }
+
+/* Crop result top row: plan card ~40% / recommended crop ~60%, same height; stacked on narrow screens */
+.cr-top { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1.1rem; align-items: stretch; }
+@media (min-width: 861px) and (max-width: 1100px) { .cr-top { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+@media (max-width: 860px) { .cr-top { grid-template-columns: minmax(0, 1fr); } }
+.cr-top > .card { margin: 0; border-radius: 14px; min-width: 0; }
+.cr-top .plan-summary { padding: 1.25rem; gap: 0.9rem; justify-content: space-between; }
+.cr-top .plan-place { font-size: 1.25rem; line-height: 1.25; }
+.plan-facts { display: grid; gap: 0.6rem; margin: 0; }
+.plan-facts > div { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.plan-facts dt { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.plan-facts dd { margin: 0; font-weight: 700; color: var(--text); text-align: right; }
+.cr-top .best-card { padding: 0.85rem 1rem; border-width: 2px; box-shadow: var(--shadow); }
+.cr-top .best-head { gap: 0.8rem; margin: 0; }
+.cr-top .best-photo { border-radius: 12px; }
+.cr-top .rank-chip { padding: 0.1rem 0.55rem; font-size: 0.75rem; }
+.cr-top .best-name { margin: 0.15rem 0 0; font-size: 1.5rem; }
+.cr-top .best-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin-top: 0.6rem; }
+.cr-top .best-stat { min-height: 0; padding: 0.45rem 0.6rem; gap: 0; }
+.cr-top .best-stat.is-key:first-child { grid-column: 1 / -1; padding: 0.5rem 0.8rem; }
+.cr-top .best-stat.is-key:first-child .best-stat-value { font-size: 1.5rem; }
+.cr-top .best-stat:not(.is-key) { grid-column: span 1; }
+.cr-top .best-stat:not(.is-key) .best-stat-value { font-size: 0.95rem; overflow-wrap: anywhere; }
+.cr-top .best-stat-label { font-size: 0.72rem; }
+.cr-top .best-stat-sub { font-size: 0.72rem; line-height: 1.3; }
+.cr-top .best-warning { margin-top: 0.5rem; padding: 0.35rem 0.6rem; font-size: 0.8rem; }
+@media (min-width: 1100px) { .cr-top .best-stat:not(.is-key) .best-stat-value { white-space: nowrap; } }
+@media (max-width: 1100px) and (min-width: 861px) { .cr-top .best-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .cr-top .best-stats { grid-template-columns: minmax(0, 1fr); } .cr-top .best-name { font-size: 1.6rem; } }
+
+/* "Why this crop is recommended" - three short reasons */
+.why-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.why-item { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.7rem 0.9rem; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); }
+.why-item.is-warn { background: var(--harvest-soft); border-color: var(--harvest-line); }
+.why-item p { margin: 0.15rem 0 0; color: var(--text-2); font-size: 0.95rem; }
+.why-icon { display: inline-flex; margin-top: 2px; color: var(--leaf); }
+.why-item.is-warn .why-icon { color: var(--harvest-text); }
+.why-model { margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid var(--border); }
+.why-model h3 { margin: 0 0 0.4rem; font-size: 0.95rem; }
+.why-model ul { margin: 0 0 0.4rem; padding-left: 1.1rem; color: var(--text-2); font-size: 0.92rem; }
+.why-model li { margin-bottom: 0.25rem; }
+.why-model li.is-against { color: var(--harvest-text); }
+.why-note { margin: 0.8rem 0 0; }
+
+/* price form: compact layout, date placeholder (native date inputs have none) */
+.price-form .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 640px) { .price-form .form-grid { grid-template-columns: minmax(0, 1fr); } }
+.price-form .form-section + .form-section { margin-top: 1.1rem; }
+.price-form .form-section > .field { max-width: 22rem; }
+.forecast-start-line { margin: 0.5rem 0 0; }
+.date-ph { position: relative; }
+.date-ph.is-empty input { color: transparent; }
+.date-ph.is-empty input:focus { color: inherit; }
+.date-ph.is-empty::before { content: attr(data-placeholder); position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.date-ph.is-empty:focus-within::before { display: none; }

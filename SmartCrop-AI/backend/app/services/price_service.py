@@ -81,6 +81,6 @@ def explain(forecaster: PriceForecaster, req: PriceRequest) -> dict:
     f = _run(forecaster, req, req.as_of or today(), explain=True)
     return {"series": f["series"], "forecast_origin_date": f["forecast_origin_date"],
             "target_date": f["target_date"], "current_price": f["current_price"],
-            "projection": f["projection"], "explanations": f["explanations"],
+            "projection": f["projection"], "model": f["model"], "explanations": f["explanations"],
             "message": None if f["explanations"] else
             "The model could not calculate an explanation for this forecast."}

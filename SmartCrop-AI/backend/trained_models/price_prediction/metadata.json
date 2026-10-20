@@ -1,7 +1,7 @@
 {
   "model_type": "price_prediction",
-  "version": "202610101847",
-  "trained_at": "2026-10-10T18:47:52+00:00",
+  "version": "202610170304",
+  "trained_at": "2026-10-17T03:04:58+00:00",
   "approach": "direct multi-horizon (horizon is a feature), no recursion",
   "max_horizon": 60,
   "horizons": [
@@ -293,13 +293,13 @@
     }
   },
   "validated_horizons": {
-    "Brinjal": "1-60",
-    "Cabbage": "1-60",
-    "Cauliflower": "1-60",
+    "Brinjal": "2-60",
+    "Cabbage": "2-60",
+    "Cauliflower": "2-60",
     "Onion": "none",
-    "Potato": "1-60",
-    "Tomato": "1-8",
-    "Wheat": "1-60"
+    "Potato": "2-60",
+    "Tomato": "2-8",
+    "Wheat": "3-60"
   },
   "residual_intervals": {
     "1": {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Activity, ArrowLeft, CalendarDays, ChartNoAxesCombined, CircleCheck, CloudSun, Coins, History, Lightbulb, Map, Minus, MoveRight, Plus, Scale, TrendingDown, TrendingUp, TriangleAlert, Truck, Warehouse, Wheat,
+  ArrowLeft, ChartNoAxesCombined, CircleHelp, CircleCheck, History, Lightbulb, TriangleAlert, Warehouse,
 } from "lucide-react";
 import Alert from "../components/Alert";
 import CropArt from "../components/CropArt";
@@ -171,8 +171,10 @@ function SellRecommendation({ advice, commodity }) {
 
   return (
     <div className={`sell-card ${style.tone}`}>
-      <div className="sell-badge"><Icon size={18} aria-hidden="true" />
-        {labelFor(t, `price.advice.code.${advice.code}`, advice.label)}</div>
+      {advice.code !== "NO_CLEAR_DIFFERENCE" && (
+        <div className="sell-badge"><Icon size={18} aria-hidden="true" />
+          {labelFor(t, `price.advice.code.${advice.code}`, advice.label)}</div>
+      )}
 
       <div className={`sell-summary${alt ? "" : " is-short"}`}>
         <SellCell label={t("price.sell.planned")} date={advice.target_date} price={advice.target_price}
@@ -208,178 +210,6 @@ function SellRecommendation({ advice, commodity }) {
         {advice.wait_days > 0 && <CostCheck advice={advice} />}
       </div>
 
-      <p className="sell-note"><TriangleAlert size={15} aria-hidden="true" />
-        <span>{advice.typical_error_pct != null
-          ? t("price.sell.note", { pct: advice.typical_error_pct.toFixed(0) })
-          : t("price.sell.noteNoError")}</span></p>
-    </div>
-  );
-}
-
-// Direction of a factor's SHAP contribution as the API reports it ("impact"); never inferred here
-const PUSH = {
-  higher: { cls: "push-up", icon: TrendingUp, label: "price.why.pushUp", detail: "price.why.detailUp" },
-  lower: { cls: "push-down", icon: TrendingDown, label: "price.why.pushDown", detail: "price.why.detailDown" },
-  small: { cls: "push-small", icon: Minus, label: "price.why.pushSmall", detail: null },
-};
-// factors whose backend observation is a measured fact worth showing (the others are generic)
-const OBSERVED = new Set(["recent_week", "recent_month", "averages", "volatility", "arrivals", "state_market", "price_level"]);
-
-/** One factor: what it did to the prediction (icon + label) and what it means, in one or two short sentences. */
-function FactorCard({ f, commodity }) {
-  const t = useT();
-  const m = PUSH[f.impact] || PUSH.small;
-  const crop = cropName(t, commodity);
-  const sayKey = `price.why.say.${f.factor}.${f.impact in PUSH ? f.impact : "small"}`;
-  const say = t(sayKey, { crop });
-  return (
-    <li className={`factor-card ${m.cls}`}>
-      <span className="factor-push"><m.icon size={16} aria-hidden="true" />{t(m.label)}</span>
-      <strong className="factor-name">{labelFor(t, `price.factor.${f.factor}`, f.title)}</strong>
-      <p className="factor-say">
-        {say !== sayKey ? say : <ServerText>{f.observation}</ServerText>}
-        {m.detail && <> <span className="factor-detail">{t(m.detail, { pct: `${Math.abs(f.effect_pct).toFixed(1)}%` })}</span></>}
-      </p>
-      {say !== sayKey && OBSERVED.has(f.factor) && (
-        <p className="factor-seen"><ServerText>{f.observation}</ServerText></p>
-      )}
-    </li>
-  );
-}
-
-/** Step 4 — the three factors the model relied on most, as cards (from the API's SHAP explanation). */
-function WhyFactors({ explain, error, forecast, which, setWhich }) {
-  const t = useT();
-  const exps = explain?.explanations || [];
-  const exp = exps[Math.min(which, exps.length - 1)];
-  const point = exp && forecast.path.find((p) => p.horizon_days === exp.horizon_days);
-  return (
-    <>
-      {exps.length > 1 && (
-        <div className="segmented mb-3" role="radiogroup" aria-label={t("price.why.whichDate")}>
-          {exps.map((e, i) => (
-            <button key={e.date} type="button" role="radio" aria-checked={which === i}
-              className={which === i ? "active" : ""} onClick={() => setWhich(i)}>
-              {i === 0 ? t("price.chart.yourDate") : t("price.why.suggestedDate")}
-            </button>
-          ))}
-        </div>
-      )}
-      {error && <Alert type="error">{error}</Alert>}
-      {!explain && !error && <Loader label={t("price.why.loading")} />}
-      {explain && !exp && <Alert type="info">{explain.message ? <ServerText>{explain.message}</ServerText> : t("price.why.none")}</Alert>}
-      {exp && (
-        <div className="stack">
-          <p className="text-2" style={{ margin: 0 }}>
-            {t("price.why.introA", { date: fmtDate(exp.date) })}{" "}
-            <strong>{point ? rupees(point.predicted_price) : t("price.why.thisPrice")}</strong>{" "}
-            {t("price.why.introB", { change: pct(exp.prediction_change_pct) })}
-          </p>
-          {exp.all_small && <Alert type="info">{t("price.why.allSmall")}</Alert>}
-          <ul className="factor-cards">
-            {exp.factors.slice(0, 3).map((f) => <FactorCard key={f.factor} f={f} commodity={forecast.series.commodity} />)}
-          </ul>
-          <p className="muted small" style={{ margin: 0 }}>{t("price.why.patternsNote")}</p>
-        </div>
-      )}
-    </>
-  );
-}
-
-const FLAT_PCT = 1;   // changes within +/-1% are described as "about the same"
-const SMALL_PCT = 3;  // up to this a change is "a tiny bit"
-const BIG_PCT = 8;    // from this a change is "a lot"
-const REASON_ICON = {
-  price_level: Coins, seasonal: CloudSun, vs_average: Scale, movement: TrendingUp, crop_market: Wheat,
-  horizon: CalendarDays, volatility: Activity, supply: Truck, statewide: Map, other: Plus,
-};
-
-/** Headline key, tone and arrow for an expected price change in percent. */
-function changeStyle(change) {
-  const a = Math.abs(change);
-  if (a < FLAT_PCT) return { tone: "flat", Arrow: MoveRight, headline: "price.kid.flat" };
-  const size = a < SMALL_PCT ? "Tiny" : a >= BIG_PCT ? "Lot" : "Some";
-  return change > 0
-    ? { tone: "up", Arrow: TrendingUp, headline: `price.kid.up${size}` }
-    : { tone: "down", Arrow: TrendingDown, headline: `price.kid.down${size}` };
-}
-
-const localToday = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
-/** Big number, a plain headline and "today -> that day" prices. */
-function SummaryCard({ exp, forecast }) {
-  const tr = useT();
-  const { tone, Arrow, headline } = changeStyle(exp.prediction_change_pct);
-  const point = forecast.path.find((p) => p.horizon_days === exp.horizon_days);
-  const origin = forecast.forecast_origin_date;
-  return (
-    <div className={`kid-summary is-${tone}`}>
-      <div className="kid-summary-top">
-        <span className="kid-summary-num"><Arrow size={30} aria-hidden="true" />{Math.round(exp.prediction_change_pct) === 0 ? "0%" : pct(exp.prediction_change_pct, 0)}</span>
-        <span className="kid-summary-title">{tr(headline)}</span>
-      </div>
-      {point && (
-        <p className="kid-summary-line">
-          {origin === localToday() ? tr("price.kid.today") : fmtDate(origin)}: <strong>{rupees(forecast.current_price)}</strong>
-          {" \u2192 "}{fmtDate(exp.date)}: {tr("price.kid.about")} <strong>{rupees(point.predicted_price)}</strong>
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** One reason: emoji, short title, one easy line, and the effect as a coloured pill. */
-function Reason({ f }) {
-  const tr = useT();
-  const tone = f.factor === "other" ? "flat" : f.effect_pct > 0 ? "up" : f.effect_pct < 0 ? "down" : "flat";
-  const Icon = REASON_ICON[f.factor] || Plus;
-  const line = f.factor === "other" ? tr("price.kid.other.line") : tr(`price.kid.${f.factor}.${f.direction}`);
-  return (
-    <li className="kid-row">
-      <span className="kid-icon" aria-hidden="true"><Icon size={22} /></span>
-      <span className="kid-text">
-        <strong>{tr(`price.kid.${f.factor}.title`)}</strong>
-        <span>{line}</span>
-      </span>
-      <span className={`kid-pill is-${tone}`}>{pct(f.effect_pct)}</span>
-    </li>
-  );
-}
-
-/** Step 6: why the price moves, in plain words. */
-function AdvancedDetails({ explain, forecast, which }) {
-  const tr = useT();
-  const exps = explain?.explanations || [];
-  const exp = exps[Math.min(which, exps.length - 1)];
-  const validated = forecast.path.filter((p) => p.beats_baseline).map((p) => p.horizon_days);
-  const simple = exp?.simple;
-  const rows = simple ? [...simple.factors, simple.other] : [];
-  const change = exp?.prediction_change_pct ?? 0;
-  const pushUp = rows.some((f) => f.factor !== "other" && f.effect_pct > 0);
-  const pushDown = rows.some((f) => f.factor !== "other" && f.effect_pct < 0);
-  const word = Math.abs(change) < FLAT_PCT ? "flat" : change > 0 ? "up" : "down";
-  const total = word === "flat" ? tr("price.kid.sumFlat") : tr(`price.kid.sum${word === "up" ? "Up" : "Down"}`, { pct: Math.abs(change).toFixed(0) });
-  const closing = pushUp && pushDown ? tr("price.kid.mixed", { total }) : tr("price.kid.same", { total });
-  return (
-    <div className="kid">
-      {exp && <SummaryCard exp={exp} forecast={forecast} />}
-      {simple && (
-        <>
-          <h3 className="kid-h">{tr("price.kid.why")}</h3>
-          <ul className="kid-list">{rows.map((f) => <Reason key={f.factor} f={f} />)}</ul>
-          <p className="kid-closing">{closing}</p>
-        </>
-      )}
-      {/* only the caution is shown; "tested and checked" is not useful to a farmer */}
-      {!(forecast.target.beats_baseline && validated.length) && (
-        <details className="kid-about">
-          <summary>{tr("price.kid.aboutTitle")}</summary>
-          <p className="kid-about-line is-warn"><TriangleAlert size={16} aria-hidden="true" />{tr("price.kid.notTested")}</p>
-        </details>
-      )}
     </div>
   );
 }
@@ -392,14 +222,14 @@ export default function PriceResult() {
   const [forecast, setForecast] = useState(source?.forecast || null);
   const [explain, setExplain] = useState(null);
   const [error, setError] = useState(null);
-  const [explainError, setExplainError] = useState(null);
-  const [which, setWhich] = useState(0); // which date the explanation shows (your date / suggested date)
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!source) return;
     if (source.forecast) setForecast(source.forecast);
     else priceService.trend(source.req).then(setForecast).catch((e) => setError(errorMessage(e)));
-    priceService.explain(source.req).then(setExplain).catch((e) => setExplainError(errorMessage(e)));
+    // prefetched only so the explanation page can open without a second model run; it refetches if this fails
+    priceService.explain(source.req).then(setExplain).catch(() => {});
   }, [source]);
 
   const backLinks = (
@@ -476,37 +306,24 @@ export default function PriceResult() {
       </div>
 
       <ResultStep n={3} id="step-chart" title={tr("price.chart.title", { crop: cropName(tr, series.commodity) })} className="reveal">
-        <p className="chart-desc mb-3">
-          {tr("price.chart.desc", { from: fmtDate(forecast.forecast_origin_date), to: fmtDate(forecast.path[forecast.path.length - 1].date) })}
-          {forecast.path.length > t.horizon_days && ` ${tr("price.chart.descLater")}`}
-        </p>
         <PriceTrendChart history={forecast.history} historyIsReference={forecast.history_is_reference}
           actualAfter={forecast.actual_after_origin} path={forecast.path}
           originDate={forecast.forecast_origin_date} currentPrice={forecast.current_price}
           targetDate={forecast.target_date} recommendedDate={advice.recommended_date} peak={advice.peak} />
-        {forecast.path.some((p) => !p.beats_baseline) && (
-          <p className="small text-2" style={{ marginTop: 8 }}>
-            {forecast.validated_days > 0
-              ? tr("price.chart.weakSome", { crop: cropName(tr, series.commodity) })
-              : tr("price.chart.weakAll", { crop: cropName(tr, series.commodity) })}
-            {forecast.last_validated_days < forecast.max_horizon_days && forecast.path.length < forecast.max_horizon_days &&
-              <> {tr("price.chart.stops", { date: fmtDate(forecast.path[forecast.path.length - 1].date) })}</>}
-          </p>
-        )}
       </ResultStep>
 
-      <ResultStep n={4} id="step-why" title={tr("price.why.title")} className="reveal">
-        <WhyFactors explain={explain} error={explainError} forecast={forecast} which={which} setWhich={setWhich} />
-      </ResultStep>
-
-      <ResultStep n={5} id="step-sell" title={tr("price.sell.title")} className="sell-step">
-        <p className="step-subtitle">{tr("price.sell.subtitle")}</p>
+      <ResultStep n={4} id="step-sell" title={tr("price.sell.title")} className="sell-step">
         <SellRecommendation advice={advice} commodity={series.commodity} />
       </ResultStep>
 
-      <ResultStep n={6} id="step-advanced" title={tr("price.steps.advanced")}>
-        <AdvancedDetails explain={explain} forecast={forecast} which={which} />
-      </ResultStep>
+      <div className="row" style={{ margin: "1rem 0" }}>
+        <button type="button" className="btn btn-primary"
+          onClick={() => navigate(historyId ? `/price-prediction/explanation?id=${historyId}` : "/price-prediction/explanation",
+            { state: { req: source.req, explain } })}>
+          <CircleHelp size={16} aria-hidden="true" />{tr("price.expl.button")}
+        </button>
+        <span className="muted small">{tr("price.expl.buttonHint")}</span>
+      </div>
 
       <p className="price-disclaimer"><strong>{tr("price.result.disclaimerLabel")}</strong> {tr("price.result.disclaimer")}</p>
     </>

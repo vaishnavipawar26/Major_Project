@@ -1,8 +1,8 @@
 {
   "model_type": "monthly_price",
   "algorithm": "xgboost_regressor",
-  "version": "202610101456",
-  "trained_at": "2026-10-10T14:56:49+00:00",
+  "version": "202610170314",
+  "trained_at": "2026-10-17T03:14:40+00:00",
   "target": "log(real price[t+h] / real price[t]), h = 1..24 months",
   "inflation_annual": 0.05,
   "inflation_note": "Assumed constant annual inflation used to deflate prices for training and to re-inflate forecasts.",

@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { History, Plus, Sprout } from "lucide-react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { CircleHelp, History, Plus, Sprout } from "lucide-react";
 import Alert from "../components/Alert";
 import EmptyState from "../components/EmptyState";
 import Loader from "../components/Loader";
 import ServerText from "../components/ServerText";
 import BestCropCard from "../components/crop/BestCropCard";
 import CropCompare from "../components/crop/CropCompare";
-import CropPicker from "../components/crop/CropPicker";
 import Financials from "../components/crop/Financials";
 import PlanSummary from "../components/crop/PlanSummary";
-import SuitabilitySection from "../components/crop/SuitabilitySection";
 import TimelineSection from "../components/crop/TimelineSection";
 import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
@@ -19,10 +17,10 @@ import { historyService } from "../services/historyService";
 import { cropName, fmtDateTime, titleCase } from "../utils/format";
 import { LAST_CROP_RESULT_KEY, SOILS } from "./CropRecommendation";
 
-const INPUT_KEYS = ["nitrogen", "phosphorus", "potassium", "temperature", "humidity", "ph", "rainfall"];
+export const INPUT_KEYS = ["nitrogen", "phosphorus", "potassium", "temperature", "humidity", "ph", "rainfall"];
 
 /** Rebuild the dashboard from a saved history record by re-running the (unsaved) analysis. */
-async function loadFromHistory(id) {
+export async function loadFromHistory(id) {
   const rec = await historyService.recommendationItem(id);
   if (!rec.city || !rec.selling_month) return { legacy: rec };
   const req = {
@@ -38,6 +36,7 @@ async function loadFromHistory(id) {
 export default function CropResult() {
   const tr = useT();
   const location = useLocation();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const id = params.get("id");
   const [data, setData] = useState(() => {
@@ -87,7 +86,6 @@ export default function CropResult() {
   }
 
   const best = results.find((r) => r.crop_name === response.best_overall);
-  const inputs = Object.fromEntries(INPUT_KEYS.map((k) => [k, data.req[k]]));
 
   return (
     <div className="crop-result">
@@ -103,14 +101,22 @@ export default function CropResult() {
       )}
 
       <div className="stack">
-        <PlanSummary response={response} crop={best || current} />
-        <BestCropCard response={response} onSelect={setSelected} />
+        <div className="cr-top">
+          <PlanSummary response={response} crop={best || current} />
+          <BestCropCard response={response} onSelect={setSelected} />
+        </div>
         <CropCompare response={response} selected={current.crop_name} onSelect={setSelected} />
-        <CropPicker results={results} selected={current.crop_name} bestName={response.best_overall} onSelect={setSelected} />
-        <SuitabilitySection result={current} response={response} inputs={inputs} />
         <Financials result={current} response={response} />
         <TimelineSection result={current} />
-        <p className="cr-disclaimer">{tr("cr.disclaimer")}</p>
+        <div className="row">
+          <button type="button" className="btn btn-primary" onClick={() => {
+            // the saved record id travels in the URL; an unsaved result has none, so it is handed over as page state instead
+            const rid = id || response.id;
+            navigate(rid ? `/crop-recommendation/explanation?id=${rid}` : "/crop-recommendation/explanation", { state: data });
+          }}>
+            <CircleHelp size={16} aria-hidden="true" />{tr("cr.xp.viewButton")}
+          </button>
+        </div>
       </div>
     </div>
   );

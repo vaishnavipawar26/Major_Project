@@ -143,3 +143,79 @@ def test_market_level_forecast(client, user):
                           "target_date": (start + timedelta(days=7)).isoformat()})
     # either a forecast or an honest "not enough data" message — never a 500
     assert r.status_code in (200, 422), r.text
+
+
+# ---------------------------------------------------------------- explanation integration
+def _explain(client, user, **over):
+    body = {**STATE_REQ, **over}
+    t = client.post("/api/price-prediction/trend", headers=user["headers"], json=body).json()
+    e = client.post("/api/price-prediction/explain", headers=user["headers"], json=body)
+    assert e.status_code == 200, e.text
+    return t, e.json()["explanations"][0]
+
+
+def test_explanation_summary_matches_the_forecast_and_is_not_a_sum_of_factors(client, user):
+    t, exp = _explain(client, user)
+    s = exp["summary"]
+    assert s["reference_price"] == t["current_price"] and s["predicted_price"] == t["target"]["predicted_price"]
+    assert s["change_pct"] == pytest.approx((s["predicted_price"] / s["reference_price"] - 1) * 100, abs=0.15)
+    assert exp["prediction_change_pct"] == pytest.approx(s["change_pct"], abs=0.15)
+    # the overall change comes from the model output; per-factor percentages do not add up to it
+    assert all("effect_pct" not in f for f in exp["factors"])
+    assert exp["weather"]["status"] in ("not_used", "used", "unavailable")
+    if exp["weather"]["status"] == "not_used":
+        assert all(f["factor"] != "weather" for f in exp["factors"])
+    assert exp["reliability"]["model_mae"] > 0 and exp["price_range"]["lower"] <= s["predicted_price"] <= exp["price_range"]["upper"]
+
+
+def test_explanation_evidence_matches_the_price_series(client, user):
+    """The 7-day averages quoted to farmers are recomputed here from the stored panel."""
+    import pandas as pd
+
+    from app.ml.price_prediction.features import STATE_MARKET, STATE_VARIETY
+    from app.ml.common import paths
+    t, exp = _explain(client, user)
+    origin = pd.Timestamp(t["forecast_origin_date"])
+    panel = pd.read_parquet(paths.PRICE_PANEL_PATH)
+    s = panel[(panel["Market"] == STATE_MARKET) & (panel["Commodity"] == "Onion")
+              & (panel["Variety"] == STATE_VARIETY) & panel["observed"] & (panel["Date"] <= origin)]
+    last = s[s["Date"] > origin - pd.Timedelta(days=7)]["price"].mean()
+    prev = s[(s["Date"] <= origin - pd.Timedelta(days=7)) & (s["Date"] > origin - pd.Timedelta(days=14))]["price"].mean()
+    rw = next(f for f in exp["factors"] if f["factor"] == "recent_week")
+    ev = rw["evidence"][0]
+    assert ev["value"] == pytest.approx(last, abs=0.06) and ev["reference_value"] == pytest.approx(prev, abs=0.06)
+    assert ev["change_pct"] == pytest.approx((last / prev - 1) * 100, abs=0.06)
+    # farmer sentences never leak technical terms
+    for sentence in exp["farmer_explanation"]:
+        assert not any(w in sentence.lower() for w in ("shap", "log-ratio", "feature vector"))
+
+
+def test_every_crop_returns_an_explanation_with_consistent_direction(client, user):
+    for crop in ("Brinjal", "Cabbage", "Cauliflower", "Onion", "Potato", "Tomato", "Wheat"):
+        _, exp = _explain(client, user, commodity=crop)
+        for f in exp["factors"]:
+            assert f["direction"] == ("up" if f["shap_value"] > 0 else "down")
+            assert f["strength"] in ("small", "moderate", "strong")
+        assert exp["summary"]["headline"].startswith("Why")
+
+
+def test_reasons_for_every_crop_and_scope_are_evidence_backed(client, user):
+    """Real models, state aggregate and a single mandi: at most three market reasons, each with evidence, a meaning
+    sentence and a direction equal to the sign of its summed SHAP; arrivals only with arrival evidence; data basis stated."""
+    allowed = {"recent_week", "averages", "price_level", "season", "arrivals", "state_market", "weather"}
+    for crop in ("Brinjal", "Cabbage", "Cauliflower", "Onion", "Potato", "Tomato", "Wheat"):
+        _, exp = _explain(client, user, commodity=crop)
+        assert exp["technical"]["reconstruction_ok"] is True
+        assert len(exp["reasons"]) <= 3 and exp["scope"]["kind"] == "state"
+        assert "No live market feed" in exp["data_basis"]["text"]
+        by = {f["factor"]: f for f in exp["factors"]}
+        for r in exp["reasons"]:
+            assert r["id"] in allowed and r["evidence"] and r["meaning"]
+            assert r["direction"] == ("up" if r["shap_value"] > 0 else "down")
+            if r["id"] == "arrivals":
+                assert by["arrivals"]["evidence_available"] and by["arrivals"]["evidence"]
+            if r["id"] == "recent_week":
+                s = sum(by[k]["shap_value"] for k in ("recent_week", "recent_month") if k in by)
+                assert r["shap_value"] == pytest.approx(s, abs=1e-4)
+        if exp["what_it_means"]:
+            assert exp["what_it_means"].startswith(("The forecast is", "The model expects little", "The strongest factors"))

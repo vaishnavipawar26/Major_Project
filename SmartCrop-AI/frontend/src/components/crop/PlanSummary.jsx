@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarClock, LandPlot, MapPin } from "lucide-react";
+import { CalendarClock, MapPin } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { cropName, monthLabel } from "../../utils/format";
 
@@ -9,16 +9,13 @@ export default function PlanSummary({ response, crop }) {
   const months = tl && (tl.growth_months_min === tl.growth_months_max ? `${tl.growth_months_min}` : `${tl.growth_months_min}–${tl.growth_months_max}`);
   return (
     <section className="card plan-summary" aria-label={t("cr.plan.title")}>
-      <p className="plan-place"><MapPin size={18} aria-hidden="true" />{cropName(t, response.city, "city")}, {cropName(t, response.state, "state")}</p>
-      <p className="plan-dates">
-        <span>{t("cr.plan.plant")} <strong>{monthLabel(response.planting_date)}</strong></span>
-        <ArrowRight size={16} aria-hidden="true" />
-        <span>{t("cr.plan.sell")} <strong>{monthLabel(response.selling_date)}</strong></span>
-      </p>
-      <p className="plan-meta">
-        <span className="inline-icon"><LandPlot size={15} aria-hidden="true" />{t(response.area_acres === 1 ? "cr.plan.acre" : "cr.plan.acres", { n: response.area_acres })}</span>
-        {months && <span className="inline-icon"><CalendarClock size={15} aria-hidden="true" />{t("cr.plan.growing", { crop: cropName(t, crop.crop_name), months })}</span>}
-      </p>
+      <p className="plan-place"><MapPin size={20} aria-hidden="true" />{cropName(t, response.city, "city")}, {cropName(t, response.state, "state")}</p>
+      <dl className="plan-facts">
+        <div><dt>{t("cr.plan.plantLabel")}</dt><dd>{monthLabel(response.planting_date)}</dd></div>
+        <div><dt>{t("cr.plan.sellLabel")}</dt><dd>{monthLabel(response.selling_date)}</dd></div>
+        <div><dt>{t("cr.plan.sizeLabel")}</dt><dd>{t(response.area_acres === 1 ? "cr.plan.acre" : "cr.plan.acres", { n: response.area_acres })}</dd></div>
+      </dl>
+      {months && <p className="plan-meta"><span className="inline-icon"><CalendarClock size={15} aria-hidden="true" />{t("cr.plan.growing", { crop: cropName(t, crop.crop_name), months })}</span></p>}
     </section>
   );
 }

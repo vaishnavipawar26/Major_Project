@@ -1,0 +1,42 @@
+{
+  "generated": "2026-10-18T16:11:37+00:00",
+  "rows_raw": 246067,
+  "rows_clean": 244150,
+  "missing_pct_raw": {
+    "Date": 0.0,
+    "State": 0.0,
+    "Market": 0.0,
+    "Commodity": 0.0,
+    "Variety": 0.0,
+    "Arrivals": 0.0,
+    "Min_Price": 0.0,
+    "Max_Price": 0.0,
+    "Modal_Price": 0.0
+  },
+  "missing_pct_clean": {
+    "Date": 0.0,
+    "State": 0.0,
+    "Market": 0.0,
+    "Commodity": 0.0,
+    "Variety": 0.0,
+    "Arrivals": 0.0,
+    "Min_Price": 0.0,
+    "Max_Price": 0.0,
+    "Modal_Price": 0.0
+  },
+  "exact_duplicate_rows_raw": 0,
+  "same_day_key_duplicates_raw": 1917,
+  "date_min": "2023-01-01",
+  "date_max": "2025-12-31",
+  "distinct_dates": 1091,
+  "calendar_days_without_any_report": 5,
+  "unique_crops": 7,
+  "unique_markets": 297,
+  "unique_varieties": 13,
+  "series": 760,
+  "modal_outside_min_max_clean": 296,
+  "min_gt_max_clean": 0,
+  "outlier_capped_rows": 610,
+  "series_median_coverage": 0.34758484399346334,
+  "series_with_gap_gt30": 412
+}
