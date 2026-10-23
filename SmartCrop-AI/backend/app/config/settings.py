@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # Optional. Open-Meteo commercial key: switches weather lookups to the customer archive endpoint.
     OPEN_METEO_API_KEY: str = ""
 
+    # Price forecast freshness gate: off | auto | on (see app/ml/price_prediction/freshness.py).
+    # auto = applied only once the price records are at most 60 days old.
+    PRICE_FRESHNESS_GATE: str = "auto"
+
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     @field_validator("CORS_ORIGINS", mode="before")

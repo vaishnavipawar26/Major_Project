@@ -82,5 +82,6 @@ def explain(forecaster: PriceForecaster, req: PriceRequest) -> dict:
     return {"series": f["series"], "forecast_origin_date": f["forecast_origin_date"],
             "target_date": f["target_date"], "current_price": f["current_price"],
             "projection": f["projection"], "model": f["model"], "explanations": f["explanations"],
+            "source": f.get("source"),
             "message": None if f["explanations"] else
             "The model could not calculate an explanation for this forecast."}

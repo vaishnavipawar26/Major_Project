@@ -1,0 +1,9 @@
+{
+  "no_change_crops": [
+    "Potato",
+    "Tomato"
+  ],
+  "source": "dataset/reports/phaseB_decisions.json",
+  "decisions_sha256": "10baf05567d5a3d29796f725fed93124f8d076aad837c10253446419f72c3336",
+  "note": "Validation (folds 2024-H2 and 2025-H1) showed the model does not reliably beat keeping the latest price for these crops."
+}

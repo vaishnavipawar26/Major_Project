@@ -141,6 +141,7 @@ class SourceInfo(BaseModel):
     data_age_days: int
     fallback: bool
     observations: int
+    note: str | None = None   # set when the freshness gate replaced a stale market with the state median
 
 
 class DatesInfo(BaseModel):
@@ -324,6 +325,8 @@ class PriceExplanation(BaseModel):
     what_it_means: str | None = None
     scope: ExplainNote | None = None
     data_basis: ExplainNote | None = None
+    # evidence-first explanation (cards in rupees, dated evidence, trust block); see price_explainer_v3.py
+    v3: dict | None = None
 
 
 class PriceExplainResponse(BaseModel):
@@ -335,6 +338,7 @@ class PriceExplainResponse(BaseModel):
     model: ModelInfo | None = None
     explanations: list[PriceExplanation]
     message: str | None = None
+    source: SourceInfo | None = None
 
 
 class MarketOption(BaseModel):

@@ -18,7 +18,9 @@ import pandas as pd
 import shap
 
 from app.ml.common import paths
+from app.ml.explainability import price_explainer_v3 as v3x
 from app.ml.explainability.price_explainer import explain_price
+from app.ml.price_prediction import freshness
 from app.ml.price_prediction.features import (FEATURE_COLUMNS, HORIZONS, MAX_HORIZON,
                                               PRICE_FFILL_LIMIT, SERIES_KEY, STATE_MARKET,
                                               STATE_VARIETY, TARGET_FFILL_LIMIT,
@@ -126,6 +128,12 @@ class PriceForecaster:
         self.data_end = date.fromisoformat(self.meta["data_end"])
         self.version = self.meta["version"]
         self.inflation = _load_inflation()
+        # backtest reliability per crop x horizon band (built by scripts/build_reliability_table.py); optional
+        rt = paths.MODELS_DIR / "price_reliability" / "reliability_v1.json"
+        self.reliability_table = json.loads(rt.read_text(encoding="utf-8")) if rt.exists() else None
+        # crops for which validation showed the model should not be used to claim a direction (strategy "no_change")
+        cp = paths.MODELS_DIR / "price_reliability" / "crop_policy.json"
+        self.crop_policy = json.loads(cp.read_text(encoding="utf-8")) if cp.exists() else {"no_change_crops": []}
 
     def _check_schema(self) -> None:
         """Refuse to serve a model whose input columns differ from the saved feature list."""
@@ -270,27 +278,36 @@ class PriceForecaster:
             raise ForecastError(f"The model forecasts at most {self.max_horizon} days after the "
                                 f"forecast date ({as_of}). Choose a target date on or before "
                                 f"{as_of + timedelta(days=self.max_horizon)}.")
-        ref_date, years = self._reference_date(as_of)
+        # Freshness gate (app/ml/price_prediction/freshness.py): with records at most 60 days old the forecast starts
+        # from the latest real price instead of replaying the same season of an earlier year. Off while data are stale.
+        gate = freshness.gate_active(freshness.gate_mode(), as_of, self.data_end)
+        if gate and as_of > self.data_end:
+            ref_date, years = self.data_end, 0
+        else:
+            ref_date, years = self._reference_date(as_of)
         ctx = _Ctx(input_date=as_of, ref_date=ref_date, years_ahead=years,
                    level=(1 + self.inflation) ** years)
         cands = self._candidates(ref)
         if not cands:
             raise ForecastError("No price history exists for this state / market / crop "
                                 "combination.")
+        stale_note = None
+        if gate:
+            cands, stale_note = self._apply_freshness(cands, ref, ctx.ref_date, as_of)
         for kind, cref in cands:
             try:
                 out = self._forecast_model(cref, ctx, target_date, explain)
             except _Unusable as why:
                 log.info("model forecast unavailable for %s: %s", cref, why)
                 continue
-            return self._with_source(out, kind, cref, ref, "trained_model")
+            return self._with_note(self._with_source(out, kind, cref, ref, "trained_model"), stale_note)
         for kind, cref in cands:
             try:
                 out = self._forecast_baseline(cref, ctx, target_date)
             except _Unusable as why:
                 log.info("historical estimate unavailable for %s: %s", cref, why)
                 continue
-            return self._with_source(out, kind, cref, ref, "historical_baseline")
+            return self._with_note(self._with_source(out, kind, cref, ref, "historical_baseline"), stale_note)
         raise ForecastError(f"There are not enough valid historical {ref.commodity} prices in "
                             "the dataset to calculate a reliable estimate.")
 
@@ -311,7 +328,18 @@ class PriceForecaster:
             "observations": int(series["observed"].sum()),
         }
         out["dates"]["latest_data_date"] = seen.max().date().isoformat()
+        if used.market != wanted.market:
+            why = ("the Maharashtra median is used because this market has too little recent price history" if kind == "state_median"
+                   else "another market's prices are used because this market has too little recent price history")
+            self._set_market_note(out, f"You selected {wanted.market}; {why}.")
         return out
+
+    @staticmethod
+    def _set_market_note(out: dict, note: str) -> None:
+        for e in out.get("explanations", []):
+            v3 = e.get("v3")
+            if v3 and v3.get("market_breakdown") is not None:
+                v3["market_breakdown"]["note"] = note
 
     @staticmethod
     def _dates(ctx: "_Ctx", target_date: date, origin_obs: date) -> dict:
@@ -410,8 +438,11 @@ class PriceForecaster:
                                if advice["recommended_horizon_days"] not in (0, target_h) else [])
             try:
                 evidence = self._evidence_context(series, origin, ref_origin_date, ref, ref_p0)
+                state_prices = self._state_prices(ref, ctx, target_date)
                 explanations = self._explain(X, hs, origin, p0, ref.commodity, origin_date,
-                                             projected, evidence, path)
+                                             projected, evidence, path, series=series, ref=ref,
+                                             ref_origin_date=ref_origin_date, ctx=ctx,
+                                             state_prices=state_prices)
             except Exception:  # never fabricate reasons; the API reports "no explanation"
                 log.exception("SHAP explanation failed")
 
@@ -570,6 +601,162 @@ class PriceForecaster:
     def _algorithm(self, h: int) -> str:
         return _algorithm_name(self.meta, self.horizon_models[h])
 
+    # ------------------------------------------------------------------ freshness gate
+    @staticmethod
+    def _last_report(series: pd.DataFrame | None, ref_date: date) -> date | None:
+        if series is None:
+            return None
+        d = series.loc[series["observed"] & (series["Date"] <= pd.Timestamp(ref_date)), "Date"]
+        return None if d.empty else d.max().date()
+
+    def _apply_freshness(self, cands: list, ref: SeriesRef, ref_date: date, as_of: date) -> tuple[list, str | None]:
+        """Order / refuse candidate series by the age of their latest price (see freshness.py).
+        Age is measured from the forecast start date (``as_of``), not from the end of the dataset."""
+        def age_of(cref: SeriesRef) -> tuple[int, date | None]:
+            last = self._last_report(self._series.get((cref.state, cref.market, cref.commodity, cref.variety)), ref_date)
+            return ((as_of - last).days if last else 10 ** 6), last
+
+        kind0, cref0 = cands[0]
+        age, last = age_of(cref0)
+        decision = freshness.market_decision(age)
+        if decision == "no_recent_data":
+            raise ForecastError(f"No recent data for this market: its latest price is "
+                                f"{'missing' if last is None else f'{age} days old (reported {last.isoformat()})'}.")
+        if decision == "use_state_median" and kind0 == "market":
+            rest = [c for c in cands[1:] if c[0] == "state_median"] + [c for c in cands[1:] if c[0] != "state_median"]
+            if not rest:
+                raise ForecastError(f"No recent data for this market: its latest price is {age} days old.")
+            s_age, s_last = age_of(rest[0][1])
+            if freshness.market_decision(s_age) == "no_recent_data":
+                raise ForecastError("No recent data for this market or for Maharashtra as a whole.")
+            return rest, (f"The latest price for {ref.market} is {age} days old (reported {last.isoformat()}), "
+                          f"so the latest Maharashtra median price (reported {s_last.isoformat()}) is used instead.")
+        return cands, None
+
+    @staticmethod
+    def _with_note(out: dict, note: str | None) -> dict:
+        if note:
+            out["source"]["note"] = note
+            out["source"]["fallback"] = True
+            PriceForecaster._set_market_note(out, note)
+        return out
+
+    # ------------------------------------------------------------------ evidence-first explanation (v3)
+    def _state_prices(self, ref: SeriesRef, ctx: "_Ctx", target_date: date) -> dict | None:
+        """Predicted state-median price per date for the same crop and start (the "median market" in the breakdown)."""
+        if ref.market == STATE_MARKET:
+            return None
+        sref = SeriesRef(ref.state, STATE_MARKET, ref.commodity, STATE_VARIETY)
+        if (sref.state, sref.market, sref.commodity, sref.variety) not in self._series:
+            return None
+        try:
+            o = self._forecast_model(sref, ctx, target_date, explain=False)
+        except (_Unusable, ForecastError):
+            return None
+        return {p["date"]: p["predicted_price"] for p in o["path"]}
+
+    def reliability_cell(self, crop: str, h: int, projected: bool) -> tuple[dict | None, str | None]:
+        t = self.reliability_table
+        if not t:
+            return None, None
+        scope = "projection" if projected else "real_origin"
+        sc = t["scenarios"].get(scope)
+        if not sc:
+            return None, None
+        cell = sc["cells"].get(f"{crop}|{v3x.band_name(h)}")
+        if cell and cell["n"] >= 100:
+            return cell, scope
+        cell = sc["crops"].get(crop)
+        return (cell, scope) if cell else (None, None)
+
+    def _facts_v3(self, series: pd.DataFrame, ref: SeriesRef, ref_origin: date, h: int, origin: pd.Series) -> dict:
+        """Dated, measured facts up to the (reference) origin date; nothing after it is read."""
+        cut = pd.Timestamp(ref_origin)
+        obs = series[series["observed"] & (series["Date"] <= cut)]
+        facts: dict = {}
+        # supply: arrivals of the last 30 days against the same calendar month of earlier years
+        w0 = cut - pd.Timedelta(days=29)
+        arr = obs.loc[obs["Date"] >= w0, "arrivals"].dropna()
+        if len(arr) >= 5:
+            usual, years = [], []
+            for k in (1, 2, 3):
+                m = obs[(obs["Date"].dt.year == cut.year - k) & (obs["Date"].dt.month == cut.month)]["arrivals"].dropna()
+                if len(m) >= 5:
+                    usual.append(float(m.mean()))
+                    years.append(cut.year - k)
+            f = {"start": w0.date(), "end": cut.date(), "mean": float(arr.mean()), "n_days": int(len(arr)),
+                 "month": cut.month, "usual": None, "usual_years": [], "pct": None}
+            if usual:
+                f["usual"], f["usual_years"] = float(np.mean(usual)), years
+                f["pct"] = (f["mean"] / f["usual"] - 1) * 100
+            facts["supply"] = f
+        # market against the Maharashtra median, 90 days
+        state = self._series.get((ref.state, STATE_MARKET, ref.commodity, STATE_VARIETY))
+        if ref.market != STATE_MARKET and state is not None:
+            w90 = cut - pd.Timedelta(days=89)
+            m = obs.loc[obs["Date"] >= w90, ["Date", "price"]]
+            st = state.set_index("Date")["price_ffill"]
+            j = m.assign(state=st.reindex(m["Date"]).to_numpy()).dropna()
+            if len(j) >= 10:
+                facts["market"] = {"start": j["Date"].min().date(), "end": j["Date"].max().date(), "n_days": int(len(j)),
+                                   "market_avg": float(j["price"].mean()), "state_avg": float(j["state"].mean()),
+                                   "avg_gap_pct": float((j["price"].mean() / j["state"].mean() - 1) * 100)}
+        # recent trend and last-year comparison from the filled daily price
+        pf = series.set_index("Date")["price_ffill"]
+        now = pf.get(cut)
+        if now is not None and pd.notna(now) and now > 0:
+            t = {"date": cut.date(), "price": float(now), "d30": None, "d90": None}
+            for key, days_ in (("d30", 30), ("d90", 90)):
+                prev = pf.get(cut - pd.Timedelta(days=days_))
+                if prev is not None and pd.notna(prev) and prev > 0:
+                    t[key] = {"date": (cut - pd.Timedelta(days=days_)).date(), "price": float(prev), "pct": float((now / prev - 1) * 100)}
+            facts["trend"] = t
+            prev = pf.get(cut - pd.Timedelta(days=365))
+            if prev is not None and pd.notna(prev) and prev > 0:
+                facts["last_year"] = {"date": cut.date(), "price": float(now), "prev_date": (cut - pd.Timedelta(days=365)).date(),
+                                      "prev_price": float(prev), "pct": float((now / prev - 1) * 100)}
+        # seasonal: what the price did over the next h days in earlier years
+        known = obs[obs["price"].notna() & (obs["price"] > 0)]
+        if len(known) >= MIN_BASELINE_OBS:
+            dates = known["Date"].to_numpy("datetime64[D]")
+            prices = known["price"].to_numpy(float)
+            yrs = []
+            for k in range(1, BASELINE_SEASON_YEARS + 1):
+                then = _shift_years(ref_origin, -k)
+                a = self._window_median(dates, prices, then)
+                b = self._window_median(dates, prices, then + timedelta(days=h))
+                if a and b:
+                    yrs.append({"year": then.year, "from": then, "to": then + timedelta(days=h), "pct": (b / a - 1) * 100})
+            if yrs:
+                facts["seasonal"] = {"years": yrs, "mean_pct": float(np.mean([y["pct"] for y in yrs]))}
+        vol = origin.get("volatility_30")
+        if vol is not None and pd.notna(vol):
+            facts["swings"] = {"date": ref_origin, "daily_pct": float(vol) * 100}
+        return facts
+
+    def _build_v3(self, series, ref, ref_origin_date, ctx, h, sv, base, values, origin, p0, commodity, projected,
+                  point, target, weather_status, model_out, state_prices) -> dict:
+        contrib = dict(zip(self.feature_columns, map(float, sv)))
+        cell, scope = self.reliability_cell(commodity, h, projected)
+        model_mae, _ = self.reliability(h, commodity)
+        is_state = ref.market == STATE_MARKET
+        st_price = None if state_prices is None else state_prices.get(target.isoformat())
+        beats = cell["beats_baseline"] if cell else (h in set(self.validated_horizons(commodity)))
+        policy_no_change = commodity in set(self.crop_policy.get("no_change_crops", []))
+        context_only = policy_no_change or beats is False
+        reason = ((f"In validation tests the model did not beat keeping the latest price for {commodity}, so it is not used to predict a rise or fall.")
+                  if policy_no_change else None)
+        return v3x.build_v3(context_only=context_only, context_reason=reason, 
+            contrib=contrib, base_value=float(base), values=values, model_features=set(self.feature_columns),
+            facts=self._facts_v3(series, ref, ref_origin_date, h, origin), crop=commodity, market=ref.market,
+            requested_market=None, series_is_state=is_state, horizon=h, start_price=p0,
+            predicted_price=point["predicted_price"], lower=point["lower"], upper=point["upper"], target_date=target,
+            projected=projected, forecast_date=ctx.input_date, ref_origin_date=ref_origin_date,
+            inflation_pct=self.inflation * 100 if projected else None, reliability_cell=cell, reliability_scope=scope,
+            fallback_mae=model_mae, fallback_beats=h in set(self.validated_horizons(commodity)),
+            breakdown=None if st_price is None else {"state_price": st_price}, weather_status=weather_status,
+            model_output_log=model_out)
+
     def _evidence_context(self, series: pd.DataFrame, origin: pd.Series, ref_origin: date,
                           ref: SeriesRef, ref_price: float) -> dict:
         """Measured facts for the explanation, from reports up to the origin day only
@@ -607,8 +794,11 @@ class PriceForecaster:
 
     def _explain(self, X: pd.DataFrame, horizons: list[int], origin: pd.Series, p0: float,
                  commodity: str, origin_date: date, projected: bool, evidence: dict,
-                 path: list[dict]) -> list[dict]:
-        """SHAP explanation of the forecast for the given horizons."""
+                 path: list[dict], *, series: pd.DataFrame | None = None, ref: SeriesRef | None = None,
+                 ref_origin_date: date | None = None, ctx: "_Ctx | None" = None,
+                 state_prices: dict | None = None) -> list[dict]:
+        """SHAP explanation of the forecast for the given horizons (legacy fields + the evidence-first ``v3`` block)."""
+        ctx_run = ctx            # the loop below reuses the name ``ctx`` for the legacy evidence context
         out = []
         for h in horizons:
             c = self.horizon_models[h]
@@ -630,15 +820,21 @@ class PriceForecaster:
             if self.uses_weather:
                 weather_status = ("used" if all(pd.notna(values.get(f)) for f in WEATHER_FEATURES)
                                   else "unavailable")
-            out.append({"horizon_days": h, "date": target.isoformat(),
-                        "algorithm": self._algorithm(h),   # the model that actually produced (and is explained for) this horizon
-                        **explain_price(sv, base, values, self.feature_columns,
-                                        origin_date.month, p0, commodity, horizon=h,
-                                        target_month=target.month, projected=projected,
-                                        context=ctx, calibration=self.calibration,
-                                        target_point=path[h - 1], weather_status=weather_status,
-                                        model_output=float(self._predict(row)[0]),
-                                        n_tests=self.crop_cv_n.get((h, commodity)))})
+            model_out = float(self._predict(row)[0])
+            entry = {"horizon_days": h, "date": target.isoformat(),
+                     "algorithm": self._algorithm(h),   # the model that actually produced (and is explained for) this horizon
+                     **explain_price(sv, base, values, self.feature_columns,
+                                     origin_date.month, p0, commodity, horizon=h,
+                                     target_month=target.month, projected=projected,
+                                     context=ctx, calibration=self.calibration,
+                                     target_point=path[h - 1], weather_status=weather_status,
+                                     model_output=model_out,
+                                     n_tests=self.crop_cv_n.get((h, commodity)))}
+            if series is not None and ref is not None and ctx_run is not None:
+                entry["v3"] = self._build_v3(series, ref, ref_origin_date, ctx_run, h, sv, base, values, origin,
+                                             p0, commodity, projected, path[h - 1], target, weather_status,
+                                             model_out, state_prices)
+            out.append(entry)
         return out
 
 
