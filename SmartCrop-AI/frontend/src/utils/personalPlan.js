@@ -20,10 +20,25 @@ export function headerLine(plan, t) {
     t("cr.pp.priorityIs", { v: t(`crop.form.priority.${i.priority}`) }), t("cr.pp.riskIs", { v: t(`crop.form.risk.${i.risk_level}`) })].join(" · ");
 }
 
+/**
+ * How to describe the picked crop's price forecast, from the monthly model's own testing (never invented):
+ *  "predictable" : the pick has a reliable forecast AND at least one other suitable crop that was considered and not picked does not;
+ *  "held"        : the pick has a reliable forecast and there is no such comparison;
+ *  null          : the pick's forecast is not reliable: say nothing about it.
+ */
+export function forecastClaim(best, plan) {
+  if (!best.reliable_forecast) return null;
+  const others = plan.crops.filter((f) => f.crop !== best.crop && !f.unsuitable && f.upfront != null);
+  return others.some((f) => !f.reliable_forecast) ? "predictable" : "held";
+}
+
 /** One plain line on why this crop is shown, from the real comparison with the pick and the farmer's priority. */
 function reasonOf(f, kind, best, plan, t) {
   const budget = plan.inputs.budget_inr != null ? "Budget" : "";
-  if (kind === "best") return t(`cr.pp.reason.best.${plan.inputs.priority}${budget}`);
+  if (kind === "best") {
+    const claim = forecastClaim(f, plan);
+    return `${t(`cr.pp.reason.best.${plan.inputs.priority}${budget}`)}${claim ? ` ${t(`cr.pp.reason.${claim}`)}` : ""}`;
+  }
   if (f.upfront < best.upfront) return t("cr.pp.reason.cheaper", { best: cropName(t, best.crop) });
   if (f.downside_pct > best.downside_pct) return t("cr.pp.reason.safer", { best: cropName(t, best.crop) });
   return t("cr.pp.reason.also");
@@ -43,6 +58,7 @@ function cardOf(f, kind, best, plan, t) {
     cost: budget != null ? t("cr.pp.costOf", { cost: rupees(f.upfront), budget: rupees(budget) }) : t("cr.pp.costToStart", { cost: rupees(f.upfront) }),
     costPct: budget != null ? Math.min(100, Math.round((f.upfront / budget) * 100)) : null,
     profit: rupees(f.profit), downside: signedRupees(f.downside_profit), downsideLoss: f.downside_profit < 0,
+    mayLose: f.downside_profit < 0 ? t("cr.pp.mayLose") : null,
     risk: f.risk_level, riskText: t(`cr.pp.risk.${f.risk_level}`), supply: supplyChip(f, t),
     reason: reasonOf(f, kind, best, plan, t),
   };
@@ -82,7 +98,11 @@ export function planView(response, t) {
     return view;
   }
   view.cards = [cardOf(best, "best", best, plan, t), ...plan.alternatives.map((c) => cardOf(facts[c], "alt", best, plan, t))];
-  if (plan.matches_standard) view.matchLine = { text: t("cr.pp.matches"), reason: view.cards[0].reason };
+  if (plan.matches_standard) {
+    // the plan agrees with the standard #1: say so, but still name the other crops that fit
+    const others = plan.alternatives.map((c) => `${cropName(t, c)} (${t(`cr.pp.risk.${facts[c].risk_level}`)})`);
+    view.matchLine = { text: t("cr.pp.matches"), reason: view.cards[0].reason, others: others.length ? t("cr.pp.otherFit", { list: others.join(", ") }) : null, mayLose: view.cards[0].mayLose };
+  }
   return view;
 }
 
@@ -100,7 +120,8 @@ export function planStep(response, t) {
     lines.push(noFitText(plan, response, t));
   } else {
     const why = t(`cr.pp.step.why.${i.priority}`);
-    const steady = best.reliable_forecast ? t("cr.pp.step.steady") : t("cr.pp.step.unsteady");
+    const claim = forecastClaim(best, plan);
+    const steady = claim ? t(`cr.pp.step.${claim}`) : ".";
     lines.push(t("cr.pp.step.picked", { priority: t(`crop.form.priority.${i.priority}`), risk: t(`crop.form.risk.${i.risk_level}`), crop: cropName(t, best.crop), why, steady }));
   }
   lines.push(costNote(plan, t));

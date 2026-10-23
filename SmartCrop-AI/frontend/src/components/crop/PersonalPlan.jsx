@@ -29,6 +29,7 @@ function PlanCard({ c }) {
       </dl>
       <div className="pp-chips">
         <span className={`xp-status is-${RISK_TONE[c.risk]}`} data-testid="risk-chip"><RiskIcon size={14} aria-hidden="true" />{c.riskText}</span>
+        {c.mayLose && <span className="xp-status is-bad" data-testid="lose-chip"><TrendingDown size={14} aria-hidden="true" />{c.mayLose}</span>}
         {c.supply && <span className="xp-status is-warn" data-testid="supply-chip"><TrendingDown size={14} aria-hidden="true" />{c.supply.text}</span>}
       </div>
       {c.supply && <p className="xp-sub">{c.supply.note}</p>}
@@ -52,6 +53,8 @@ export default function PersonalPlan({ response }) {
         <div className="pp-match" data-testid="plan-match">
           <strong>{v.matchLine.text}</strong>
           <p>{v.matchLine.reason}</p>
+          {v.matchLine.mayLose && <p className="pp-chips"><span className="xp-status is-bad" data-testid="lose-chip"><TrendingDown size={14} aria-hidden="true" />{v.matchLine.mayLose}</span></p>}
+          {v.matchLine.others && <p className="pp-others" data-testid="plan-others">{v.matchLine.others}</p>}
         </div>
       )}
       {!v.matchLine && v.cards.length > 0 && <ul className="pp-cards">{v.cards.map((c) => <PlanCard key={c.crop} c={c} />)}</ul>}

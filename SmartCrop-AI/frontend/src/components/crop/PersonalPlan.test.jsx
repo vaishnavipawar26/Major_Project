@@ -86,6 +86,44 @@ describe("personalised plan card", () => {
     expect(screen.queryAllByTestId(/plan-card-/)).toHaveLength(0);
   });
 
+  it("still names the other crops that fit, compactly, with their risk, when the plan matches the standard #1", () => {
+    const p = plan({ matches_standard: true, alternatives: ["Cauliflower", "Brinjal"] });
+    p.crops.find((f) => f.crop === "Brinjal").fits_budget = true;
+    render(<PersonalPlan response={response(p, { best_overall: "Cabbage" })} />);
+    expect(screen.getByTestId("plan-others").textContent).toBe("Other options that fit: Cauliflower (Medium risk), Brinjal (Low risk)");
+  });
+
+  it("shows no 'other options' line when nothing else fits", () => {
+    render(<PersonalPlan response={response(plan({ matches_standard: true, alternatives: [] }), { best_overall: "Cabbage" })} />);
+    expect(screen.queryByTestId("plan-others")).toBeNull();
+  });
+
+  it("adds 'May lose money if prices are low' on a crop whose low-end profit is below zero, and not otherwise", () => {
+    const p = plan({ alternatives: ["Brinjal"] });
+    p.crops.find((f) => f.crop === "Brinjal").fits_budget = true;                              // Brinjal's low-end profit is +20,608
+    render(<PersonalPlan response={response(p)} />);
+    expect(within(screen.getByTestId("plan-card-Cabbage")).getByTestId("lose-chip").textContent).toBe("May lose money if prices are low");
+    expect(within(screen.getByTestId("plan-card-Brinjal")).queryByTestId("lose-chip")).toBeNull();
+  });
+
+  it("shows that chip on the matching-#1 line too when its low-end profit is a loss", () => {
+    render(<PersonalPlan response={response(plan({ matches_standard: true }), { best_overall: "Cabbage" })} />);
+    expect(within(screen.getByTestId("plan-match")).getByTestId("lose-chip").textContent).toBe("May lose money if prices are low");
+  });
+
+  it("puts the forecast sentence in the card's reason only when it is true", () => {
+    const p = plan(); p.crops.find((f) => f.crop === "Brinjal").reliable_forecast = false;
+    const { unmount } = render(<PersonalPlan response={response(p)} />);
+    expect(text(screen.getByTestId("plan-card-Cabbage"))).toContain("among suitable crops. Its price has been more predictable in past tests.");
+    unmount();
+    render(<PersonalPlan response={response()} />);
+    expect(text(screen.getByTestId("plan-card-Cabbage"))).toContain("among suitable crops. Its price forecast held up in past tests.");
+    cleanup();
+    const q = plan(); q.crops[0].reliable_forecast = false;
+    render(<PersonalPlan response={response(q)} />);
+    expect(text(screen.getByTestId("plan-card-Cabbage"))).not.toMatch(/predictable|held up/);
+  });
+
   it("lists, collapsed, why other crops are not shown, each with its plain reason", () => {
     render(<PersonalPlan response={response()} />);
     const d = screen.getByTestId("plan-excluded");
@@ -129,15 +167,31 @@ describe("explanation step for the budget and priorities", () => {
     expect(s.headline).toBe("Cabbage");
     expect(s.lines).toEqual([
       "With ₹60,000, Cabbage and Cauliflower fit your budget.",
-      "You chose Balanced and Medium risk, so Cabbage was picked: it gives the most profit for each rupee spent, and its price has been more predictable in past tests.",
+      "You chose Balanced and Medium risk, so Cabbage was picked: it gives the most profit for each rupee spent, and its price forecast held up in past tests.",
       "Costs are approximate estimates (2024 prices + 5% a year).",
     ]);
     // only crops that are suitable AND within the budget are named: Brinjal costs more, Wheat does not suit the field
   });
 
-  it("mentions an uncertain price forecast honestly", () => {
-    const p = plan(); p.crops[0].reliable_forecast = false;
-    expect(planStep(response(p), t).lines[1]).toContain("though its price forecast is less certain.");
+  it("says 'more predictable' only when the pick has a reliable forecast and a rejected alternative does not", () => {
+    const p = plan(); p.crops.find((f) => f.crop === "Brinjal").reliable_forecast = false;       // Brinjal is a suitable crop that was not picked
+    expect(planStep(response(p), t).lines[1]).toBe("You chose Balanced and Medium risk, so Cabbage was picked: it gives the most profit for each rupee spent, and its price has been more predictable in past tests.");
+  });
+
+  it("an unsuitable crop is not a rejected alternative, so it cannot make the pick 'more predictable'", () => {
+    const p = plan(); p.crops.find((f) => f.crop === "Wheat").reliable_forecast = false;           // Wheat does not suit the field
+    expect(planStep(response(p), t).lines[1]).toContain("and its price forecast held up in past tests.");
+  });
+
+  it("says 'held up in past tests' when the pick is reliable and no such comparison exists", () => {
+    expect(planStep(response(), t).lines[1]).toContain("it gives the most profit for each rupee spent, and its price forecast held up in past tests.");
+  });
+
+  it("leaves the forecast sentence out when the pick's own forecast is not reliable", () => {
+    const p = plan(); p.crops[0].reliable_forecast = false; p.crops[2].reliable_forecast = false;
+    const line = planStep(response(p), t).lines[1];
+    expect(line).toBe("You chose Balanced and Medium risk, so Cabbage was picked: it gives the most profit for each rupee spent.");
+    expect(line).not.toMatch(/predictable|held up|less certain/);
   });
 
   it("is null without a plan, and says so when nothing fits", () => {

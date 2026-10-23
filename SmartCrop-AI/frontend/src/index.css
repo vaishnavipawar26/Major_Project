@@ -2158,3 +2158,5 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .pp-excluded ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
 .pp-foot { margin: 0.8rem 0 0; }
 @media (max-width: 900px) { .pp-cards { grid-template-columns: minmax(0, 1fr); } }
+
+.pp-others { margin: 0.4rem 0 0; font-size: 0.9rem; color: var(--text-2); }
