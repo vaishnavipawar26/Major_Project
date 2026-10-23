@@ -1106,6 +1106,7 @@ const en = {
   "gc.stage.transplant": "Transplanting",
   "gc.stage.picking": "Harvest (repeated pickings)",
   "gc.yearRound": "Year-round",
+  "gc.estimateShifted": "Typical estimate · {season} · planting in {month}",
   "gc.estimateSeason": "Typical estimate · {season}",
   "gc.estimateTip": "Typical months for the crop's main planting season; they vary by region, variety and climate. Sources: {sources}",
 };

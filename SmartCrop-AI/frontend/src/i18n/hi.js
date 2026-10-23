@@ -957,6 +957,8 @@ const hi = {
   "gc.stage.transplant": "रोपाई",
   "gc.stage.picking": "तुड़ाई (बार-बार)",
   "gc.yearRound": "सालभर",
+  // NEEDS REVIEW: Hindi wording for the shifted growing timeline chip (gc.estimateShifted) was written without a native review.
+  "gc.estimateShifted": "सामान्य अनुमान · {season} · {month} में बुवाई",
   "gc.estimateSeason": "सामान्य अनुमान · {season}",
   "gc.estimateTip": "फ़सल के मुख्य बुवाई मौसम के सामान्य महीने; ये क्षेत्र, किस्म और जलवायु के अनुसार बदलते हैं. स्रोत: {sources}",
 };

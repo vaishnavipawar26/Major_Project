@@ -1,7 +1,7 @@
 import { Flower2, Info, Leaf, Salad, Shovel, ShoppingBasket, Sprout, Wheat } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { growthCycleFor, SOURCES, stageCalendar } from "../../data/cropGrowthCycle";
-import { cropName, monthShort } from "../../utils/format";
+import { cropName, monthLong, monthShort } from "../../utils/format";
 
 const STAGE_ICON = {
   nursery: Sprout, sowing: Shovel, transplant: Shovel, establish: Sprout, emergence: Sprout,
@@ -16,8 +16,9 @@ function monthsText(t, s) {
 }
 
 /**
- * B. The crop's typical biological growing calendar: each stage with its usual months, from the
- * crop's own stage durations and main planting season — not from the months the user picked.
+ * B. The crop's typical growing calendar, shifted to the farmer's own planting month: planting (or transplanting) is the chosen month and every
+ * stage follows from the crop's usual durations after planting (the selling month is never used to place them). Only if the planting month is unknown
+ * does it fall back to the crop's usual planting season.
  */
 function OriginalTimeline({ cal, crop }) {
   const t = useT();
@@ -45,14 +46,16 @@ export default function GrowthCycle({ result }) {
   const t = useT();
   const crop = cropName(t, result.crop_name);
   const cycle = growthCycleFor(result.crop_name);
-  const cal = stageCalendar(cycle, result.timeline?.planting_months);
+  const [py, pm] = (result.timeline?.planting || "").split("-").map(Number);
+  const chosen = Number.isInteger(pm) && pm >= 1 && pm <= 12;
+  const cal = chosen ? stageCalendar(cycle, [pm], py) : stageCalendar(cycle, result.timeline?.planting_months);
   const sources = cycle ? cycle.sources.map((k) => SOURCES[k].label).join("; ") : "";
   return (
     <div className="gc" aria-labelledby="gc-title">
       <div className="gc-head">
         <h3 id="gc-title" className="gc-title">{t("gc.title")}</h3>
         <span className="gc-chip" title={cal ? t("gc.estimateTip", { sources }) : undefined}>
-          {cal ? t("gc.estimateSeason", { season: t(`gc.season.${cal.season}`) }) : t("gc.estimateChip")}
+          {cal ? (chosen ? t("gc.estimateShifted", { season: t(`gc.season.${cal.season}`), month: monthLong(pm) }) : t("gc.estimateSeason", { season: t(`gc.season.${cal.season}`) })) : t("gc.estimateChip")}
         </span>
       </div>
       {cal

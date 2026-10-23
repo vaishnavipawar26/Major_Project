@@ -48,10 +48,10 @@ describe("Original Crop Growing Timeline next to the user's timeline", () => {
     expect(existing.compareDocumentPosition(gc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("labels the months as a typical estimate for the main season; sources and variability in the tooltip", () => {
+  it("labels the months as a typical estimate for the season and the planting month; sources and variability in the tooltip", () => {
     const c = show("Wheat", TL.wheatOctSep);
     const chip = c.querySelector(".gc-chip");
-    expect(chip.textContent).toBe("Typical estimate · Rabi");
+    expect(chip.textContent).toBe("Typical estimate · Rabi · planting in October");
     expect(chip.title).toMatch(/vary by region, variety and climate/);
     expect(chip.title).toMatch(/TNAU/);
     expect(chip.title).toMatch(/FAO/);
@@ -61,7 +61,7 @@ describe("Original Crop Growing Timeline next to the user's timeline", () => {
     const c = show("Wheat", TL.wheatOctSep);
     expect(stageLabels(c)).toEqual(["Sowing / planting", "Germination / establishment", "Tillering", "Heading and flowering",
       "Grain filling and ripening", "Harvest"]);
-    expect(stageMonths(c)[0]).toBe("Oct – Dec");
+    expect(stageMonths(c)[0]).toBe("Oct");                                  // planting = the farmer's planting month
     stageMonths(c).forEach((m) => expect(m).toMatch(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)( – (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))?$/));
     expect(c.querySelector(".gc-stages").textContent).not.toMatch(/Day|days/);
     // only the heading with its label, and the timeline
@@ -72,21 +72,34 @@ describe("Original Crop Growing Timeline next to the user's timeline", () => {
     const c = show("Brinjal", TL.brinjalJunOct);
     expect(stageLabels(c)).toEqual(["Nursery", "Transplanting", "Establishment", "Vegetative growth", "Flowering and fruiting",
       "Harvest (repeated pickings)"]);
-    expect(stageMonths(c)[1]).toBe("Sep – Nov"); // brinjal's main planting window from its own calendar
+    expect(stageMonths(c)[0]).toBe("May – Jun");                           // the nursery comes first
+    expect(stageMonths(c)[1]).toBe("Jun");                                 // transplanting = the farmer's planting month (June)
   });
 
-  it("changing the crop updates the original timeline; changing the user's months does not", () => {
+  it("is shifted to the farmer's planting month: the stages move with it, but not with the selling month", () => {
     const { container, rerender } = render(<TimelineSection result={{ crop_name: "Wheat", timeline: TL.wheatOctSep }} />);
     const wheat = container.querySelector(".gc-stages").textContent;
     rerender(<TimelineSection result={{ crop_name: "Brinjal", timeline: TL.brinjalOctSep }} />);
-    expect(container.querySelector(".gc-stages").textContent).not.toBe(wheat);
-    const brinjalOctSep = container.querySelector(".gc-stages").textContent;
+    expect(container.querySelector(".gc-stages").textContent).not.toBe(wheat);            // another crop: other stages
+    const brinjalOct = container.querySelector(".gc-stages").textContent;
+    rerender(<TimelineSection result={{ crop_name: "Brinjal", timeline: TL.brinjalJunOct }} />);
+    expect(container.querySelector(".gc-stages").textContent).not.toBe(brinjalOct);       // planted in June instead of October: the stages move
+    const brinjalJun = container.querySelector(".gc-stages").textContent;
     rerender(<TimelineSection result={{ crop_name: "Brinjal", timeline: TL.brinjalJunJul }} />);
-    expect(container.querySelector(".gc-stages").textContent).toBe(brinjalOctSep);
+    expect(container.querySelector(".gc-stages").textContent).toBe(brinjalJun);           // same planting month, other selling month: unchanged
+  });
+
+  it("the planting stage is exactly the farmer's planting month, for every crop that has stage data", () => {
+    for (const crop of ["Brinjal", "Tomato", "Cabbage", "Cauliflower", "Onion", "Potato", "Wheat"]) {
+      const c = show(crop, { ...TL.wheatOctSep, planting: "2026-11" });
+      const labels = stageLabels(c), months = stageMonths(c);
+      const i = labels.findIndex((l) => /^(Transplanting|Sowing)/.test(l));
+      expect(months[i], crop).toBe("Nov");
+    }
   });
 
   it("a crop with stage data but no planting months shows a fallback instead of invented months", () => {
-    const c = show("Wheat", { ...TL.wheatOctSep, planting_months: [] });
+    const c = show("Wheat", { ...TL.wheatOctSep, planting: undefined, planting_months: [] });
     expect(c.querySelector(".gc-stages")).toBeNull();
     expect(c.querySelector(".gc > .tl-status").textContent).toMatch(/not available/);
   });

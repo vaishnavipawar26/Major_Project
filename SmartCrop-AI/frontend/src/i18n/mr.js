@@ -957,6 +957,8 @@ const mr = {
   "gc.stage.transplant": "पुनर्लागवड",
   "gc.stage.picking": "काढणी (वारंवार तोडणी)",
   "gc.yearRound": "वर्षभर",
+  // NEEDS REVIEW: Marathi wording for the shifted growing timeline chip (gc.estimateShifted) was written without a native review.
+  "gc.estimateShifted": "सर्वसाधारण अंदाज · {season} · {month} मध्ये लागवड",
   "gc.estimateSeason": "सर्वसाधारण अंदाज · {season}",
   "gc.estimateTip": "पिकाच्या मुख्य लागवड हंगामाचे सर्वसाधारण महिने; प्रदेश, वाण व हवामानानुसार बदलतात. स्रोत: {sources}",
 };
