@@ -142,15 +142,7 @@ def main() -> None:
 
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "reliability_v1.json").write_text(json.dumps(clean(result), indent=2), encoding="utf-8")
-    # crops whose frozen Phase B strategy is "no_change": the explanation shows dated context only for them
-    dec_path = paths.REPORTS_DIR / "phaseB_decisions.json"
-    if dec_path.exists() and not SMOKE:
-        dec = json.loads(dec_path.read_text(encoding="utf-8"))
-        policy = {"no_change_crops": sorted(c for c, v in dec["crop_strategy"].items() if v["strategy"] == "no_change"),
-                  "source": "dataset/reports/phaseB_decisions.json", "decisions_sha256": dec["content_sha256"],
-                  "note": "Validation (folds 2024-H2 and 2025-H1) showed the model does not reliably beat keeping the latest price for these crops."}
-        (OUT / "crop_policy.json").write_text(json.dumps(policy, indent=2), encoding="utf-8")
-        log(f"crop policy written: no_change = {policy['no_change_crops']}")
+    # the per-cell policy (model / context-only) is built from this table by scripts.build_crop_policy
     log(f"done; wrote {OUT / 'reliability_v1.json'}")
 
 

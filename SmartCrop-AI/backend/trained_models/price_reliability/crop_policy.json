@@ -1,9 +1,258 @@
 {
+  "created": "2026-10-23T08:22:14+00:00",
+  "rule": "(applied to every cell, no hand-picked exceptions): a cell is CONTEXT-ONLY if any of\n  1. the crop's frozen Phase B strategy is \"no_change\" (validation folds 2024-H2 and 2025-H1: the model was not >= 0 on both),\n  2. the real-origin backtest (origins 2025-H2) shows the model does NOT beat \"price stays unchanged\" in that cell,\n  3. the projection backtest shows the model does NOT beat the starting price in that cell.\nOtherwise it is MODEL. The scenario-independent union is deliberate: the application falls back between the two\nkinds of forecast depending on how old the records are, and a direction claim must hold in both.",
+  "reliability_created": "2026-10-23T08:11:43+00:00",
+  "decisions_sha256": "10baf05567d5a3d29796f725fed93124f8d076aad837c10253446419f72c3336",
   "no_change_crops": [
     "Potato",
     "Tomato"
   ],
-  "source": "dataset/reports/phaseB_decisions.json",
-  "decisions_sha256": "10baf05567d5a3d29796f725fed93124f8d076aad837c10253446419f72c3336",
-  "note": "Validation (folds 2024-H2 and 2025-H1) showed the model does not reliably beat keeping the latest price for these crops."
+  "context_only_cells": [
+    "Onion|1-7",
+    "Onion|15-30",
+    "Onion|31-60",
+    "Onion|8-14",
+    "Potato|1-7",
+    "Potato|15-30",
+    "Potato|31-60",
+    "Potato|8-14",
+    "Tomato|1-7",
+    "Tomato|15-30",
+    "Tomato|31-60",
+    "Tomato|8-14",
+    "Wheat|15-30",
+    "Wheat|31-60"
+  ],
+  "cells": {
+    "Brinjal|1-7": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 4.7451,
+      "projection_skill_pct": 6.6422
+    },
+    "Brinjal|8-14": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 6.5695,
+      "projection_skill_pct": 10.072
+    },
+    "Brinjal|15-30": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 5.4316,
+      "projection_skill_pct": 8.7283
+    },
+    "Brinjal|31-60": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 9.0073,
+      "projection_skill_pct": 6.3073
+    },
+    "Cabbage|1-7": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 9.2632,
+      "projection_skill_pct": 8.4961
+    },
+    "Cabbage|8-14": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 9.5526,
+      "projection_skill_pct": 14.6511
+    },
+    "Cabbage|15-30": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 9.4581,
+      "projection_skill_pct": 22.9931
+    },
+    "Cabbage|31-60": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 14.2668,
+      "projection_skill_pct": 31.9785
+    },
+    "Cauliflower|1-7": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 6.7213,
+      "projection_skill_pct": 8.5765
+    },
+    "Cauliflower|8-14": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 12.8236,
+      "projection_skill_pct": 12.8049
+    },
+    "Cauliflower|15-30": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 17.5571,
+      "projection_skill_pct": 21.8539
+    },
+    "Cauliflower|31-60": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 23.6897,
+      "projection_skill_pct": 34.8094
+    },
+    "Onion|1-7": {
+      "mode": "context_only",
+      "reasons": [
+        "Real-origin backtest (origins 2025-H2, n=7,939): model -4.8% vs no-change.",
+        "Validation fold A (2025-H1), pooled model vs no-change: -6.0% (market-bootstrap 95% CI -11.7 to -0.8)."
+      ],
+      "real_origin_skill_pct": -4.8212,
+      "projection_skill_pct": 2.4823
+    },
+    "Onion|8-14": {
+      "mode": "context_only",
+      "reasons": [
+        "Real-origin backtest (origins 2025-H2, n=7,389): model -17.2% vs no-change.",
+        "Validation fold A (2025-H1), pooled model vs no-change: -6.0% (market-bootstrap 95% CI -11.7 to -0.8)."
+      ],
+      "real_origin_skill_pct": -17.1979,
+      "projection_skill_pct": 4.7966
+    },
+    "Onion|15-30": {
+      "mode": "context_only",
+      "reasons": [
+        "Real-origin backtest (origins 2025-H2, n=15,418): model -33.5% vs no-change.",
+        "Validation fold A (2025-H1), pooled model vs no-change: -6.0% (market-bootstrap 95% CI -11.7 to -0.8)."
+      ],
+      "real_origin_skill_pct": -33.508,
+      "projection_skill_pct": 4.7396
+    },
+    "Onion|31-60": {
+      "mode": "context_only",
+      "reasons": [
+        "Real-origin backtest (origins 2025-H2, n=24,482): model -76.6% vs no-change.",
+        "Projection backtest (origins 2025-H2, n=16,477): model -2.6% vs the starting price.",
+        "Validation fold A (2025-H1), pooled model vs no-change: -6.0% (market-bootstrap 95% CI -11.7 to -0.8)."
+      ],
+      "real_origin_skill_pct": -76.5624,
+      "projection_skill_pct": -2.6357
+    },
+    "Potato|1-7": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +9.1% / -3.3%)."
+      ],
+      "real_origin_skill_pct": 2.0953,
+      "projection_skill_pct": 2.9915
+    },
+    "Potato|8-14": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +9.1% / -3.3%)."
+      ],
+      "real_origin_skill_pct": 3.571,
+      "projection_skill_pct": 5.2632
+    },
+    "Potato|15-30": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +9.1% / -3.3%)."
+      ],
+      "real_origin_skill_pct": 4.0717,
+      "projection_skill_pct": 4.0832
+    },
+    "Potato|31-60": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +9.1% / -3.3%)."
+      ],
+      "real_origin_skill_pct": 7.0333,
+      "projection_skill_pct": 2.2944
+    },
+    "Tomato|1-7": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%)."
+      ],
+      "real_origin_skill_pct": 2.0421,
+      "projection_skill_pct": 4.2186
+    },
+    "Tomato|8-14": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%)."
+      ],
+      "real_origin_skill_pct": 0.3342,
+      "projection_skill_pct": 6.4723
+    },
+    "Tomato|15-30": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%)."
+      ],
+      "real_origin_skill_pct": 1.1892,
+      "projection_skill_pct": 15.4469
+    },
+    "Tomato|31-60": {
+      "mode": "context_only",
+      "reasons": [
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%)."
+      ],
+      "real_origin_skill_pct": 9.2731,
+      "projection_skill_pct": 27.1222
+    },
+    "Wheat|1-7": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 1.7766,
+      "projection_skill_pct": 4.7876
+    },
+    "Wheat|8-14": {
+      "mode": "model",
+      "reasons": [
+        "The model beat its baseline in both backtests and was not rejected in validation."
+      ],
+      "real_origin_skill_pct": 0.1333,
+      "projection_skill_pct": 6.1847
+    },
+    "Wheat|15-30": {
+      "mode": "context_only",
+      "reasons": [
+        "Real-origin backtest (origins 2025-H2, n=14,923): model -0.1% vs no-change."
+      ],
+      "real_origin_skill_pct": -0.1123,
+      "projection_skill_pct": 1.0626
+    },
+    "Wheat|31-60": {
+      "mode": "context_only",
+      "reasons": [
+        "Real-origin backtest (origins 2025-H2, n=23,437): model -5.6% vs no-change.",
+        "Projection backtest (origins 2025-H2, n=15,152): model -4.0% vs the starting price."
+      ],
+      "real_origin_skill_pct": -5.6401,
+      "projection_skill_pct": -4.0058
+    }
+  }
 }

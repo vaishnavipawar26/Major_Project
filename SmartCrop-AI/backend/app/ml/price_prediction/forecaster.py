@@ -655,6 +655,30 @@ class PriceForecaster:
             return None
         return {p["date"]: p["predicted_price"] for p in o["path"]}
 
+    def policy_for(self, crop: str, h: int, cell: dict | None = None) -> dict:
+        """{"mode": "model" | "context_only", "band", "reasons"} for a crop and horizon (crop_policy.json, built by
+        scripts/build_crop_policy.py). Without a policy file: context-only when the backtest cell, or else the
+        cross-validated "beats no-change" flag, says the model does not beat its baseline."""
+        band = v3x.band_name(h)
+        pol = self.crop_policy.get("cells", {}).get(f"{crop}|{band}")
+        if pol is not None:
+            return {"mode": pol["mode"], "band": band, "reasons": pol["reasons"]}
+        beats = cell["beats_baseline"] if cell else (h in set(self.validated_horizons(crop)))
+        listed = crop in set(self.crop_policy.get("no_change_crops", []))
+        return {"mode": "context_only" if (listed or beats is False) else "model", "band": band,
+                "reasons": ["No policy file; decided from the available backtest figures."]}
+
+    def latest_recorded(self, state: str, market: str, commodity: str, variety: str) -> dict | None:
+        """The last price actually reported by this series (its real date), whatever today's date is."""
+        s = self._series.get((state, market, commodity, variety))
+        if s is None:
+            return None
+        o = s[s["observed"] & s["price"].notna()]
+        if o.empty:
+            return None
+        r = o.iloc[-1]
+        return {"price": round(float(r["price"]), 2), "date": r["Date"].date().isoformat()}
+
     def reliability_cell(self, crop: str, h: int, projected: bool) -> tuple[dict | None, str | None]:
         t = self.reliability_table
         if not t:
@@ -741,12 +765,11 @@ class PriceForecaster:
         model_mae, _ = self.reliability(h, commodity)
         is_state = ref.market == STATE_MARKET
         st_price = None if state_prices is None else state_prices.get(target.isoformat())
-        beats = cell["beats_baseline"] if cell else (h in set(self.validated_horizons(commodity)))
-        policy_no_change = commodity in set(self.crop_policy.get("no_change_crops", []))
-        context_only = policy_no_change or beats is False
-        reason = ((f"In validation tests the model did not beat keeping the latest price for {commodity}, so it is not used to predict a rise or fall.")
-                  if policy_no_change else None)
-        return v3x.build_v3(context_only=context_only, context_reason=reason, 
+        pol = self.policy_for(commodity, h, cell)
+        context_only = pol["mode"] == "context_only"
+        reason = (f"In testing, the model did not reliably beat keeping the latest price for {commodity}, "
+                  f"{pol['band']} days ahead, so it is not used to predict a rise or fall.") if context_only else None
+        out = v3x.build_v3(context_only=context_only, context_reason=reason, 
             contrib=contrib, base_value=float(base), values=values, model_features=set(self.feature_columns),
             facts=self._facts_v3(series, ref, ref_origin_date, h, origin), crop=commodity, market=ref.market,
             requested_market=None, series_is_state=is_state, horizon=h, start_price=p0,
@@ -756,6 +779,8 @@ class PriceForecaster:
             fallback_mae=model_mae, fallback_beats=h in set(self.validated_horizons(commodity)),
             breakdown=None if st_price is None else {"state_price": st_price}, weather_status=weather_status,
             model_output_log=model_out)
+        out["policy"] = pol
+        return out
 
     def _evidence_context(self, series: pd.DataFrame, origin: pd.Series, ref_origin: date,
                           ref: SeriesRef, ref_price: float) -> dict:
