@@ -24,7 +24,12 @@ export default {
 
   "cr.compare.title": "सभी फसलों की तुलना",
   "cr.compare.chartTitle": "{month} में बेचने पर अनुमानित मुनाफ़ा या घाटा",
-  "cr.compare.chartDesc": "आपके {area} एकड़ खेत के लिए सभी {n} फसलों की तुलना। दाईं ओर की पट्टियाँ अनुमानित मुनाफ़ा और बाईं ओर की पट्टियाँ अनुमानित घाटा दिखाती हैं। नीचे विवरण देखने के लिए फसल पर क्लिक करें।",
+  "cr.compare.chartDesc": "आपके {size} के खेत के लिए: {summary} दाईं ओर की पट्टियाँ अनुमानित मुनाफ़ा हैं, बाईं ओर की अनुमानित नुकसान. विवरण नीचे देखने के लिए किसी फसल पर क्लिक करें.",
+  // NEEDS REVIEW: Hindi wording for the sellable-crops sentence (cr.sell.*) and the chart description was written without a native review.
+  "cr.sell.many": "{total} में से {n} फसलें {month} में बेची जा सकती हैं; इनमें {crop} सबसे ज़्यादा कमाती है.",
+  "cr.sell.one": "{total} में से 1 फसल {month} में बेची जा सकती है: {crop}.",
+  "cr.sell.noProfit": "{total} में से {n} फसलें {month} में बेची जा सकती हैं; इनमें से किसी से मुनाफ़े की उम्मीद नहीं है.",
+  "cr.sell.none": "{month} में कोई फसल बेची नहीं जा सकती.",
   "cr.compare.summaryTop": "सबसे ज़्यादा अनुमानित मुनाफ़ा: {crop} ({profit})।",
   "cr.compare.summaryNone": "चुने हुए महीने में कोई फसल नहीं बेची जा सकती।",
   "cr.compare.summaryLosses": "बिकने योग्य {total} में से {n} फसलों में अनुमानित घाटा दिखता है।",

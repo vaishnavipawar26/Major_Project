@@ -3,7 +3,7 @@ import FormField from "../FormField";
 import FieldSize from "./FieldSize";
 import { useT } from "../../i18n/LanguageContext";
 import { PRIORITIES, RISKS, costRange, formatBudget, rangeText } from "../../utils/budgetPlan";
-import { fmtNum } from "../../utils/fieldSize";
+import { fieldSizeText } from "../../utils/fieldSize";
 
 const PRIORITY_ICON = { spend_less: Wallet, balanced: Scale, highest_profit: TrendingUp };
 const RISK_ICON = { low: ShieldCheck, medium: Shield, high: ShieldAlert };
@@ -40,7 +40,7 @@ export default function BudgetStep({ form, set, setField, error, onBlur, economi
         <div className="fb-top">
           <FieldSize acres={form.area_acres} onAcres={area.onAcres} unit={area.unit} onUnit={area.onUnit} error={area.error} onBlur={area.onBlur} />
           <FormField id="budget_inr" label={t("crop.form.budgetLabel")} error={error}
-          hint={range ? t("crop.form.budgetHelp", { size: t(Number(form.area_acres) <= 1 ? "cr.plan.acre" : "cr.plan.acres", { n: fmtNum(form.area_acres) }), range: rangeText(range) }) : undefined}>
+          hint={range ? t("crop.form.budgetHelp", { size: fieldSizeText(t, form.area_acres), range: rangeText(range) }) : undefined}>
           <div className="input-unit">
             <span className="input-prefix" aria-hidden="true">₹</span>
             <input id="budget_inr" type="text" inputMode="numeric" autoComplete="off" placeholder={t("crop.form.budgetPlaceholder")}

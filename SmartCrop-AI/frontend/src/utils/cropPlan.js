@@ -253,3 +253,21 @@ export function keyPoints(r, response, inputs, t) {
   if (bad) timing += ` ${t(`timeline.concl.${tl.status}`, { crop, sell: monthLabel(tl.selling), harvest, n: tl.months_stored })}`;
   return { profit, field, timing: { tone: tl.planting_in_window && !bad ? "good" : "warn", text: timing } };
 }
+
+
+/**
+ * "5 of the 7 crops can be sold in Jan 2027; Brinjal earns the most of these." Generated from the results: a crop counts as sellable when the
+ * month is a sale month for it (feasible) and it has an estimated profit; "the most" is the highest net profit among those crops.
+ */
+export function sellableSummary(response, t) {
+  const total = response.results.length;
+  const sellable = response.results.filter((r) => r.feasible && Number.isFinite(r.economics?.net_profit));
+  const month = monthLabel(response.selling_date);
+  const n = sellable.length;
+  if (!n) return { n, total, text: t("cr.sell.none", { month }) };
+  const top = sellable.reduce((m, r) => (r.economics.net_profit > m.economics.net_profit ? r : m));
+  const crop = cropName(t, top.crop_name);
+  const text = n === 1 ? t("cr.sell.one", { total, month, crop })
+    : top.economics.net_profit > 0 ? t("cr.sell.many", { n, total, month, crop }) : t("cr.sell.noProfit", { n, total, month });
+  return { n, total, month, top: top.crop_name, text };
+}

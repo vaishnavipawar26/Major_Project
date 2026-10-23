@@ -201,11 +201,11 @@ describe("validation and the helper text", () => {
     expect(hint()).not.toBe(first);
     expect(hint()).toMatch(/^For your 3 acres field, the crops cost about ₹[\d,]+–₹[\d,]+\.$/);
     type("0.5");
-    expect(hint()).toMatch(/^For your 0\.5 acre field,/);
+    expect(hint()).toMatch(/^For your 0\.5 acre \(20 guntha\) field,/);
     type("0.0125");                                                                      // half a guntha
-    expect(hint()).toMatch(/^For your 0\.0125 acre field, the crops cost about ₹[1-9][\d,]*–₹[1-9][\d,]*\.$/);
+    expect(hint()).toMatch(/^For your 0\.01 acre \(0\.5 guntha\) field, the crops cost about ₹[1-9][\d,]*–₹[1-9][\d,]*\.$/);
     expect(hint()).not.toMatch(/₹0\b/);
     fireEvent.click(screen.getByTestId("unit-guntha"));                                  // the same size seen in guntha: the same helper text
-    expect(hint()).toMatch(/^For your 0\.0125 acre field/);
+    expect(hint()).toMatch(/^For your 0\.01 acre \(0\.5 guntha\) field/);
   });
 });

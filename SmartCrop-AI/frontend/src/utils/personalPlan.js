@@ -1,10 +1,11 @@
 // View model for the "Your personalised plan" card (result page) and the "Your budget and priorities" step (explanation page).
 // The decision itself is made by the backend (app/ml/crop_recommendation/budget_plan.py); this file only turns its numbers and codes
 // into plain sentences. Nothing is recalculated and no number is invented: every figure is a field of `response.personal_plan`.
+import { fieldSizeText } from "./fieldSize";
 import { cropName, monthLong, rupees, signedRupees } from "./format";
 
 const byCrop = (plan) => Object.fromEntries(plan.crops.map((f) => [f.crop, f]));
-const acres = (t, n) => t(n <= 1 ? "cr.pp.acreOne" : "cr.pp.acreMany", { n });
+const acres = (t, n) => fieldSizeText(t, n);
 const joinWords = (xs, and) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} ${and} ${xs[xs.length - 1]}`);
 
 /** "Costs are approximate estimates (2024 prices + 5% a year)." from the plan's own cost basis. */

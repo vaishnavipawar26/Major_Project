@@ -54,3 +54,16 @@ export function areaError(acres, unit, t) {
   }
   return null;
 }
+
+/**
+ * The one way a field size is written on the result, explanation, plan and history pages: acres with up to 2 decimals and, under 1 acre,
+ * the guntha in brackets: "0.51 acre (20.5 guntha)", "0.5 acre (20 guntha)", "2 acres". A size that would round to 0 keeps its 4 decimals.
+ */
+export function fieldSizeText(t, acres) {
+  const n = Number(acres);
+  if (!Number.isFinite(n)) return String(acres ?? "");
+  let a = Number(n.toFixed(2));
+  if (a === 0) a = Number(fmtNum(n));
+  const base = t(a <= 1 ? "cr.plan.acre" : "cr.plan.acres", { n: a });
+  return n < 1 ? `${base} (${Number((n * GUNTHA_PER_ACRE).toFixed(1))} ${t("crop.form.gunthaWord")})` : base;
+}

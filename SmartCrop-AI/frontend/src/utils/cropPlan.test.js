@@ -130,3 +130,25 @@ describe("compareRows rough estimates", () => {
   });
 });
 
+
+describe("sellableSummary", () => {
+  const tt = (k, v = {}) => ({
+    "cr.sell.many": "{n} of the {total} crops can be sold in {month}; {crop} earns the most of these.", "cr.sell.one": "1 of the {total} crops can be sold in {month}: {crop}.",
+    "cr.sell.noProfit": "{n} of the {total} crops can be sold in {month}; none of them is expected to make a profit.", "cr.sell.none": "None of the crops can be sold in {month}.",
+  }[k] ?? k).replace(/\{(\w+)\}/g, (_, n) => v[n]);
+  const c = (name, feasible, profit) => ({ crop_name: name, feasible, economics: profit == null ? null : { net_profit: profit } });
+  const resp = (results) => ({ selling_date: "2027-01", results });
+  it("counts the crops that can be sold and names the one that earns the most of them", async () => {
+    const { sellableSummary } = await import("./cropPlan");
+    const r = resp([c("Brinjal", true, 96931), c("Cabbage", true, 6469), c("Cauliflower", true, 8349), c("Tomato", true, 3069), c("Potato", true, 15471), c("Onion", false, 27255), c("Wheat", false, 9261)]);
+    const s = sellableSummary(r, tt);
+    expect(s.text).toBe("5 of the 7 crops can be sold in Jan 2027; Brinjal earns the most of these.");   // Onion earns more but cannot be sold: it is not counted
+    expect([s.n, s.total]).toEqual([5, 7]);
+  });
+  it("handles one crop, none, and no profit", async () => {
+    const { sellableSummary } = await import("./cropPlan");
+    expect(sellableSummary(resp([c("Wheat", true, 100), c("Onion", false, 9)]), tt).text).toBe("1 of the 2 crops can be sold in Jan 2027: Wheat.");
+    expect(sellableSummary(resp([c("Wheat", false, 100)]), tt).text).toBe("None of the crops can be sold in Jan 2027.");
+    expect(sellableSummary(resp([c("Wheat", true, -5), c("Onion", true, -9)]), tt).text).toBe("2 of the 2 crops can be sold in Jan 2027; none of them is expected to make a profit.");
+  });
+});

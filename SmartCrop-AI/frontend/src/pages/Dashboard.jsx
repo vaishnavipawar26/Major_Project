@@ -139,7 +139,7 @@ function RecentCrops({ items, total, calendar }) {
               <strong className="plan-card-name">{best ? cropName(t, crop) : t("hist.noneSuitable")}</strong>
               <span className="muted small">
                 {r.city ? `${cropName(t, r.city, "city")} · ` : ""}{monthShort(r.month)}{r.selling_month ? ` → ${monthShort(r.selling_month)}` : ""}
-                {r.area_acres ? ` · ${t(r.area_acres === 1 ? "cr.plan.acre" : "cr.plan.acres", { n: r.area_acres })}` : ""}
+                {r.area_acres ? ` · ${fieldSizeText(t, r.area_acres)}` : ""}
               </span>
               <span className="muted small">{t("dash.savedOn", { date: fmtDate(r.created_at) })}</span>
             </span>

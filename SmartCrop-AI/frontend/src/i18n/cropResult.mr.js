@@ -24,7 +24,12 @@ export default {
 
   "cr.compare.title": "सर्व पिकांची तुलना",
   "cr.compare.chartTitle": "{month} मध्ये विकल्यास अंदाजे नफा किंवा तोटा",
-  "cr.compare.chartDesc": "तुमच्या {area} एकर शेतासाठी सर्व {n} पिकांची तुलना. उजवीकडील पट्ट्या अंदाजे नफा, डावीकडील पट्ट्या अंदाजे तोटा दर्शवतात. खाली तपशील पाहण्यासाठी पिकावर क्लिक करा.",
+  "cr.compare.chartDesc": "तुमच्या {size} शेतासाठी: {summary} उजवीकडील पट्ट्या अंदाजे नफा, डावीकडील अंदाजे तोटा दाखवतात. तपशील खाली पाहण्यासाठी पिकावर क्लिक करा.",
+  // NEEDS REVIEW: Marathi wording for the sellable-crops sentence (cr.sell.*) and the chart description was written without a native review.
+  "cr.sell.many": "{total} पैकी {n} पिके {month} मध्ये विकता येतात; त्यांत {crop} सर्वाधिक कमावते.",
+  "cr.sell.one": "{total} पैकी 1 पीक {month} मध्ये विकता येते: {crop}.",
+  "cr.sell.noProfit": "{total} पैकी {n} पिके {month} मध्ये विकता येतात; त्यापैकी कशातूनही नफ्याची अपेक्षा नाही.",
+  "cr.sell.none": "{month} मध्ये कोणतेही पीक विकता येत नाही.",
   "cr.compare.summaryTop": "सर्वाधिक अंदाजे नफा: {crop} ({profit}).",
   "cr.compare.summaryNone": "निवडलेल्या महिन्यात कोणतेही पीक विकता येत नाही.",
   "cr.compare.summaryLosses": "विकता येणाऱ्या {total} पैकी {n} पिकांत अंदाजे तोटा दिसतो.",

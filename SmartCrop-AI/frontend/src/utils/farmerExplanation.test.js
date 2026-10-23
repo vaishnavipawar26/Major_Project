@@ -6,7 +6,7 @@ const t = (k, v) => translate("en", k, v);
 const f = (feature, value, low, high, unit = "") => ({ feature, value: `${value}${unit ? ` ${unit}` : ""}`, typical_low: low, typical_high: high, unit, shap_value: 0.1, share_pct: 5, label: feature });
 
 const brinjal = (over = {}) => ({
-  crop_name: "Brinjal", rank: 1, recommended: true, profit_rank: 1, forecast_reliability: "tested",
+  crop_name: "Brinjal", rank: 1, recommended: true, feasible: true, profit_rank: 1, forecast_reliability: "tested",
   timeline: { planting: "2026-11", harvest_start: "2027-02", harvest_end: "2027-04", selling: "2027-03", status: "fresh", months_stored: 0,
     growth_months_min: 3, growth_months_max: 5, planting_in_window: true },
   economics: { selling_price: 2946, gross_revenue: 2253460, total_cost: 896902, net_profit: 1356559, effective_yield_q: 800 },
@@ -18,7 +18,7 @@ const inputs = { nitrogen: 80, phosphorus: 45, potassium: 85, ph: 6.8, temperatu
 const response = (results, over = {}) => ({
   city: "Nashik", state: "Maharashtra", area_acres: 10, selling_date: "2027-03", best_overall: "Brinjal", results, ...over,
 });
-const others = Array.from({ length: 6 }, (_, i) => ({ crop_name: `C${i}`, profit_rank: i + 2 }));
+const others = Array.from({ length: 6 }, (_, i) => ({ crop_name: `C${i}`, profit_rank: i + 2, feasible: true, economics: { net_profit: 1000 * (i + 1) } }));
 
 describe("buildExplanation", () => {
   const out = buildExplanation(brinjal(), response([brinjal(), ...others]), inputs, t);
@@ -56,15 +56,15 @@ describe("buildExplanation", () => {
     expect(out.rainfall.note).toBe("Average per month during the crop's growing period.");
   });
   it("section 6: profit uses the API's figures in Indian format", () => {
-    expect(out.profit.headline).toBe("Highest among the crops compared");
+    expect(out.profit.headline).toBe("Highest of the crops that can be sold");
     expect(out.profit.amount).toBe("₹13,56,559");
     expect(out.profit.label).toBe("Estimated net profit for 10 acres");
     expect(out.profit.metrics.map((m) => m.value)).toEqual(["₹22,53,460", "₹8,96,902", "₹2,946"]);
     expect(out.profit.metrics[2].sub).toBe("per quintal in March 2027");
-    expect(out.profit.text).toBe("Brinjal has the highest estimated profit among the 7 crops compared for the selected plan. Actual earnings can differ because yield, market prices, weather and farming costs can change.");
+    expect(out.profit.text).toBe("7 of the 7 crops can be sold in Mar 2027; Brinjal earns the most of these. Actual earnings can differ because yield, market prices, weather and farming costs can change.");
   });
   it("final explanation is built from the results and makes no claim about the model", () => {
-    expect(out.final).toBe("SmartCrop AI ranks Brinjal first because it has the highest estimated profit among the 7 crops compared and your planting schedule matches its expected growing period. Your temperature is within the reference range, while potassium and rainfall need attention. Check your soil condition and ensure water is available before making your final decision.");
+    expect(out.final).toBe("SmartCrop AI ranks Brinjal first because it has the highest estimated profit of the crops that can be sold and your planting schedule matches its expected growing period. Your temperature is within the reference range, while potassium and rainfall need attention. Check your soil condition and ensure water is available before making your final decision.");
   });
 });
 
@@ -72,7 +72,8 @@ describe("buildExplanation for other situations", () => {
   it("reports the real profit rank when the crop is not the most profitable or recommended", () => {
     const r = brinjal({ profit_rank: 3, rank: 2, recommended: false });
     const out = buildExplanation(r, response([r, ...others], { best_overall: "C0" }), inputs, t);
-    expect(out.profit.headline).toBe("Ranked 3 of 7 crops compared");
+    expect(out.profit.headline).toBe("Ranked 3 of the 7 crops that can be sold");
+    expect(out.profit.text).toContain("7 of the 7 crops can be sold in Mar 2027;");
     expect(out.final).toContain("Brinjal is ranked 2 of 7 crops for your plan.");
   });
   it("says a loss is a loss", () => {

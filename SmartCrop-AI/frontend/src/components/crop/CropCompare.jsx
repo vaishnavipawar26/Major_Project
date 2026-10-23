@@ -3,7 +3,8 @@ import { IndianRupee } from "lucide-react";
 import ChartIntro from "../ChartIntro";
 import ProfitComparisonChart from "../charts/ProfitComparisonChart";
 import { useT } from "../../i18n/LanguageContext";
-import { chartNote, compareRows } from "../../utils/cropPlan";
+import { chartNote, compareRows, sellableSummary } from "../../utils/cropPlan";
+import { fieldSizeText } from "../../utils/fieldSize";
 import { monthLabel } from "../../utils/format";
 
 /** Section 3 - every crop side by side as a clickable profit chart (clicking a bar picks the crop shown below). */
@@ -18,7 +19,7 @@ export default function CropCompare({ response, selected, onSelect }) {
     <section className="card compare-section" aria-labelledby="compare-title">
       <h2 id="compare-title" className="sr-only">{t("cr.compare.title")}</h2>
       <ChartIntro icon={IndianRupee} title={t("cr.compare.chartTitle", { month })}>
-        {t("cr.compare.chartDesc", { n: rows.length, area: response.area_acres })}
+        {t("cr.compare.chartDesc", { size: fieldSizeText(t, response.area_acres), summary: sellableSummary(response, t).text })}
       </ChartIntro>
       <ProfitComparisonChart rows={rows} selected={selected} onSelect={onSelect} breakdown={breakdown} />
 

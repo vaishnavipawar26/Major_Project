@@ -79,3 +79,19 @@ describe("very small fields never round to nothing", () => {
     expect(compactRupees(385)).toBe("₹385");
   });
 });
+
+describe("one field-size format on every page", () => {
+  const tt = (k, v = {}) => ({ "cr.plan.acre": "{n} acre", "cr.plan.acres": "{n} acres", "crop.form.gunthaWord": "guntha" }[k] ?? k).replace(/\{(\w+)\}/g, (_, n) => v[n]);
+  it("writes acres with up to 2 decimals and, under 1 acre, the guntha in brackets", async () => {
+    const { fieldSizeText } = await import("./fieldSize");
+    expect(fieldSizeText(tt, 0.5125)).toBe("0.51 acre (20.5 guntha)");
+    expect(fieldSizeText(tt, 0.5)).toBe("0.5 acre (20 guntha)");
+    expect(fieldSizeText(tt, 0.25)).toBe("0.25 acre (10 guntha)");
+    expect(fieldSizeText(tt, 1)).toBe("1 acre");
+    expect(fieldSizeText(tt, 2)).toBe("2 acres");
+    expect(fieldSizeText(tt, 2.5)).toBe("2.5 acres");
+    expect(fieldSizeText(tt, 10)).toBe("10 acres");
+    expect(fieldSizeText(tt, 0.0125)).toBe("0.01 acre (0.5 guntha)");
+    expect(fieldSizeText(tt, 0.002)).toBe("0.002 acre (0.1 guntha)");       // never "0 acre"
+  });
+});

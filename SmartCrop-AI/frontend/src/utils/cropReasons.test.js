@@ -25,7 +25,7 @@ describe("whyReasons", () => {
     const { reasons } = whyReasons(crop(), response, inputs, t);
     expect(reasons.map((x) => x.key)).toEqual(["soil", "weather", "profit"]);
     expect(reasons[0].text).toContain("Soil pH is 7.2, within Wheat's usual range of 6.6–8.3");
-    expect(reasons[2].text).toContain("highest of the crops compared");
+    expect(reasons[2].text).toContain("highest of the crops that can be sold");
   });
 
   it("changes with the farmer's inputs: a low rainfall becomes an honest attention note", () => {

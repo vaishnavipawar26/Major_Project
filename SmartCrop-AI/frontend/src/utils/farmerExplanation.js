@@ -3,7 +3,8 @@
 // timeline, economics, profit rank); nothing is recalculated here except comparing a value with a range. A missing
 // value or range leaves that comparison out ("Not available") instead of guessing. "Usual range" is the crop's
 // 5th-95th percentile in the dataset: it says where a value sits, never that the value caused the recommendation.
-import { SOIL, indicatorRows, reliabilityOf } from "./cropPlan";
+import { SOIL, indicatorRows, reliabilityOf, sellableSummary } from "./cropPlan";
+import { fieldSizeText } from "./fieldSize";
 import { cropName, monthLong, rupees } from "./format";
 
 const SLIGHT_PCT = 0.10;   // up to 10% beyond the nearest bound still reads as "slightly" outside
@@ -16,8 +17,8 @@ const yearOf = (ym) => ym.split("-")[0];
 const monthYearLong = (ym) => `${monthLong(monthNo(ym))} ${yearOf(ym)}`;
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** "10 acres", "1 acre", "2.5 acres" */
-export const acresText = (n, t) => `${clean(n)} ${t(Number(n) === 1 ? "cr.fx.acre" : "cr.fx.acres")}`;
+/** "10 acres", "1 acre", "0.51 acre (20.5 guntha)": the same format on every page (see utils/fieldSize.js) */
+export const acresText = (n, t) => fieldSizeText(t, n);
 const join = (list, t) => (list.length <= 1 ? list.join("") : `${list.slice(0, -1).join(", ")}${t("cr.sum.and")}${list[list.length - 1]}`);
 
 /** "between February and April 2027", "between November 2026 and February 2027" or "in March 2027". */
@@ -137,7 +138,7 @@ function profitOf(r, response, crop, t) {
   const top = rank === 1 && !loss;
   const rough = reliabilityOf(r) !== "tested";
   const month = monthYearLong(response.selling_date);
-  const p = { crop, n: ranked, rank };
+  const p = { crop, n: ranked, rank, summary: sellableSummary(response, t).text };
   const headline = loss ? t("cr.fx.profit.head.loss") : top ? t("cr.fx.profit.head.top") : rank != null ? t("cr.fx.profit.head.rank", p) : t("cr.fx.profit.head.positive");
   const body = loss ? t("cr.fx.profit.text.loss", p) : top ? t("cr.fx.profit.text.top", p) : rank != null ? t("cr.fx.profit.text.rank", p) : t("cr.fx.profit.text.positive", p);
   return {
