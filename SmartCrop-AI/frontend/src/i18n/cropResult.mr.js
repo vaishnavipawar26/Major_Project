@@ -134,6 +134,10 @@ export default {
   "cr.fx.edgeText": "तुमचा {label} ({value}) ज्या श्रेणीत ({range}) {crop} सहसा घेतले जाते तिच्या अगदी बाहेर आहे. ते नेहमीच्या श्रेणीच्या काठावर आहे, म्हणून ती समस्या मानली नाही.",
   "cr.fx.edgeSoil": "{what} नेहमीच्या श्रेणीच्या काठावर {verb}, ती समस्या मानली नाही.",
   "cr.fx.fin.edge": "{list} नेहमीच्या श्रेणीच्या काठावर {verb}, ही काळजीची बाब नाही.",
+  // NEEDS REVIEW: Marathi wording for the location price evidence (cr.fx.loc.*) was written without a native review.
+  "cr.fx.loc.evidence": "{years} मध्ये {city} येथे {crop} {month} मध्ये सुमारे {low}–{high} प्रति क्विंटल विकले गेले.",
+  "cr.fx.loc.evidenceState": "{years} मध्ये संपूर्ण महाराष्ट्रात {crop} {month} मध्ये सुमारे {low}–{high} प्रति क्विंटल विकले गेले; {city} मध्ये {crop} चे स्वतःचे अहवाल खूप कमी आहेत.",
+  "cr.fx.loc.none": "{city} साठी {month} मध्ये {crop} च्या भावाची कोणतीही नोंद उपलब्ध नाही.",
   "cr.chart.recommended": "शिफारस केलेले",
   "cr.chart.rough": "≈ ढोबळ अंदाज — या पिकासाठी भावाचा विश्वासार्ह अंदाज नाही",
   "cr.chart.roughTip": "ढोबळ अंदाज — या पिकासाठी भावाचा विश्वासार्ह अंदाज नाही.",

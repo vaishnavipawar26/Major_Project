@@ -14,7 +14,7 @@ Stored with the history record in three nullable columns: `budget_inr`, `priorit
 | Estimated profit | `economics.net_profit` (unchanged) |
 | If the price is at the low end of its expected range | `economics.net_profit_low`: profit at the monthly model's 80% range lower bound |
 | Reliable forecast | the monthly price model's `beats_baseline` for that crop (CV error below the simple "latest price + inflation" guess). `crop_policy.json` (the daily 1-60 day model) is **not** used here |
-| Supply note | the selling month's arrivals against that crop's average month, 2023-2025 (`seasonal.arrivals_vs_avg_pct` of the monthly model), on the farmer's city series, or on all Maharashtra markets when the city has too few months (then the note says "Maharashtra-wide") |
+| Supply note | the selling month's arrivals against that crop's average month, 2023-2025 (`market.supply_check` of the monthly model): on the city's own series when it has every calendar month observed, otherwise on all Maharashtra markets (`scope: "state"`, and the note says "Maharashtra-wide") |
 
 ## Risk level (per crop)
 `downside = net_profit_low / upfront cost` (negative = a loss at the low end)

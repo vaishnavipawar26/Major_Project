@@ -6,8 +6,6 @@ YOU". Everything is derived from numbers already in the results; nothing is inve
 """
 from __future__ import annotations
 
-from app.ml.price_prediction.monthly import STATE_SERIES
-
 PRIORITIES = ("spend_less", "balanced", "highest_profit")
 RISK_LEVELS = ("low", "medium", "high")
 RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
@@ -44,12 +42,13 @@ def risk_level(downside_pct: float, reliable: bool) -> str:
 
 def supply_note(market: dict | None) -> dict | None:
     """A note only when the selling month's arrivals are 25% or more away from the crop's average month; else None."""
-    seasonal = ((market or {}).get("explanation") or {}).get("seasonal") or {}
-    pct = seasonal.get("arrivals_vs_avg_pct")
+    # the monthly model's own arrivals check: the city's series when it has every calendar month, else all Maharashtra markets (``scope``)
+    check = (market or {}).get("supply_check") or {}
+    pct = check.get("arrivals_vs_avg_pct")
     if pct is None or abs(pct) < SUPPLY_NOTE_PCT:
         return None
-    return {"kind": "high" if pct > 0 else "low", "pct": round(pct), "month": seasonal["month"], "years": SUPPLY_YEARS,
-            "scope": "state" if (market or {}).get("series") == STATE_SERIES else "city"}
+    month = int(str((market or {}).get("target_month", "0-0")).split("-")[1])
+    return {"kind": "high" if pct > 0 else "low", "pct": round(pct), "month": month, "years": SUPPLY_YEARS, "scope": check.get("scope", "state")}
 
 
 def crop_facts(r: dict, area: float, budget: float | None) -> dict:

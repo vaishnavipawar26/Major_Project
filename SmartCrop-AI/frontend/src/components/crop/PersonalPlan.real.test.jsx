@@ -19,6 +19,7 @@ import en from "../../i18n/en";
 import hi from "../../i18n/hi";
 import mr from "../../i18n/mr";
 import { planStep, planView } from "../../utils/personalPlan";
+import { buildExplanation } from "../../utils/farmerExplanation";
 import FarmExplanation from "./FarmExplanation";
 import PersonalPlan from "./PersonalPlan";
 
@@ -151,3 +152,17 @@ describe("every dictionary key the plan card, the explanation step and the budge
     expect(keys.filter((k) => !(k in dict) || String(dict[k]).trim() === "")).toEqual([]);
   });
 });
+
+
+describe("the explanation's 'Your location' step from the real responses", () => {
+  it.each(Object.keys(FIELDS_OF()))("%s: states what the crop sold for in the selling month, from the price data", (name) => {
+    const { request, response } = FIXTURES[name];
+    const inputs = Object.fromEntries(["nitrogen", "phosphorus", "potassium", "ph", "temperature", "humidity", "rainfall"].map((k) => [k, request[k]]));
+    for (const r of response.results) {
+      const loc = buildExplanation(r, response, inputs, t("en")).location;
+      expect(loc.text, r.crop_name).toMatch(/^In 20\d\d(–20\d\d)?, \w+ (at \w+ sold|sold Maharashtra-wide) for about ₹[\d,]+–₹[\d,]+ per quintal in \w+/);
+      expect(loc.text).not.toMatch(BROKEN);
+    }
+  });
+});
+function FIELDS_OF() { return FIXTURES; }

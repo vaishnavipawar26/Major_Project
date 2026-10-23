@@ -1,16 +1,16 @@
 """Budget- and risk-aware plan: the decision layer on top of the recommendation results (it never changes them)."""
 import pytest
 
-from app.ml.crop_recommendation.budget_plan import (RISK_THRESHOLDS, SUPPLY_NOTE_PCT, build_plan, risk_level, supply_note, upfront_cost)
 from app.ml.price_prediction.monthly import STATE_SERIES
+from app.ml.crop_recommendation.budget_plan import (RISK_THRESHOLDS, SUPPLY_NOTE_PCT, build_plan, risk_level, supply_note, upfront_cost)
 
 
 def crop(name, upfront, profit, low, *, reliable=True, eligible=True, feasible=True, viable=True, profitable=True, arrivals=None, series="Pune"):
     return {
         "crop_name": name, "eligible": eligible, "feasible": feasible, "low_agronomic_suitability": not viable, "profitable": profitable,
         "economics": {"cultivation_cost": upfront - 1000, "storage_cost": 1000, "net_profit": profit, "net_profit_low": low},
-        "market": {"reliability": {"beats_baseline": reliable}, "series": series,
-                   "explanation": {"seasonal": {"month": 2, "arrivals_vs_avg_pct": arrivals}}},
+        "market": {"reliability": {"beats_baseline": reliable}, "series": series, "target_month": "2027-02",
+                   "supply_check": None if arrivals is None else {"arrivals_vs_avg_pct": arrivals, "scope": "state" if series == STATE_SERIES else "city"}},
     }
 
 
@@ -175,3 +175,23 @@ def test_a_very_small_budget_never_rounds_the_affordable_area_to_zero():
     f = build_plan(analysis(crop("A", 100000, 30000, -3000)), 100, "balanced", "high")["crops"][0]
     assert f["affordable_area"] == 0.001 and f["extra_needed"] == 99900
     assert build_plan(analysis(crop("A", 100000, 30000, -3000)), 5, "balanced", "high")["crops"][0]["affordable_area"] == 0.0001
+
+
+def test_the_supply_check_in_a_real_result_says_which_series_it_used(client, user):
+    """The monthly model reports the arrivals comparison itself: the city's own series when it has every calendar month, else Maharashtra-wide."""
+    from datetime import date
+    body = {**BASE, "city": "Pune"}
+    r = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json=body).json()
+    by = {x["crop_name"]: x["market"] for x in r["results"]}
+    for crop, m in by.items():
+        sc = m["supply_check"]
+        assert sc is None or (sc["scope"] in ("city", "state") and isinstance(sc["arrivals_vs_avg_pct"], float))
+        assert (sc["scope"] == "state") if m["series"] == STATE_SERIES and sc else True        # a state series can only be compared with itself
+    assert by["Wheat"]["series"] == STATE_SERIES                                                   # Pune has too few wheat reports for its own series
+
+
+def test_the_month_history_is_what_the_series_really_sold_for_in_that_month(client, user):
+    r = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json=BASE).json()
+    for x in r["results"]:
+        h = x["market"]["month_history"]
+        assert h is not None and 0 < h["low"] <= h["high"] and h["years"] and set(h["years"]) <= {2023, 2024, 2025} and h["n"] >= len(h["years"]) >= 1

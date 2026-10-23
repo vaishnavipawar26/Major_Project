@@ -134,6 +134,10 @@ export default {
   "cr.fx.edgeText": "आपका {label} ({value}) उस दायरे ({range}) से ठीक बाहर है जिसमें {crop} आम तौर पर उगाई जाती है. यह सामान्य दायरे के किनारे पर है, इसलिए इसे समस्या नहीं माना गया.",
   "cr.fx.edgeSoil": "{what} सामान्य दायरे के किनारे पर {verb}, जिसे समस्या नहीं माना गया.",
   "cr.fx.fin.edge": "{list} सामान्य दायरे के किनारे पर {verb}, जो चिंता की बात नहीं है.",
+  // NEEDS REVIEW: Hindi wording for the location price evidence (cr.fx.loc.*) was written without a native review.
+  "cr.fx.loc.evidence": "{years} में {city} में {crop} {month} में लगभग {low}–{high} प्रति क्विंटल बिकी.",
+  "cr.fx.loc.evidenceState": "{years} में पूरे महाराष्ट्र में {crop} {month} में लगभग {low}–{high} प्रति क्विंटल बिकी; {city} में {crop} की अपनी रिपोर्ट बहुत कम हैं.",
+  "cr.fx.loc.none": "{city} के लिए {month} में {crop} के भाव का कोई रिकॉर्ड उपलब्ध नहीं है.",
   "cr.chart.recommended": "अनुशंसित",
   "cr.chart.rough": "≈ मोटा अनुमान — इस फसल के लिए भाव का भरोसेमंद अनुमान नहीं",
   "cr.chart.roughTip": "मोटा अनुमान — इस फसल के लिए भाव का भरोसेमंद अनुमान नहीं है.",

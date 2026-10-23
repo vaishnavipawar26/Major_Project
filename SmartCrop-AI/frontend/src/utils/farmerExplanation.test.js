@@ -23,9 +23,17 @@ const others = Array.from({ length: 6 }, (_, i) => ({ crop_name: `C${i}`, profit
 describe("buildExplanation", () => {
   const out = buildExplanation(brinjal(), response([brinjal(), ...others]), inputs, t);
 
-  it("section 1: location uses the farmer's city and state", () => {
-    expect(out.location.headline).toBe("Nashik");
-    expect(out.location.text).toBe("Brinjal was evaluated for your selected farming location, Nashik, Maharashtra. SmartCrop AI uses patterns learned from its training data to estimate how suitable Brinjal may be for your farming conditions.");
+  it("section 1: location gives real evidence from the price data: what the crop sold for in the selling month", () => {
+    const market = (series, h) => ({ series, month_history: h });
+    const run = (m) => { const r = brinjal({ market: m }); return buildExplanation(r, response([r, ...others]), inputs, t).location; };
+    const city = run(market("Nashik", { years: [2023, 2024, 2025], low: 1203, high: 3347, n: 3 }));
+    expect(city.headline).toBe("Nashik");
+    expect(city.text).toBe("In 2023–2025, Brinjal at Nashik sold for about ₹1,200–₹3,350 per quintal in March.");
+    expect(run(market("Maharashtra (all markets)", { years: [2024, 2025], low: 900, high: 1100, n: 2 })).text).toBe(
+      "In 2024–2025, Brinjal sold Maharashtra-wide for about ₹900–₹1,100 per quintal in March; Nashik has too few Brinjal reports of its own.");
+    expect(run(market("Nashik", { years: [2025], low: 1500, high: 1500, n: 1 })).text).toContain("In 2025, Brinjal at Nashik sold for about ₹1,500–₹1,500");
+    expect(run(market("Nashik", null)).text).toBe("No price records for Brinjal in March are available for Nashik.");
+    expect(run(null).text).toBe("No price records for Brinjal in March are available for Nashik.");
   });
   it("section 2: planting time is computed from the timeline", () => {
     expect(out.planning.headline).toBe("November 2026");

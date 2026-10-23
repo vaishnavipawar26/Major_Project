@@ -20,7 +20,7 @@ import shap
 from app.ml.common import paths
 from app.ml.common.reference import add_months, month_label
 from app.ml.explainability.monthly_price_explainer import explain_monthly_price
-from app.ml.price_prediction.monthly import (BASE_PERIOD, STATE_SERIES, SeriesContext,
+from app.ml.price_prediction.monthly import (BASE_PERIOD, STATE_SERIES, SeriesContext, _seasonal_profile,
                                              series_frame)
 
 HISTORY_MONTHS = 24
@@ -64,6 +64,27 @@ class MonthlyPriceForecaster:
             self._ctx[key] = SeriesContext(frame, state, self.inflation, self.crop_codes[crop],
                                            self.series_codes[series])
         return self._ctx[key]
+
+    @staticmethod
+    def _month_history(ctx, month: int) -> dict | None:
+        """What this series actually sold for in this calendar month in each year of the data (monthly median modal price, as reported),
+        as {"years": [...], "low", "high", "n"}; None when the series has no price for that month."""
+        f = ctx.frame
+        sel = f[(f["period"].dt.month == month) & f["price"].notna()]
+        if sel.empty:
+            return None
+        return {"years": sorted(int(y) for y in sel["period"].dt.year.unique()), "low": round(float(sel["price"].min()), 2),
+                "high": round(float(sel["price"].max()), 2), "n": int(len(sel))}
+
+    @staticmethod
+    def _supply_check(ctx, t0: int, month: int, series: str) -> dict | None:
+        """How the arrivals of this calendar month compare with the same crop's average month in the data, in percent: on the city's own
+        series when it has every calendar month observed, otherwise on the Maharashtra-wide series (``scope`` says which)."""
+        for scope, prof in (("city", None if series == STATE_SERIES else _seasonal_profile(ctx.larr, ctx.months, t0)),
+                            ("state", ctx.profiles(t0)[1])):
+            if prof is not None and np.isfinite(prof[month]):
+                return {"arrivals_vs_avg_pct": round((math.exp(float(prof[month])) - 1) * 100, 1), "scope": scope}
+        return None
 
     def resolve_series(self, crop: str, city: str | None) -> tuple[str, str | None]:
         if crop not in self.crop_codes:
@@ -146,6 +167,8 @@ class MonthlyPriceForecaster:
             "reliability": {"model_mae": round(model_mae, 1), "naive_mae": round(naive_mae, 1),
                             "beats_baseline": bool(model_mae < naive_mae)},
         }
+        out["month_history"] = self._month_history(ctx, target_month)
+        out["supply_check"] = self._supply_check(ctx, t0, target_month, series)
         out["peak"] = max(path[:h_target], key=lambda p: p["price"])
         out["trough"] = min(path[:h_target], key=lambda p: p["price"])
         if explain:

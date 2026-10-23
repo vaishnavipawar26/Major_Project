@@ -73,11 +73,21 @@ function valueRow(row, label, t) {
 
 // ---- 1. location and 2. planting time ----------------------------------------------------------------------------
 
-function locationOf(response, crop, t) {
+/**
+ * "Your location": real evidence from the mandi price data, not a generic sentence: what this crop actually sold for in the selling month in the
+ * years of the data, at the city's market (or Maharashtra-wide when the city has too few reports). One line when there is no record.
+ */
+function locationOf(r, response, crop, t) {
   if (!response.city) return null;
   const city = cropName(t, response.city, "city");
-  const place = response.state ? `${city}, ${response.state}` : city;
-  return { headline: city, tone: "neutral", text: t("cr.fx.loc.text", { crop, place }) };
+  const month = monthLong(monthNo(response.selling_date));
+  const h = r.market?.month_history;
+  if (!h) return { headline: city, tone: "neutral", text: t("cr.fx.loc.none", { crop, city, month }) };
+  const years = h.years.length > 1 ? `${h.years[0]}–${h.years[h.years.length - 1]}` : String(h.years[0]);
+  const round = (v) => rupees(Math.max(10, Math.round(v / 10) * 10));
+  const stateWide = r.market.series === "Maharashtra (all markets)";
+  return { headline: city, tone: "neutral",
+    text: t(stateWide ? "cr.fx.loc.evidenceState" : "cr.fx.loc.evidence", { years, crop, city, month, low: round(h.low), high: round(h.high) }) };
 }
 
 function planningOf(r, crop, t) {
@@ -214,7 +224,7 @@ function finalOf({ r, response, planning, soil, temperature, rainfall, profit, c
 /** Everything the explanation section shows for one crop result. */
 export function buildExplanation(r, response, inputs, t) {
   const crop = cropName(t, r.crop_name);
-  const location = locationOf(response, crop, t);
+  const location = locationOf(r, response, crop, t);
   const planning = planningOf(r, crop, t);
   const soil = soilOf(r, inputs, crop, t);
   const temperature = weatherOf("temperature", r, inputs, crop, t);
