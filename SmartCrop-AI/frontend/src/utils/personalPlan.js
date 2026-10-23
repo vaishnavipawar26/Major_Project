@@ -109,7 +109,7 @@ export function planView(response, t) {
   if (plan.matches_standard) {
     // the plan agrees with the standard #1: say so, but still name the other crops that fit
     const others = plan.alternatives.map((c) => `${cropName(t, c)} (${t(`cr.pp.risk.${facts[c].risk_level}`)})`);
-    view.matchLine = { text: t("cr.pp.matches"), reason: view.cards[0].reason, others: others.length ? t("cr.pp.otherFit", { list: others.join(", ") }) : null, mayLose: view.cards[0].mayLose };
+    view.matchLine = { text: t(plan.inputs.budget_inr != null ? "cr.pp.matches" : "cr.pp.matchesNoBudget"), reason: view.cards[0].reason, others: others.length ? t("cr.pp.otherFit", { list: others.join(", ") }) : null, mayLose: view.cards[0].mayLose };
   }
   return view;
 }

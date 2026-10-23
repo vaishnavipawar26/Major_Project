@@ -125,3 +125,31 @@ describe("Step 4 · Budget & priorities (optional)", () => {
     expect(cropService.recommend).not.toHaveBeenCalled();
   });
 });
+
+describe("priority and risk without a budget", () => {
+  it("are sent on their own when the farmer changes one of them, with no budget in the request", async () => {
+    await renderForm();
+    fillExample();
+    fireEvent.click(screen.getByTestId("priority-spend_less"));
+    await submit();
+    const req = sent();
+    expect(req).toMatchObject({ priority: "spend_less", risk_level: "medium" });
+    expect(req).not.toHaveProperty("budget_inr");
+  });
+
+  it("a risk choice alone counts too, and leaving everything at its default sends nothing extra", async () => {
+    await renderForm();
+    fillExample();
+    fireEvent.click(screen.getByTestId("risk-low"));
+    await submit();
+    expect(sent()).toMatchObject({ priority: "balanced", risk_level: "low" });
+    expect(sent()).not.toHaveProperty("budget_inr");
+    cleanup(); cropService.recommend.mockClear();
+    await renderForm();
+    fillExample();
+    await submit();
+    expect(sent()).not.toHaveProperty("priority");
+    expect(sent()).not.toHaveProperty("risk_level");
+    expect(sent()).not.toHaveProperty("budget_inr");
+  });
+});

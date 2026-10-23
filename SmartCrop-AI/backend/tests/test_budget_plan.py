@@ -195,3 +195,16 @@ def test_the_month_history_is_what_the_series_really_sold_for_in_that_month(clie
     for x in r["results"]:
         h = x["market"]["month_history"]
         assert h is not None and 0 < h["low"] <= h["high"] and h["years"] and set(h["years"]) <= {2023, 2024, 2025} and h["n"] >= len(h["years"]) >= 1
+
+
+def test_priority_and_risk_work_without_a_budget(client, user):
+    """No budget: the plan still picks the best suitable crop for the priority and risk level, with no budget figures anywhere."""
+    r = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json={**BASE, "priority": "spend_less", "risk_level": "medium"}).json()
+    p = r["personal_plan"]
+    assert p["inputs"]["budget_inr"] is None and p["outcome"] == "ok" and p["best_for_you"]
+    assert all(f["fits_budget"] is None and f["extra_needed"] is None and f["affordable_area"] is None for f in p["crops"])
+    assert not any(x["code"] == "over_budget" for x in p["excluded"])
+    ranked = sorted((f for f in p["crops"] if not f["unsuitable"] and f["risk_level"] != "high"), key=lambda f: (f["upfront"], -f["profit"]))
+    assert p["best_for_you"] == ranked[0]["crop"]                                          # spend less: the cheapest suitable crop within the risk level
+    plain = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json=BASE).json()
+    assert plain["personal_plan"] is None                                                   # both left at the defaults and no budget: nothing, as today

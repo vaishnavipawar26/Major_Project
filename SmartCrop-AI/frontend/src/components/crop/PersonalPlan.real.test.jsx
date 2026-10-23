@@ -166,3 +166,16 @@ describe("the explanation's 'Your location' step from the real responses", () =>
   });
 });
 function FIELDS_OF() { return FIXTURES; }
+
+describe("the real no-budget response (only a priority and a risk level)", () => {
+  it("shows the plan without any budget lines", () => {
+    const { response } = FIXTURES.no_budget;
+    const { container } = renderPlan(response);
+    expect(container.querySelector("[data-testid=plan-header]").textContent).toBe("Based on your choices · Priority: Spend less to start · Risk: Low");
+    const text = container.textContent;
+    expect(text).not.toMatch(/of your ₹|needs ₹[\d,]+ more|budget covers|fits your budget/);
+    expect(container.querySelector("[data-testid=plan-match]").textContent).toContain("Our top recommendation also fits your priority and risk level.");
+    expect(response.personal_plan.excluded.some((x) => x.code === "over_budget")).toBe(false);
+    expect(planStep(response, t("en")).lines[0]).toBe("You did not set a budget, so every suitable crop was considered.");
+  });
+});

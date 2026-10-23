@@ -65,6 +65,7 @@ export default {
   "cr.pp.priorityIs": "Priority: {v}",
   "cr.pp.riskIs": "Risk: {v}",
   "cr.pp.matches": "Our top recommendation also fits your budget and preferences.",
+  "cr.pp.matchesNoBudget": "Our top recommendation also fits your priority and risk level.",
   "cr.pp.badge.best": "Best for you",
   "cr.pp.badge.alt": "Alternative",
   "cr.pp.costOf": "{cost} of your {budget}",

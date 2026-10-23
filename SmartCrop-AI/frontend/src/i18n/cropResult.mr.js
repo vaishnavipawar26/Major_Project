@@ -64,6 +64,8 @@ export default {
   "cr.pp.priorityIs": "प्राधान्य: {v}",
   "cr.pp.riskIs": "धोका: {v}",
   "cr.pp.matches": "आमची मुख्य शिफारस तुमच्या बजेटला आणि पसंतीलाही साजेशी आहे.",
+  // NEEDS REVIEW: Marathi wording for the no-budget match line (cr.pp.matchesNoBudget) was written without a native review.
+  "cr.pp.matchesNoBudget": "आमची मुख्य शिफारस तुमच्या प्राधान्याला आणि धोक्याच्या पातळीलाही साजेशी आहे.",
   "cr.pp.badge.best": "तुमच्यासाठी सर्वोत्तम",
   "cr.pp.badge.alt": "पर्याय",
   "cr.pp.costOf": "तुमच्या {budget} पैकी {cost}",

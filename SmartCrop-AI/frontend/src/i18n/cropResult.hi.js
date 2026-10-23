@@ -64,6 +64,8 @@ export default {
   "cr.pp.priorityIs": "प्राथमिकता: {v}",
   "cr.pp.riskIs": "जोखिम: {v}",
   "cr.pp.matches": "हमारा मुख्य सुझाव आपके बजट और पसंद पर भी खरा उतरता है.",
+  // NEEDS REVIEW: Hindi wording for the no-budget match line (cr.pp.matchesNoBudget) was written without a native review.
+  "cr.pp.matchesNoBudget": "हमारा मुख्य सुझाव आपकी प्राथमिकता और जोखिम स्तर पर भी खरा उतरता है.",
   "cr.pp.badge.best": "आपके लिए सबसे अच्छी",
   "cr.pp.badge.alt": "विकल्प",
   "cr.pp.costOf": "आपके {budget} में से {cost}",
