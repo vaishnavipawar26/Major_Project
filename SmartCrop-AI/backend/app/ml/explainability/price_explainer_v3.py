@@ -276,6 +276,8 @@ def _context_only(*, facts, values, crop, market, requested_market, series_is_st
              "seasonal": lambda: _seasonal(facts.get("seasonal"), crop)}
     cards = []
     for g in CONTEXT_ORDER:
+        if g == "market" and series_is_state:
+            continue
         text, _mech, _reading, missing = ev_fn[g]()
         title = TITLES[g] if not (g == "market" and series_is_state) else "Maharashtra median prices"
         cards.append({"group": g, "title": title, "direction": None, "inr_effect": None, "inr_effect_rounded": None, "log_contribution": None,
@@ -334,6 +336,9 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
         if g == "other":
             other_inr[other_part_of(f)] += alloc["per_feature"][f]
             other_log_total += s
+        elif g == "market" and series_is_state:
+            other_inr["crop_identity"] += alloc["per_feature"][f]      # no single market to compare: this is the series' usual behaviour
+            other_log_total += s
         else:
             g_log[g] += s
             g_inr[g] += alloc["per_feature"][f]
@@ -381,6 +386,8 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
         "weather": lambda: _weather(values, weather_status),
     }
     for g in CARD_ORDER:
+        if g == "market" and series_is_state:
+            continue
         text, mech, reading, missing = ev_fn[g]()
         if g not in used_groups:
             if text is not None:
@@ -392,13 +399,15 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
         inr = g_inr[g]
         pushed = "up" if inr > 0 else "down"
         agree = _agreement(g, reading, pushed, text)
+        if abs(inr) < 5 and agree["flag"] in ("agree", "disagree"):
+            agree = {"flag": "negligible", "text": "The model gave this almost no weight, so there is nothing to compare."}
         effect = ("had almost no effect on the forecast" if abs(inr) < 5 else
                   f"pushed the forecast {pushed} by about {rs(round_inr(inr))}")
         cards.append({
             "group": g, "title": TITLES[g] if not (g == "market" and series_is_state) else "Maharashtra median prices",
             "direction": pushed, "inr_effect": round(inr, 2), "inr_effect_rounded": round_inr(inr), "effect_text": f"{TITLES[g] if not (g == 'market' and series_is_state) else 'Maharashtra median prices'} {effect}.",
             "log_contribution": round(g_log[g], 6), "evidence": text if text is not None else missing,
-            "evidence_available": text is not None, "mechanism": mech if (mech and agree["flag"] != "no_evidence") else None,
+            "evidence_available": text is not None, "mechanism": mech if (mech and agree["flag"] not in ("no_evidence", "negligible")) else None,
             "agreement": agree})
     cards.sort(key=lambda c: abs(c["inr_effect"]), reverse=True)
     shown, hidden = cards[:MAX_CARDS], cards[MAX_CARDS:]

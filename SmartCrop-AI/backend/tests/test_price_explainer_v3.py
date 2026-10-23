@@ -353,3 +353,22 @@ def test_explanation_range_is_hidden_below_40_percent_coverage_and_otherwise_car
     assert edge["headline"]["range"] is not None
     ctx, _ = build(context_only=True)
     assert ctx["headline"]["range"] is None                                  # no model price, so no model range
+
+
+# ------------------------------------------------------------------ card quality fixes
+def test_state_median_forecast_has_no_market_card_and_its_rupees_stay_in_other_factors():
+    out, _ = build(series_is_state=True, market="All markets (state median)", breakdown=None)
+    assert all(c["group"] != "market" for c in out["cards"])
+    assert abs(out["checks"]["inr_sum"] - out["checks"]["predicted_change_inr"]) < 0.05        # nothing lost
+    ctx, _ = build(series_is_state=True, market="All markets (state median)", breakdown=None, context_only=True)
+    assert [c["group"] for c in ctx["cards"]] == ["supply", "trend", "last_year", "seasonal"]
+
+
+def test_a_push_of_almost_nothing_is_not_compared_with_the_records_and_gets_no_mechanism():
+    tiny = {**CONTRIB, "log_arrivals": 0.0002, "arrivals_vs_30d": 0.0001}          # supply group ~ +0.0003 -> under 5 rupees
+    out, _ = build(contrib=tiny)
+    supply = next(c for c in out["cards"] if c["group"] == "supply")
+    assert abs(supply["inr_effect"]) < 5 and supply["agreement"]["flag"] == "negligible" and supply["mechanism"] is None
+    assert "almost no effect" in supply["effect_text"]
+    big, _ = build()
+    assert next(c for c in big["cards"] if c["group"] == "supply")["agreement"]["flag"] == "agree"

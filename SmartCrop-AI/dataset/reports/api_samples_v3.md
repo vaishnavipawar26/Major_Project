@@ -235,22 +235,6 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    }
   },
   {
-   "group": "market",
-   "title": "Maharashtra median prices",
-   "direction": "down",
-   "inr_effect": -11.39,
-   "inr_effect_rounded": -11,
-   "effect_text": "Maharashtra median prices pushed the forecast down by about ₹11.",
-   "log_contribution": -0.004297,
-   "evidence": "This forecast is for the Maharashtra median, so no single-market comparison applies.",
-   "evidence_available": false,
-   "mechanism": null,
-   "agreement": {
-    "flag": "no_evidence",
-    "text": "No comparable records, so the evidence cannot be compared with the model's push."
-   }
-  },
-  {
    "group": "supply",
    "title": "Supply (arrivals)",
    "direction": "up",
@@ -260,17 +244,17 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    "log_contribution": 0.000792,
    "evidence": "Reported arrivals across the markets that reported, 24 Sep–23 Oct 2025: 935 a day (as reported), 26% above the October average of 2023 and 2024 (739 a day).",
    "evidence_available": true,
-   "mechanism": "More supply usually lowers prices.",
+   "mechanism": null,
    "agreement": {
-    "flag": "disagree",
-    "text": "Arrivals above the usual level normally go with lower prices, but the model pushed the forecast higher. The reason is not visible from the records shown."
+    "flag": "negligible",
+    "text": "The model gave this almost no weight, so there is nothing to compare."
    }
   }
  ],
  "other_factors": {
-  "inr_total": -4.98,
-  "inr_total_rounded": -5,
-  "text": "Other factors: −₹5",
+  "inr_total": -16.36,
+  "inr_total_rounded": -16,
+  "text": "Other factors: −₹16",
   "parts": [
    {
     "label": "Current price level",
@@ -279,7 +263,7 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    },
    {
     "label": "This crop's usual behaviour in past data",
-    "inr": 31.02,
+    "inr": 19.64,
     "meaning": null
    },
    {
@@ -344,7 +328,7 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
   ]
  },
  "checks": {
-  "inr_sum": 18.19,
+  "inr_sum": 18.2,
   "predicted_change_inr": 18.199312,
   "reconstruction_error": 0.0
  },
@@ -436,10 +420,10 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    "log_contribution": -0.001387,
    "evidence": "Reported arrivals at APMC Mumbai, 18 Sep–17 Oct 2025: 72 a day (as reported), 63% above the October average of 2023 and 2024 (44 a day).",
    "evidence_available": true,
-   "mechanism": "More supply usually lowers prices.",
+   "mechanism": null,
    "agreement": {
-    "flag": "agree",
-    "text": "Arrivals above the usual level normally go with lower prices, and the model pushed the forecast lower."
+    "flag": "negligible",
+    "text": "The model gave this almost no weight, so there is nothing to compare."
    }
   },
   {
@@ -624,22 +608,6 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    }
   },
   {
-   "group": "market",
-   "title": "Maharashtra median prices",
-   "direction": "down",
-   "inr_effect": -7.52,
-   "inr_effect_rounded": -8,
-   "effect_text": "Maharashtra median prices pushed the forecast down by about ₹8.",
-   "log_contribution": -0.003878,
-   "evidence": "This forecast is for the Maharashtra median, so no single-market comparison applies.",
-   "evidence_available": false,
-   "mechanism": null,
-   "agreement": {
-    "flag": "no_evidence",
-    "text": "No comparable records, so the evidence cannot be compared with the model's push."
-   }
-  },
-  {
    "group": "supply",
    "title": "Supply (arrivals)",
    "direction": "up",
@@ -649,17 +617,17 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    "log_contribution": 0.000574,
    "evidence": "Reported arrivals across the markets that reported, 24 Sep–23 Oct 2025: 3,980 a day (as reported), 66% above the October average of 2023 and 2024 (2,402 a day).",
    "evidence_available": true,
-   "mechanism": "More supply usually lowers prices.",
+   "mechanism": null,
    "agreement": {
-    "flag": "disagree",
-    "text": "Arrivals above the usual level normally go with lower prices, but the model pushed the forecast higher. The reason is not visible from the records shown."
+    "flag": "negligible",
+    "text": "The model gave this almost no weight, so there is nothing to compare."
    }
   }
  ],
  "other_factors": {
-  "inr_total": -51.61,
-  "inr_total_rounded": -50,
-  "text": "Other factors: −₹50",
+  "inr_total": -59.13,
+  "inr_total_rounded": -60,
+  "text": "Other factors: −₹60",
   "parts": [
    {
     "label": "Current price level",
@@ -668,7 +636,7 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    },
    {
     "label": "This crop's usual behaviour in past data",
-    "inr": -68.61,
+    "inr": -76.13,
     "meaning": null
    },
    {
@@ -792,22 +760,6 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    "effect_text": "Shown as context. It is not used to claim a rise or fall.",
    "evidence": "Reported arrivals across the markets that reported, 24 Sep–23 Oct 2025: 17,791 a day (as reported), close to the October average of 2023 and 2024 (17,152 a day).",
    "evidence_available": true,
-   "mechanism": null,
-   "agreement": {
-    "flag": "context",
-    "text": "No model push is shown for this crop; these records are for information."
-   }
-  },
-  {
-   "group": "market",
-   "title": "Maharashtra median prices",
-   "direction": null,
-   "inr_effect": null,
-   "inr_effect_rounded": null,
-   "log_contribution": null,
-   "effect_text": "Shown as context. It is not used to claim a rise or fall.",
-   "evidence": "This forecast is for the Maharashtra median, so no single-market comparison applies.",
-   "evidence_available": false,
    "mechanism": null,
    "agreement": {
     "flag": "context",
@@ -979,22 +931,6 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    }
   },
   {
-   "group": "market",
-   "title": "Maharashtra median prices",
-   "direction": "down",
-   "inr_effect": -2.6,
-   "inr_effect_rounded": -3,
-   "effect_text": "Maharashtra median prices had almost no effect on the forecast.",
-   "log_contribution": -0.002016,
-   "evidence": "This forecast is for the Maharashtra median, so no single-market comparison applies.",
-   "evidence_available": false,
-   "mechanism": null,
-   "agreement": {
-    "flag": "no_evidence",
-    "text": "No comparable records, so the evidence cannot be compared with the model's push."
-   }
-  },
-  {
    "group": "supply",
    "title": "Supply (arrivals)",
    "direction": "down",
@@ -1004,15 +940,15 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    "log_contribution": -0.001793,
    "evidence": "Reported arrivals across the markets that reported, 24 Sep–23 Oct 2025: 388 a day (as reported), 19% below the October average of 2023 and 2024 (477 a day).",
    "evidence_available": true,
-   "mechanism": "Less supply usually supports prices.",
+   "mechanism": null,
    "agreement": {
-    "flag": "disagree",
-    "text": "Arrivals below the usual level normally go with higher prices, but the model pushed the forecast lower. The reason is not visible from the records shown."
+    "flag": "negligible",
+    "text": "The model gave this almost no weight, so there is nothing to compare."
    }
   }
  ],
  "other_factors": {
-  "inr_total": -33.81,
+  "inr_total": -36.42,
   "inr_total_rounded": -35,
   "text": "Other factors: −₹35",
   "parts": [
@@ -1023,7 +959,7 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
    },
    {
     "label": "This crop's usual behaviour in past data",
-    "inr": -103.61,
+    "inr": -106.22,
     "meaning": null
    },
    {
@@ -1082,7 +1018,7 @@ Note: *Days ahead* is counted from the market's last report in the reference yea
   ]
  },
  "checks": {
-  "inr_sum": -144.37,
+  "inr_sum": -144.38,
   "predicted_change_inr": -144.353074,
   "reconstruction_error": 0.0
  },

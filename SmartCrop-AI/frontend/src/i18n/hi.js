@@ -289,6 +289,7 @@ const hi = {
   "price.v3.flag.disagree": "असहमत",
   "price.v3.flag.noReading": "जानकारी के लिए",
   "price.v3.flag.noEvidence": "रिकॉर्ड नहीं",
+  "price.v3.flag.negligible": "बहुत कम असर",
   "price.v3.group.supply": "आपूर्ति (आवक)",
   "price.v3.group.market": "आपका चुना हुआ बाज़ार",
   "price.v3.group.marketState": "महाराष्ट्र का माध्यक भाव",

@@ -453,6 +453,7 @@ const en = {
   "price.v3.flag.disagree": "Disagree",
   "price.v3.flag.noReading": "For information",
   "price.v3.flag.noEvidence": "No records",
+  "price.v3.flag.negligible": "Almost no weight",
   "price.v3.group.supply": "Supply (arrivals)",
   "price.v3.group.market": "Your selected market",
   "price.v3.group.marketState": "Maharashtra median prices",
