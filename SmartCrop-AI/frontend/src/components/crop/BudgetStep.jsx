@@ -1,7 +1,9 @@
 import { Flame, Scale, Shield, ShieldAlert, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import FormField from "../FormField";
+import FieldSize from "./FieldSize";
 import { useT } from "../../i18n/LanguageContext";
 import { PRIORITIES, RISKS, costRange, formatBudget, rangeText } from "../../utils/budgetPlan";
+import { fmtNum } from "../../utils/fieldSize";
 
 const PRIORITY_ICON = { spend_less: Wallet, balanced: Scale, highest_profit: TrendingUp };
 const RISK_ICON = { low: ShieldCheck, medium: Shield, high: ShieldAlert };
@@ -28,21 +30,24 @@ function OptionCards({ name, labelId, value, options, icons, onChange }) {
 }
 
 /** "Step 4 · Budget & priorities (optional)": money available, what matters most, how much risk. Empty = the standard recommendation. */
-export default function BudgetStep({ form, set, setField, error, onBlur, economics, inflationPct, SectionHead }) {
+export default function BudgetStep({ form, set, setField, error, onBlur, economics, inflationPct, SectionHead, area }) {
   const t = useT();
   const range = costRange(economics, inflationPct, Number(form.planting_month), form.area_acres);
   return (
     <section className="cf-card cf-budget" aria-labelledby="budget-title">
       <SectionHead id="budget-title" icon={Wallet} title={t("crop.form.budgetTitle")} note={t("crop.form.budgetNote")} />
       <div className="grid gap-4">
-        <FormField id="budget_inr" label={t("crop.form.budgetLabel")} error={error}
-          hint={range ? t("crop.form.budgetHelp", { size: t(Number(form.area_acres) === 1 ? "cr.plan.acre" : "cr.plan.acres", { n: form.area_acres }), range: rangeText(range) }) : undefined}>
+        <div className="fb-top">
+          <FieldSize acres={form.area_acres} onAcres={area.onAcres} unit={area.unit} onUnit={area.onUnit} error={area.error} onBlur={area.onBlur} />
+          <FormField id="budget_inr" label={t("crop.form.budgetLabel")} error={error}
+          hint={range ? t("crop.form.budgetHelp", { size: t(Number(form.area_acres) <= 1 ? "cr.plan.acre" : "cr.plan.acres", { n: fmtNum(form.area_acres) }), range: rangeText(range) }) : undefined}>
           <div className="input-unit">
             <span className="input-prefix" aria-hidden="true">₹</span>
             <input id="budget_inr" type="text" inputMode="numeric" autoComplete="off" placeholder={t("crop.form.budgetPlaceholder")}
               value={formatBudget(form.budget_inr)} onChange={set("budget_inr")} onBlur={onBlur} className="has-prefix" />
           </div>
         </FormField>
+        </div>
 
         <div className="field">
           <span className="label-like" id="priority-label">{t("crop.form.priorityTitle")}</span>

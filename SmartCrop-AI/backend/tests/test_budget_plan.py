@@ -169,3 +169,9 @@ def test_plan_inputs_are_saved_and_history_returns_them_with_the_pick(client, us
 @pytest.mark.parametrize("bad", [{"budget_inr": 0}, {"budget_inr": -5}, {"priority": "cheapest"}, {"risk_level": "extreme"}])
 def test_invalid_plan_inputs_are_rejected(client, user, bad):
     assert client.post("/api/crop-recommendation/analyze", headers=user["headers"], json={**BASE, **bad}).status_code == 422
+
+
+def test_a_very_small_budget_never_rounds_the_affordable_area_to_zero():
+    f = build_plan(analysis(crop("A", 100000, 30000, -3000)), 100, "balanced", "high")["crops"][0]
+    assert f["affordable_area"] == 0.001 and f["extra_needed"] == 99900
+    assert build_plan(analysis(crop("A", 100000, 30000, -3000)), 5, "balanced", "high")["crops"][0]["affordable_area"] == 0.0001

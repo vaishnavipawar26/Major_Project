@@ -13,7 +13,7 @@ export default function PlanSummary({ response, crop }) {
       <dl className="plan-facts">
         <div><dt>{t("cr.plan.plantLabel")}</dt><dd>{monthLabel(response.planting_date)}</dd></div>
         <div><dt>{t("cr.plan.sellLabel")}</dt><dd>{monthLabel(response.selling_date)}</dd></div>
-        <div><dt>{t("cr.plan.sizeLabel")}</dt><dd>{t(response.area_acres === 1 ? "cr.plan.acre" : "cr.plan.acres", { n: response.area_acres })}</dd></div>
+        <div><dt>{t("cr.plan.sizeLabel")}</dt><dd>{t(response.area_acres <= 1 ? "cr.plan.acre" : "cr.plan.acres", { n: response.area_acres })}</dd></div>
       </dl>
       {months && <p className="plan-meta"><span className="inline-icon"><CalendarClock size={15} aria-hidden="true" />{t("cr.plan.growing", { crop: cropName(t, crop.crop_name), months })}</span></p>}
     </section>

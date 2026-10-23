@@ -38,11 +38,13 @@ const sent = () => cropService.recommend.mock.calls[0][0];
 describe("Step 4 · Budget & priorities (optional)", () => {
   it("is a fourth step in the stepper and a fourth card with the money field, two option groups and the 'leave empty' line", async () => {
     await renderForm();
-    expect(screen.getByRole("heading", { name: "Step 4 · Budget & priorities (optional)" })).toBeTruthy();
-    expect(document.querySelectorAll("ol.steps li")).toHaveLength(4);
-    expect(screen.getByRole("radiogroup", { name: "What matters most to you?" })).toBeTruthy();
-    expect(screen.getByRole("radiogroup", { name: "How much risk are you okay with?" })).toBeTruthy();
-    expect(screen.getByText("Leave this empty to see the standard recommendation.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "4. Field size, budget & priorities" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "2. Place and dates" })).toBeTruthy();
+    expect(Array.from(document.querySelectorAll("ol.steps li")).map((li) => li.textContent.replace(/^\d/, ""))).toEqual(
+      ["Step 1 · Soil", "Step 2 · Place & dates", "Step 3 · Weather (auto)", "Step 4 · Field & budget"]);
+    expect(screen.getByRole("radiogroup", { name: /What matters most to you\?/ })).toBeTruthy();
+    expect(screen.getByRole("radiogroup", { name: /How much risk are you okay with\?/ })).toBeTruthy();
+    expect(screen.getByText("Leave the budget empty to see the standard recommendation.")).toBeTruthy();
     expect(screen.getByTestId("priority-balanced").getAttribute("aria-checked")).toBe("true");     // defaults
     expect(screen.getByTestId("risk-medium").getAttribute("aria-checked")).toBe("true");
     expect(screen.getByLabelText(/Money available/).value).toBe("");

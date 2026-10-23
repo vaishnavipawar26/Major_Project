@@ -2,7 +2,7 @@
 export default {
   "crop.form.step2": "चरण 2 · जगह और तारीख़ें",
   "crop.form.step3": "चरण 3 · मौसम (अपने-आप)",
-  "crop.form.placeTitle": "2. जगह, तारीख़ें और खेत",
+  "crop.form.placeTitle": "2. जगह और तारीख़ें",
   "crop.form.weatherTitle": "3. फसल उगने के दौरान मौसम",
   "crop.form.weatherNoteManual": "बुवाई से कटाई तक के अपेक्षित औसत मान भरें।",
   "crop.form.weatherSelect": "मौसम अपने-आप लाने के लिए अपना शहर और बुवाई/बिक्री के महीने चुनें।",

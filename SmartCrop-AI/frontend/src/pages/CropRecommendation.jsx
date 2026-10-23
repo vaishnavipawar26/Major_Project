@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Check, CircleAlert, CircleCheck, CircleX, CloudSun, Lightbulb, Lock, MapPin, Minus, Package, Pencil, Plus, Sprout, TrendingUp, Wand2,
+  Check, CircleAlert, CircleCheck, CircleX, CloudSun, Lightbulb, Lock, MapPin, Package, Pencil, Sprout, TrendingUp, Wand2,
 } from "lucide-react";
 import Alert from "../components/Alert";
 import CropArt from "../components/CropArt";
@@ -21,7 +21,7 @@ import { errorMessage } from "../services/api";
 import { cropService } from "../services/cropService";
 import { buildRanges, fieldStatus, fmtRange, likelyFits } from "../utils/featureRanges";
 import { cropName, monthLong } from "../utils/format";
-import { numberInRange } from "../utils/validation";
+import { areaError } from "../utils/fieldSize";
 import BudgetStep from "../components/crop/BudgetStep";
 import { DEFAULT_PRIORITY, DEFAULT_RISK, budgetError, cleanBudget, planPayload } from "../utils/budgetPlan";
 
@@ -46,7 +46,6 @@ const MONTH_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 // stored (and sent) in English; shown in the chosen language
 // Soil types the model knows (the value sent to the API), in display order; "unknown" = "Not sure / skip" (the default).
 export const SOILS = ["sandy_loam", "loam", "clay_loam", "alluvial", "unknown"];
-const AREA_MIN = 0.1, AREA_MAX = 1000;
 
 
 // Ready-in-time status for the crop chips (icon + colour + label, never colour alone)
@@ -119,6 +118,7 @@ export default function CropRecommendation() {
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [apiError, setApiError] = useState(null);
+  const [areaUnit, setAreaUnit] = useState("acre");      // how the field size is typed and shown; the value kept and sent is always acres
   const [submitting, setSubmitting] = useState(false);
 
   const set = (k) => (e) => {
@@ -164,14 +164,14 @@ export default function CropRecommendation() {
       if (state === "required") errs[f.key] = t("valid.required", { label });
       else if (state === "invalid") errs[f.key] = Number.isNaN(Number(form[f.key])) ? t("valid.number", { label }) : t("crop.form.between", { min: r.hardMin, max: r.hardMax });
     });
-    const areaErr = numberInRange(form.area_acres, AREA_MIN, AREA_MAX, t("crop.form.validLabel.area_acres"), t);
+    const areaErr = areaError(form.area_acres, areaUnit, t);
     if (areaErr) errs.area_acres = areaErr;
     if (monthsError) errs.selling_month = monthsError;
     const budgetKey = budgetError(form.budget_inr);
     if (budgetKey) errs.budget_inr = t(budgetKey);
     return errs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, ranges, t, manual, monthsError]);
+  }, [form, ranges, t, manual, monthsError, areaUnit]);
   const shown = (k) => (submitted || touched[k] ? errors[k] : undefined);
   // Soft note (never blocks): the value is outside the dataset's min/max, so the model extrapolates. Automatic weather shows it at once.
   const warnOf = (f) => {
@@ -181,10 +181,11 @@ export default function CropRecommendation() {
   };
 
   const soilDone = SOIL_KEYS.every((k) => !errors[k]);
-  const placeDone = Boolean(form.city) && !errors.area_acres;
+  const placeDone = Boolean(form.city);
   const weatherDone = WEATHER_KEYS.every((k) => !errors[k]);
   const dones = [soilDone, placeDone, weatherDone];
-  const budgetDone = form.budget_inr !== "" && !errors.budget_inr;
+  // Step 4 holds the required field size (it has a default) and the optional budget: done unless one of them is wrong, so it never blocks the stepper
+  const budgetDone = !errors.area_acres && !errors.budget_inr;
   const current = dones.findIndex((d) => !d);
   const invalid = Object.keys(errors).length > 0;
   const fits = likelyFits(form, ranges);
@@ -196,11 +197,7 @@ export default function CropRecommendation() {
     setForm((f) => ({ ...f, ...exampleToForm(ex) }));
     setTouched({}); setSubmitted(false);
   };
-  const clearAll = () => { exampleWeather.current = false; setForm(blankForm(thisMonth)); setManual(false); setTouched({}); setSubmitted(false); setApiError(null); };
-  const bumpArea = (d) => setForm((f) => {
-    const next = Math.round((Number(f.area_acres || 0) + d) * 10) / 10;
-    return { ...f, area_acres: String(Math.min(AREA_MAX, Math.max(AREA_MIN, next))) };
-  });
+  const clearAll = () => { exampleWeather.current = false; setAreaUnit("acre"); setForm(blankForm(thisMonth)); setManual(false); setTouched({}); setSubmitted(false); setApiError(null); };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -304,17 +301,6 @@ export default function CropRecommendation() {
               </div>
               {monthsError && <span className="error !mt-[-0.5rem]" id="months-error" role="alert"><CircleAlert size={14} aria-hidden="true" />{monthsError}</span>}
 
-              <FormField id="area_acres" label={t("crop.form.area")} unit={t("crop.form.areaUnit")} required
-                error={shown("area_acres")}>
-                <div className="stepper">
-                  <button type="button" onClick={() => bumpArea(-0.5)} aria-label={t("crop.form.areaLess")}><Minus size={16} aria-hidden="true" /></button>
-                  <input id="area_acres" type="number" inputMode="decimal" step="0.1" min={AREA_MIN} max={AREA_MAX} value={form.area_acres}
-                    onChange={set("area_acres")} onBlur={touch("area_acres")} onWheel={(e) => e.currentTarget.blur()} />
-                  <button type="button" onClick={() => bumpArea(0.5)} aria-label={t("crop.form.areaMore")}><Plus size={16} aria-hidden="true" /></button>
-                </div>
-              </FormField>
-              <p className="muted small !mt-[-0.5rem] !mb-0">{t("crop.form.areaHint")}</p>
-
               <FormField id="soil_type" label={t("crop.form.soilType")}>
                 <select id="soil_type" value={form.soil_type} onChange={set("soil_type")}>
                   {SOILS.map((s) => <option key={s} value={s}>{t(`crop.form.soil.${s}`)}</option>)}
@@ -353,7 +339,8 @@ export default function CropRecommendation() {
         </div>
 
         <BudgetStep form={form} set={set} setField={setField} error={shown("budget_inr")} onBlur={touch("budget_inr")}
-          economics={opts.economics} inflationPct={opts.inflation_annual_pct} SectionHead={SectionHead} />
+          economics={opts.economics} inflationPct={opts.inflation_annual_pct} SectionHead={SectionHead}
+          area={{ unit: areaUnit, onUnit: setAreaUnit, error: shown("area_acres"), onBlur: touch("area_acres"), onAcres: (v) => setForm((f) => ({ ...f, area_acres: v })) }} />
 
         <div className="cf-card cf-bottom">
           <div className="crop-chips-box">

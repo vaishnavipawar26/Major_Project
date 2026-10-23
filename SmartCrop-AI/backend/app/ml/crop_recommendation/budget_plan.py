@@ -75,7 +75,7 @@ def crop_facts(r: dict, area: float, budget: float | None) -> dict:
         f["fits_budget"] = up <= budget
         if not f["fits_budget"]:
             f["extra_needed"] = round(up - budget)
-            f["affordable_area"] = round(budget / per_acre, 2) if per_acre else None
+            f["affordable_area"] = round(budget / per_acre, 4) if per_acre else None      # 4 decimals: a very small budget must not round to "0 acre"
     return f
 
 

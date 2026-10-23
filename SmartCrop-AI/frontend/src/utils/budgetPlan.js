@@ -38,9 +38,12 @@ export function costRange(economics, inflationPct, plantMonth, areaAcres, today 
   return { low: Math.min(...costs), high: Math.max(...costs) };
 }
 
-/** Round to the nearest 1,000 for the helper text ("about"). */
-export const roundK = (v) => Math.round(v / 1000) * 1000;
-export const rangeText = (r) => `${rupees(roundK(r.low))}–${rupees(roundK(r.high))}`;
+/** Round for the helper text ("about"): nearest 1,000 normally, finer for a very small field so a cost never reads "₹0" (nearest 100 below 10,000, 10 below 1,000). */
+export const roundNice = (v) => {
+  const step = v >= 10000 ? 1000 : v >= 1000 ? 100 : 10;
+  return Math.max(step, Math.round(v / step) * step);
+};
+export const rangeText = (r) => `${rupees(roundNice(r.low))}–${rupees(roundNice(r.high))}`;
 
 /**
  * The plan fields to send. Nothing (so the request is exactly today's) unless the farmer entered a budget or changed a priority or risk

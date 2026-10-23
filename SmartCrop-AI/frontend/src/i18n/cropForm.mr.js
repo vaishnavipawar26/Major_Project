@@ -2,7 +2,7 @@
 export default {
   "crop.form.step2": "पायरी 2 · ठिकाण व तारखा",
   "crop.form.step3": "पायरी 3 · हवामान (आपोआप)",
-  "crop.form.placeTitle": "2. ठिकाण, तारखा आणि शेत",
+  "crop.form.placeTitle": "2. ठिकाण आणि तारखा",
   "crop.form.weatherTitle": "3. पीक वाढताना हवामान",
   "crop.form.weatherNoteManual": "लागवडीपासून काढणीपर्यंतची अपेक्षित सरासरी मूल्ये भरा.",
   "crop.form.weatherSelect": "हवामान आपोआप मिळवण्यासाठी तुमचे शहर आणि लागवड/विक्रीचे महिने निवडा.",

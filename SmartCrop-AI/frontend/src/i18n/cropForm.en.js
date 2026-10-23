@@ -2,7 +2,7 @@
 export default {
   "crop.form.step2": "Step 2 · Place & dates",
   "crop.form.step3": "Step 3 · Weather (auto)",
-  "crop.form.placeTitle": "2. Place, dates and field",
+  "crop.form.placeTitle": "2. Place and dates",
   "crop.form.weatherTitle": "3. Weather while the crop grows",
   "crop.form.weatherNoteManual": "Type the average values you expect from planting to harvest.",
   "crop.form.weatherSelect": "Select your city and planting/selling months to load weather automatically.",

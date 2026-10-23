@@ -54,7 +54,8 @@ export const compactRupees = (v) => {
   const a = Math.abs(v), s = v < 0 ? "−" : "";
   if (a >= 1e7) return `${s}₹${(a / 1e7).toFixed(1)}Cr`;
   if (a >= 1e5) return `${s}₹${(a / 1e5).toFixed(1)}L`;
-  if (a >= 1e3) return `${s}₹${Math.round(a / 1e3)}K`;
+  if (a >= 1e4) return `${s}₹${Math.round(a / 1e3)}K`;
+  if (a >= 1e3) return `${s}₹${Number((a / 1e3).toFixed(1))}K`;      // 1,400 -> ₹1.4K, so a small field's profit is not rounded to the nearest thousand
   return `${s}₹${Math.round(a)}`;
 };
 export const signedRupees = (v) => (v == null ? "—" : `${v < 0 ? "−" : ""}${rupees(Math.abs(v))}`);
