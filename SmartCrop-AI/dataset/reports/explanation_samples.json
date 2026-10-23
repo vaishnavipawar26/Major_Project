@@ -1,0 +1,662 @@
+[
+  {
+    "headline": "The model expects Tomato's price to rise by about 14% over 6 days.",
+    "direction": "rise",
+    "why_no_direction": null,
+    "start_price": 1200.0,
+    "predicted_price": 1363.58,
+    "predicted_change_pct": 13.63,
+    "typical_error_pct": 12.7,
+    "price_range": [
+      1013.38,
+      1780.04
+    ],
+    "range_basis": "80% split-conformal range from validation errors",
+    "origin_date": "2025-09-13",
+    "horizon_days": 6,
+    "shrink_weight": 0.6,
+    "groups": [
+      {
+        "group": "seasonal",
+        "title": "Seasonal pattern",
+        "share_pct": 34.9,
+        "shap_log": 0.0438,
+        "evidence_reading": "up",
+        "evidence_vs_push": "agrees",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "In 2 earlier years, Tomato prices changed by +2.1% on average over the 6 days after a September start.",
+        "evidence_available": true
+      },
+      {
+        "group": "other",
+        "title": "Other model factors",
+        "share_pct": 33.4,
+        "shap_log": 0.0419,
+        "evidence_reading": null,
+        "evidence_vs_push": null,
+        "pushed": "higher",
+        "minor": false,
+        "evidence": null,
+        "evidence_available": false
+      },
+      {
+        "group": "recent_trend",
+        "title": "Recent trend",
+        "share_pct": 26.7,
+        "shap_log": 0.0335,
+        "evidence_reading": "down",
+        "evidence_vs_push": "opposite",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "The price fell 52% over the last 30 days and fell 50% over the last 90 days.",
+        "evidence_available": true
+      },
+      {
+        "group": "last_year",
+        "title": "Compared with last year",
+        "share_pct": 4.0,
+        "shap_log": 0.0051,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": true,
+        "evidence": "The price was 45% below the same date last year.",
+        "evidence_available": true
+      },
+      {
+        "group": "supply",
+        "title": "Supply (arrivals)",
+        "share_pct": 0.7,
+        "shap_log": 0.0009,
+        "evidence_reading": "down",
+        "evidence_vs_push": "opposite",
+        "pushed": "higher",
+        "minor": true,
+        "evidence": "Arrivals over the last 30 days were 6% above the usual September level of earlier years.",
+        "evidence_available": true
+      },
+      {
+        "group": "market_premium",
+        "title": "Market premium",
+        "share_pct": 0.3,
+        "shap_log": 0.0004,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": true,
+        "evidence": "This market's price was 8% below the Maharashtra median for Tomato on that date (8% above on average over the last 30 days).",
+        "evidence_available": true
+      }
+    ],
+    "base_drift_log": 0.0023,
+    "confidence": {
+      "basis": "backtest on unseen dates, Tomato, 1-7 days ahead, n=3176",
+      "text": "In backtests on unseen dates, Tomato forecasts 1-7 days ahead missed by about ₹394 per quintal (19%) on average and were 2% more accurate than simply keeping the latest price. When the model gave a clear direction it was right 84% of the time."
+    },
+    "notes": [
+      "Contributions describe what the model did with each input; they show association in 2023–2025 data, not proven causes."
+    ],
+    "reconstruction_error": 0.0,
+    "series": {
+      "market": "Pune(Manjri)",
+      "variety": "Other",
+      "crop": "Tomato"
+    },
+    "backtest_outcome": {
+      "actual_price_on_target_date": 800.0,
+      "target_date": "2025-09-19",
+      "note": "known only because this is a historical backtest case"
+    }
+  },
+  {
+    "headline": "The model expects Cauliflower's price to fall by about 25% over 13 days.",
+    "direction": "fall",
+    "why_no_direction": null,
+    "start_price": 2000.0,
+    "predicted_price": 1498.03,
+    "predicted_change_pct": -25.1,
+    "typical_error_pct": 22.3,
+    "price_range": [
+      1041.2,
+      2304.81
+    ],
+    "range_basis": "80% split-conformal range from validation errors",
+    "origin_date": "2025-12-13",
+    "horizon_days": 13,
+    "shrink_weight": 0.8,
+    "groups": [
+      {
+        "group": "seasonal",
+        "title": "Seasonal pattern",
+        "share_pct": 48.7,
+        "shap_log": -0.144,
+        "evidence_reading": "up",
+        "evidence_vs_push": "opposite",
+        "pushed": "lower",
+        "minor": false,
+        "evidence": "In 2 earlier years, Cauliflower prices changed by +17.8% on average over the 13 days after a December start.",
+        "evidence_available": true
+      },
+      {
+        "group": "other",
+        "title": "Other model factors",
+        "share_pct": 27.8,
+        "shap_log": -0.0822,
+        "evidence_reading": null,
+        "evidence_vs_push": null,
+        "pushed": "lower",
+        "minor": false,
+        "evidence": null,
+        "evidence_available": false
+      },
+      {
+        "group": "last_year",
+        "title": "Compared with last year",
+        "share_pct": 19.0,
+        "shap_log": -0.0563,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "lower",
+        "minor": false,
+        "evidence": "The price was 233% above the same date last year.",
+        "evidence_available": true
+      },
+      {
+        "group": "recent_trend",
+        "title": "Recent trend",
+        "share_pct": 2.6,
+        "shap_log": -0.0077,
+        "evidence_reading": "down",
+        "evidence_vs_push": "agrees",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "The price fell 20% over the last 30 days and rose 33% over the last 90 days.",
+        "evidence_available": true
+      },
+      {
+        "group": "supply",
+        "title": "Supply (arrivals)",
+        "share_pct": 1.1,
+        "shap_log": -0.0034,
+        "evidence_reading": "up",
+        "evidence_vs_push": "opposite",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "Arrivals over the last 30 days were 38% below the usual December level of earlier years.",
+        "evidence_available": true
+      },
+      {
+        "group": "market_premium",
+        "title": "Market premium",
+        "share_pct": 0.7,
+        "shap_log": -0.002,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "This market's price was about the same as the Maharashtra median for Cauliflower on that date (5% above on average over the last 30 days).",
+        "evidence_available": true
+      }
+    ],
+    "base_drift_log": 0.0067,
+    "confidence": {
+      "basis": "backtest on unseen dates, Cauliflower, 8-14 days ahead, n=2406",
+      "text": "In backtests on unseen dates, Cauliflower forecasts 8-14 days ahead missed by about ₹468 per quintal (25%) on average and were 16% more accurate than simply keeping the latest price. When the model gave a clear direction it was right 91% of the time."
+    },
+    "notes": [
+      "Contributions describe what the model did with each input; they show association in 2023–2025 data, not proven causes."
+    ],
+    "reconstruction_error": 0.0,
+    "series": {
+      "market": "Pune(Manjri)",
+      "variety": "Other",
+      "crop": "Cauliflower"
+    },
+    "backtest_outcome": {
+      "actual_price_on_target_date": 700.0,
+      "target_date": "2025-12-26",
+      "note": "known only because this is a historical backtest case"
+    }
+  },
+  {
+    "headline": "The model expects Potato's price to rise by about 17% over 32 days.",
+    "direction": "rise",
+    "why_no_direction": null,
+    "start_price": 700.0,
+    "predicted_price": 819.13,
+    "predicted_change_pct": 17.02,
+    "typical_error_pct": 10.9,
+    "price_range": [
+      639.97,
+      970.82
+    ],
+    "range_basis": "80% split-conformal range from validation errors",
+    "origin_date": "2025-08-13",
+    "horizon_days": 32,
+    "shrink_weight": 0.2,
+    "groups": [
+      {
+        "group": "other",
+        "title": "Other model factors",
+        "share_pct": 35.4,
+        "shap_log": 0.0541,
+        "evidence_reading": null,
+        "evidence_vs_push": null,
+        "pushed": "higher",
+        "minor": false,
+        "evidence": null,
+        "evidence_available": false
+      },
+      {
+        "group": "recent_trend",
+        "title": "Recent trend",
+        "share_pct": 28.3,
+        "shap_log": 0.0433,
+        "evidence_reading": "down",
+        "evidence_vs_push": "opposite",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "The price fell 63% over the last 30 days and fell 63% over the last 90 days.",
+        "evidence_available": true
+      },
+      {
+        "group": "market_premium",
+        "title": "Market premium",
+        "share_pct": 16.2,
+        "shap_log": 0.0248,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "This market's price was 50% below the Maharashtra median for Potato on that date (5% above on average over the last 30 days).",
+        "evidence_available": true
+      },
+      {
+        "group": "seasonal",
+        "title": "Seasonal pattern",
+        "share_pct": 13.3,
+        "shap_log": 0.0204,
+        "evidence_reading": "down",
+        "evidence_vs_push": "opposite",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "In 2 earlier years, Potato prices changed by -2.2% on average over the 32 days after an August start.",
+        "evidence_available": true
+      },
+      {
+        "group": "last_year",
+        "title": "Compared with last year",
+        "share_pct": 5.4,
+        "shap_log": 0.0083,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": true,
+        "evidence": "The price was 73% below the same date last year.",
+        "evidence_available": true
+      },
+      {
+        "group": "supply",
+        "title": "Supply (arrivals)",
+        "share_pct": 1.4,
+        "shap_log": 0.0022,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": true,
+        "evidence": "Arrivals over the last 30 days were close to the usual August level of earlier years.",
+        "evidence_available": true
+      }
+    ],
+    "base_drift_log": 0.0041,
+    "confidence": {
+      "basis": "backtest on unseen dates, Potato, 31-60 days ahead, n=6669",
+      "text": "In backtests on unseen dates, Potato forecasts 31-60 days ahead missed by about ₹198 per quintal (13%) on average and were 5% more accurate than simply keeping the latest price. When the model gave a clear direction it was right 100% of the time."
+    },
+    "notes": [
+      "Contributions describe what the model did with each input; they show association in 2023–2025 data, not proven causes."
+    ],
+    "reconstruction_error": 0.0,
+    "series": {
+      "market": "APMC Ramtek",
+      "variety": "Local",
+      "crop": "Potato"
+    },
+    "backtest_outcome": {
+      "actual_price_on_target_date": 1400.0,
+      "target_date": "2025-09-14",
+      "note": "known only because this is a historical backtest case"
+    }
+  },
+  {
+    "headline": "No clear direction for Onion's price over the next 12 days.",
+    "direction": "no_clear_direction",
+    "why_no_direction": "The expected change (+2.5%) is smaller than the typical error of past forecasts (about 11%), so the price may move either way.",
+    "start_price": 950.0,
+    "predicted_price": 973.44,
+    "predicted_change_pct": 2.47,
+    "typical_error_pct": 11.0,
+    "price_range": [
+      736.91,
+      1164.29
+    ],
+    "range_basis": "80% split-conformal range from validation errors",
+    "origin_date": "2025-11-24",
+    "horizon_days": 12,
+    "shrink_weight": 0.3,
+    "groups": [
+      {
+        "group": "other",
+        "title": "Other model factors",
+        "share_pct": 61.3,
+        "shap_log": 0.0262,
+        "evidence_reading": null,
+        "evidence_vs_push": null,
+        "pushed": "higher",
+        "minor": false,
+        "evidence": null,
+        "evidence_available": false
+      },
+      {
+        "group": "last_year",
+        "title": "Compared with last year",
+        "share_pct": 14.5,
+        "shap_log": 0.0062,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "The price was 73% below the same date last year.",
+        "evidence_available": true
+      },
+      {
+        "group": "seasonal",
+        "title": "Seasonal pattern",
+        "share_pct": 13.9,
+        "shap_log": -0.0059,
+        "evidence_reading": "down",
+        "evidence_vs_push": "agrees",
+        "pushed": "lower",
+        "minor": false,
+        "evidence": "In 2 earlier years, Onion prices changed by -3.3% on average over the 12 days after a November start.",
+        "evidence_available": true
+      },
+      {
+        "group": "recent_trend",
+        "title": "Recent trend",
+        "share_pct": 4.2,
+        "shap_log": -0.0018,
+        "evidence_reading": "up",
+        "evidence_vs_push": "opposite",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "The price rose 19% over the last 30 days and fell 24% over the last 90 days.",
+        "evidence_available": true
+      },
+      {
+        "group": "supply",
+        "title": "Supply (arrivals)",
+        "share_pct": 3.4,
+        "shap_log": -0.0015,
+        "evidence_reading": "down",
+        "evidence_vs_push": "agrees",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "Arrivals over the last 30 days were 70% above the usual November level of earlier years.",
+        "evidence_available": true
+      },
+      {
+        "group": "market_premium",
+        "title": "Market premium",
+        "share_pct": 2.8,
+        "shap_log": -0.0012,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "This market's price was 10% below the Maharashtra median for Onion on that date (21% below on average over the last 30 days).",
+        "evidence_available": true
+      }
+    ],
+    "base_drift_log": 0.0023,
+    "confidence": {
+      "basis": "backtest on unseen dates, Onion, 8-14 days ahead, n=3629",
+      "text": "In backtests on unseen dates, Onion forecasts 8-14 days ahead missed by about ₹184 per quintal (15%) on average and were no better than simply keeping the latest price. When the model gave a clear direction it was right 80% of the time."
+    },
+    "notes": [
+      "Contributions describe what the model did with each input; they show association in 2023–2025 data, not proven causes."
+    ],
+    "reconstruction_error": 0.0,
+    "series": {
+      "market": "Pune(Moshi)",
+      "variety": "Local",
+      "crop": "Onion"
+    },
+    "backtest_outcome": {
+      "actual_price_on_target_date": 750.0,
+      "target_date": "2025-12-06",
+      "note": "known only because this is a historical backtest case"
+    }
+  },
+  {
+    "headline": "No clear direction for Wheat's price over the next 60 days.",
+    "direction": "no_clear_direction",
+    "why_no_direction": "The expected change (+1.7%) is smaller than the typical error of past forecasts (about 4%), so the price may move either way.",
+    "start_price": 2500.0,
+    "predicted_price": 2542.04,
+    "predicted_change_pct": 1.68,
+    "typical_error_pct": 3.6,
+    "price_range": [
+      2292.41,
+      2661.16
+    ],
+    "range_basis": "80% split-conformal range from validation errors",
+    "origin_date": "2025-10-08",
+    "horizon_days": 60,
+    "shrink_weight": 1.0,
+    "groups": [
+      {
+        "group": "other",
+        "title": "Other model factors",
+        "share_pct": 42.4,
+        "shap_log": -0.0314,
+        "evidence_reading": null,
+        "evidence_vs_push": null,
+        "pushed": "lower",
+        "minor": false,
+        "evidence": null,
+        "evidence_available": false
+      },
+      {
+        "group": "recent_trend",
+        "title": "Recent trend",
+        "share_pct": 29.3,
+        "shap_log": 0.0217,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "The price was about unchanged over the last 30 days and fell 4% over the last 90 days.",
+        "evidence_available": true
+      },
+      {
+        "group": "last_year",
+        "title": "Compared with last year",
+        "share_pct": 12.9,
+        "shap_log": 0.0096,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "higher",
+        "minor": false,
+        "evidence": "The price was 11% below the same date last year.",
+        "evidence_available": true
+      },
+      {
+        "group": "market_premium",
+        "title": "Market premium",
+        "share_pct": 6.5,
+        "shap_log": -0.0048,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "This market's price was 2% below the Maharashtra median for Wheat on that date (2% below on average over the last 30 days).",
+        "evidence_available": true
+      },
+      {
+        "group": "seasonal",
+        "title": "Seasonal pattern",
+        "share_pct": 6.1,
+        "shap_log": 0.0045,
+        "evidence_reading": "up",
+        "evidence_vs_push": "agrees",
+        "pushed": "higher",
+        "minor": true,
+        "evidence": "In 2 earlier years, Wheat prices changed by +3.6% on average over the 60 days after an October start.",
+        "evidence_available": true
+      },
+      {
+        "group": "supply",
+        "title": "Supply (arrivals)",
+        "share_pct": 2.7,
+        "shap_log": -0.002,
+        "evidence_reading": "up",
+        "evidence_vs_push": "opposite",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "Arrivals over the last 30 days were 18% below the usual October level of earlier years.",
+        "evidence_available": true
+      }
+    ],
+    "base_drift_log": 0.0191,
+    "confidence": {
+      "basis": "backtest on unseen dates, Wheat, 31-60 days ahead, n=11630",
+      "text": "In backtests on unseen dates, Wheat forecasts 31-60 days ahead missed by about ₹106 per quintal (4%) on average and were no better than simply keeping the latest price. When the model gave a clear direction it was right 93% of the time."
+    },
+    "notes": [
+      "Contributions describe what the model did with each input; they show association in 2023–2025 data, not proven causes."
+    ],
+    "reconstruction_error": 0.0,
+    "series": {
+      "market": "Omchatinya Multi State Agro Purpose Co-Op Society, Dist Ahilyanagar",
+      "variety": "Other",
+      "crop": "Wheat"
+    },
+    "backtest_outcome": {
+      "actual_price_on_target_date": 2500.0,
+      "target_date": "2025-12-07",
+      "note": "known only because this is a historical backtest case"
+    }
+  },
+  {
+    "headline": "The model expects Cabbage's price to fall by about 29% over 28 days.",
+    "direction": "fall",
+    "why_no_direction": null,
+    "start_price": 1500.0,
+    "predicted_price": 1065.98,
+    "predicted_change_pct": -28.93,
+    "typical_error_pct": 23.2,
+    "price_range": [
+      671.91,
+      1531.99
+    ],
+    "range_basis": "80% split-conformal range from validation errors",
+    "origin_date": "2025-11-22",
+    "horizon_days": 28,
+    "shrink_weight": 0.6,
+    "groups": [
+      {
+        "group": "seasonal",
+        "title": "Seasonal pattern",
+        "share_pct": 47.2,
+        "shap_log": -0.1663,
+        "evidence_reading": "down",
+        "evidence_vs_push": "agrees",
+        "pushed": "lower",
+        "minor": false,
+        "evidence": "In 2 earlier years, Cabbage prices changed by -15.2% on average over the 28 days after a November start.",
+        "evidence_available": true
+      },
+      {
+        "group": "other",
+        "title": "Other model factors",
+        "share_pct": 22.1,
+        "shap_log": -0.078,
+        "evidence_reading": null,
+        "evidence_vs_push": null,
+        "pushed": "lower",
+        "minor": false,
+        "evidence": null,
+        "evidence_available": false
+      },
+      {
+        "group": "last_year",
+        "title": "Compared with last year",
+        "share_pct": 15.6,
+        "shap_log": -0.0549,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "lower",
+        "minor": false,
+        "evidence": "The price was 36% above the same date last year.",
+        "evidence_available": true
+      },
+      {
+        "group": "recent_trend",
+        "title": "Recent trend",
+        "share_pct": 13.2,
+        "shap_log": -0.0466,
+        "evidence_reading": "up",
+        "evidence_vs_push": "opposite",
+        "pushed": "lower",
+        "minor": false,
+        "evidence": "The price rose 15% over the last 30 days and rose 150% over the last 90 days.",
+        "evidence_available": true
+      },
+      {
+        "group": "supply",
+        "title": "Supply (arrivals)",
+        "share_pct": 1.7,
+        "shap_log": -0.006,
+        "evidence_reading": "up",
+        "evidence_vs_push": "opposite",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "Arrivals over the last 30 days were 6% below the usual November level of earlier years.",
+        "evidence_available": true
+      },
+      {
+        "group": "market_premium",
+        "title": "Market premium",
+        "share_pct": 0.2,
+        "shap_log": -0.0006,
+        "evidence_reading": null,
+        "evidence_vs_push": "weak",
+        "pushed": "lower",
+        "minor": true,
+        "evidence": "This market's price was 8% below the Maharashtra median for Cabbage on that date (2% above on average over the last 30 days).",
+        "evidence_available": true
+      }
+    ],
+    "base_drift_log": 0.0108,
+    "confidence": {
+      "basis": "backtest on unseen dates, Cabbage, 15-30 days ahead, n=5492",
+      "text": "In backtests on unseen dates, Cabbage forecasts 15-30 days ahead missed by about ₹297 per quintal (25%) on average and were 8% more accurate than simply keeping the latest price. When the model gave a clear direction it was right 85% of the time."
+    },
+    "notes": [
+      "Contributions describe what the model did with each input; they show association in 2023–2025 data, not proven causes."
+    ],
+    "reconstruction_error": 0.0,
+    "series": {
+      "market": "Pune(Manjri)",
+      "variety": "Other",
+      "crop": "Cabbage"
+    },
+    "backtest_outcome": {
+      "actual_price_on_target_date": 1000.0,
+      "target_date": "2025-12-20",
+      "note": "known only because this is a historical backtest case"
+    }
+  }
+]

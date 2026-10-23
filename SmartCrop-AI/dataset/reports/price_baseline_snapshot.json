@@ -1,0 +1,324 @@
+{
+  "created": "2026-10-23T05:25:47+00:00",
+  "purpose": "Phase 0 baseline: what the production price model reported before any change.",
+  "model_version": "202610170304",
+  "trained_at": "2026-10-17T03:04:58+00:00",
+  "data_start": "2023-01-01",
+  "data_end": "2025-12-31",
+  "inflation_annual_assumption": 0.05,
+  "horizon_to_model": "1-12: xgb_rate, 13-35: rf_rate, 36-60: rf_plain",
+  "reported_cv_mean_selected": {
+    "all": {
+      "MAE": 399.9511,
+      "RMSE": 668.9288,
+      "R2": 0.5632,
+      "MAPE_pct": 24.087,
+      "R2_change": 0.1402,
+      "direction_accuracy_pct": 54.9214
+    },
+    "1": {
+      "MAE": 129.2891,
+      "RMSE": 277.5746,
+      "R2": 0.9224,
+      "MAPE_pct": 7.7572,
+      "R2_change": 0.1156,
+      "direction_accuracy_pct": 32.3629
+    },
+    "7": {
+      "MAE": 266.1533,
+      "RMSE": 462.8639,
+      "R2": 0.7878,
+      "MAPE_pct": 15.7506,
+      "R2_change": 0.1875,
+      "direction_accuracy_pct": 51.5007
+    },
+    "14": {
+      "MAE": 341.6872,
+      "RMSE": 579.3407,
+      "R2": 0.6631,
+      "MAPE_pct": 20.3457,
+      "R2_change": 0.1091,
+      "direction_accuracy_pct": 52.086
+    },
+    "21": {
+      "MAE": 391.1683,
+      "RMSE": 648.7011,
+      "R2": 0.5864,
+      "MAPE_pct": 23.336,
+      "R2_change": 0.0792,
+      "direction_accuracy_pct": 53.8079
+    },
+    "30": {
+      "MAE": 433.4509,
+      "RMSE": 701.4965,
+      "R2": 0.5144,
+      "MAPE_pct": 26.2754,
+      "R2_change": 0.0667,
+      "direction_accuracy_pct": 55.8192
+    },
+    "45": {
+      "MAE": 493.0387,
+      "RMSE": 782.2199,
+      "R2": 0.417,
+      "MAPE_pct": 29.2453,
+      "R2_change": 0.1326,
+      "direction_accuracy_pct": 58.2334
+    },
+    "60": {
+      "MAE": 512.6761,
+      "RMSE": 807.7002,
+      "R2": 0.3877,
+      "MAPE_pct": 30.5436,
+      "R2_change": 0.177,
+      "direction_accuracy_pct": 59.975
+    }
+  },
+  "reported_cv_mean_no_change": {
+    "all": {
+      "MAE": 406.5341,
+      "RMSE": 709.5225,
+      "R2": 0.5051,
+      "MAPE_pct": 23.9175,
+      "R2_change": -0.0321,
+      "direction_accuracy_pct": 13.8154
+    },
+    "1": {
+      "MAE": 123.4619,
+      "RMSE": 295.1442,
+      "R2": 0.9122,
+      "MAPE_pct": 7.4568,
+      "R2_change": -0.0002,
+      "direction_accuracy_pct": 49.8848
+    },
+    "7": {
+      "MAE": 278.2163,
+      "RMSE": 507.619,
+      "R2": 0.7441,
+      "MAPE_pct": 16.487,
+      "R2_change": -0.008,
+      "direction_accuracy_pct": 18.6667
+    },
+    "14": {
+      "MAE": 351.3227,
+      "RMSE": 618.8062,
+      "R2": 0.6132,
+      "MAPE_pct": 20.6082,
+      "R2_change": -0.0217,
+      "direction_accuracy_pct": 14.8113
+    },
+    "21": {
+      "MAE": 389.9581,
+      "RMSE": 675.8992,
+      "R2": 0.5456,
+      "MAPE_pct": 22.877,
+      "R2_change": -0.0354,
+      "direction_accuracy_pct": 13.1194
+    },
+    "30": {
+      "MAE": 427.2662,
+      "RMSE": 719.67,
+      "R2": 0.481,
+      "MAPE_pct": 25.5525,
+      "R2_change": -0.045,
+      "direction_accuracy_pct": 11.4615
+    },
+    "45": {
+      "MAE": 499.2968,
+      "RMSE": 830.7268,
+      "R2": 0.3373,
+      "MAPE_pct": 28.9459,
+      "R2_change": -0.058,
+      "direction_accuracy_pct": 9.6877
+    },
+    "60": {
+      "MAE": 524.4457,
+      "RMSE": 842.635,
+      "R2": 0.3236,
+      "MAPE_pct": 30.171,
+      "R2_change": -0.0543,
+      "direction_accuracy_pct": 8.653
+    }
+  },
+  "reported_validated_horizons": {
+    "Brinjal": "2-60",
+    "Cabbage": "2-60",
+    "Cauliflower": "2-60",
+    "Onion": "none",
+    "Potato": "2-60",
+    "Tomato": "2-8",
+    "Wheat": "3-60"
+  },
+  "reported_80pct_interval_pooled": {
+    "1": {
+      "q10": -0.1762,
+      "q90": 0.1735,
+      "median_abs": 0.0519
+    },
+    "7": {
+      "q10": -0.255,
+      "q90": 0.2486,
+      "median_abs": 0.0924
+    },
+    "14": {
+      "q10": -0.3272,
+      "q90": 0.3202,
+      "median_abs": 0.1233
+    },
+    "30": {
+      "q10": -0.4297,
+      "q90": 0.388,
+      "median_abs": 0.1677
+    },
+    "60": {
+      "q10": -0.5062,
+      "q90": 0.4391,
+      "median_abs": 0.2042
+    }
+  },
+  "reported_global_shap_importance_top10": {
+    "log_price": 0.07,
+    "commodity_code": 0.0281,
+    "doy_cos": 0.0225,
+    "target_doy_cos": 0.0198,
+    "lag_30_change": 0.0149,
+    "roll_mean_30_gap": 0.0142,
+    "state_price_gap": 0.014,
+    "target_doy_sin": 0.012,
+    "doy_sin": 0.0111,
+    "horizon_days": 0.011
+  },
+  "model_files": {
+    "cv_fold_metrics.csv": {
+      "sha256": "ddf53ab129a415b8d586e4916fd21a80fc00fed2bb7dcbebf2a264e318108911",
+      "bytes": 31407
+    },
+    "cv_per_crop_metrics.csv": {
+      "sha256": "f56ae0c5718f8aa0c51372a018a904548a81aa947998b37b099815cb2d4223e7",
+      "bytes": 40463
+    },
+    "explanation_calibration.json": {
+      "sha256": "c84fa284f1794fa243187598dc2e2458a75e30b68d3ec141b159d2f682da440e",
+      "bytes": 1483
+    },
+    "metadata.json": {
+      "sha256": "6e04d2d06aceffb2358352a697f5f2300a690dfb7fd8b52e93796af93ec05c55",
+      "bytes": 87709
+    },
+    "price_model_rf_plain.joblib": {
+      "sha256": "d17833f5931889747851684e37ab983783c4a043a26432c2721785d60bf7b3de",
+      "bytes": 13120109
+    },
+    "price_model_rf_rate.joblib": {
+      "sha256": "46a83aa5c1ea126ee21e71a0c9b9f61b3ba864bde42f4e4a5e1a1ae3b7f8b009",
+      "bytes": 14210513
+    },
+    "price_model_xgb_rate.joblib": {
+      "sha256": "84e416e9d6e08c9be02b2068962169118b3a2b7fcce82caa84e02432e519cfe5",
+      "bytes": 840907
+    },
+    "price_preprocessing.joblib": {
+      "sha256": "87de227377c7e8e2c7a4d65290d517e5856dcbc71d61f1874b7539ea0b5cf07b",
+      "bytes": 7183
+    }
+  },
+  "sample_forecasts": [
+    {
+      "crop": "Brinjal",
+      "as_of": "2026-10-23",
+      "target_date": "2026-11-22",
+      "start_price": 3150.0,
+      "predicted": 3309.16,
+      "lower": 2207.13,
+      "upper": 6152.88,
+      "direction": "Stable",
+      "change_pct": 5.05,
+      "method": "trained_model",
+      "years_shifted": 1,
+      "beats_baseline": true
+    },
+    {
+      "crop": "Cabbage",
+      "as_of": "2026-10-23",
+      "target_date": "2026-11-22",
+      "start_price": 1365.0,
+      "predicted": 1412.31,
+      "lower": 840.19,
+      "upper": 2054.3,
+      "direction": "Stable",
+      "change_pct": 3.47,
+      "method": "trained_model",
+      "years_shifted": 1,
+      "beats_baseline": true
+    },
+    {
+      "crop": "Cauliflower",
+      "as_of": "2026-10-23",
+      "target_date": "2026-11-22",
+      "start_price": 1942.5,
+      "predicted": 1892.06,
+      "lower": 1172.91,
+      "upper": 3263.37,
+      "direction": "Stable",
+      "change_pct": -2.6,
+      "method": "trained_model",
+      "years_shifted": 1,
+      "beats_baseline": true
+    },
+    {
+      "crop": "Onion",
+      "as_of": "2026-10-23",
+      "target_date": "2026-11-22",
+      "start_price": 1050.0,
+      "predicted": 1137.65,
+      "lower": 740.54,
+      "upper": 1459.56,
+      "direction": "Stable",
+      "change_pct": 8.35,
+      "method": "trained_model",
+      "years_shifted": 1,
+      "beats_baseline": false
+    },
+    {
+      "crop": "Potato",
+      "as_of": "2026-10-23",
+      "target_date": "2026-11-22",
+      "start_price": 1680.0,
+      "predicted": 1702.74,
+      "lower": 1357.27,
+      "upper": 1943.73,
+      "direction": "Stable",
+      "change_pct": 1.35,
+      "method": "trained_model",
+      "years_shifted": 1,
+      "beats_baseline": true
+    },
+    {
+      "crop": "Tomato",
+      "as_of": "2026-10-23",
+      "target_date": "2026-11-22",
+      "start_price": 1575.0,
+      "predicted": 1880.04,
+      "lower": 872.2,
+      "upper": 3244.11,
+      "direction": "Stable",
+      "change_pct": 19.37,
+      "method": "trained_model",
+      "years_shifted": 1,
+      "beats_baseline": false
+    },
+    {
+      "crop": "Wheat",
+      "as_of": "2026-10-23",
+      "target_date": "2026-11-22",
+      "start_price": 2640.75,
+      "predicted": 2688.6,
+      "lower": 2495.75,
+      "upper": 2828.87,
+      "direction": "Stable",
+      "change_pct": 1.81,
+      "method": "trained_model",
+      "years_shifted": 1,
+      "beats_baseline": true
+    }
+  ]
+}

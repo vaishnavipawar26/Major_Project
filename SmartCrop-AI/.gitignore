@@ -77,3 +77,7 @@ desktop.ini
 .vscode/
 !.vscode/extensions.json
 .idea/
+
+# ---------------------------------------------------------------- experimental candidate models (kept on disk, not committed)
+backend/trained_models/candidate_v2/
+backend/trained_models/candidate_v3/

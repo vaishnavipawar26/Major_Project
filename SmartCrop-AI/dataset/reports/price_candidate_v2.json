@@ -1,0 +1,2989 @@
+{
+  "created": "2026-10-23T06:24:34+00:00",
+  "smoke_run": false,
+  "settings": {
+    "train_pairs": 400000,
+    "alpha": 0.2,
+    "w_grid": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "min_cell": 200,
+    "inflation_level": 1.05,
+    "production_model_version": "202610170304"
+  },
+  "inventory": {
+    "raw_columns": [
+      "Date",
+      "State",
+      "Market",
+      "Commodity",
+      "Variety",
+      "Arrivals",
+      "Min_Price",
+      "Max_Price",
+      "Modal_Price"
+    ],
+    "arrivals_by_crop": [
+      {
+        "crop": "Brinjal",
+        "rows": 29148,
+        "markets": 56,
+        "arrivals_missing_pct": 0.0,
+        "arrivals_zero_pct": 0.0,
+        "median_arrivals": 3.0,
+        "median_reporting_days_per_market": 576.0
+      },
+      {
+        "crop": "Cabbage",
+        "rows": 27218,
+        "markets": 50,
+        "arrivals_missing_pct": 0.0,
+        "arrivals_zero_pct": 0.0,
+        "median_arrivals": 4.2,
+        "median_reporting_days_per_market": 686.0
+      },
+      {
+        "crop": "Cauliflower",
+        "rows": 26663,
+        "markets": 50,
+        "arrivals_missing_pct": 0.0,
+        "arrivals_zero_pct": 0.0,
+        "median_arrivals": 5.0,
+        "median_reporting_days_per_market": 657.0
+      },
+      {
+        "crop": "Onion",
+        "rows": 49380,
+        "markets": 116,
+        "arrivals_missing_pct": 0.0,
+        "arrivals_zero_pct": 0.0,
+        "median_arrivals": 166.0,
+        "median_reporting_days_per_market": 375.5
+      },
+      {
+        "crop": "Potato",
+        "rows": 21211,
+        "markets": 44,
+        "arrivals_missing_pct": 0.0,
+        "arrivals_zero_pct": 0.0,
+        "median_arrivals": 23.5,
+        "median_reporting_days_per_market": 508.0
+      },
+      {
+        "crop": "Tomato",
+        "rows": 31832,
+        "markets": 61,
+        "arrivals_missing_pct": 0.0,
+        "arrivals_zero_pct": 0.0,
+        "median_arrivals": 8.9,
+        "median_reporting_days_per_market": 528.0
+      },
+      {
+        "crop": "Wheat",
+        "rows": 58698,
+        "markets": 237,
+        "arrivals_missing_pct": 0.0,
+        "arrivals_zero_pct": 0.0,
+        "median_arrivals": 4.0,
+        "median_reporting_days_per_market": 154.0
+      }
+    ],
+    "total_days": 1096,
+    "market_location_status": {
+      "mapped": 166,
+      "not_found": 121,
+      "ambiguous": 10
+    },
+    "location_has_district_column": false,
+    "city_market_map": {
+      "rows": 64,
+      "cities": 11,
+      "markets": 64
+    },
+    "arrivals_unit_in_file": "not stated"
+  },
+  "leakage_row_features": [
+    {
+      "feature": "arr_vs_month_prior",
+      "cut": "2024-06-30",
+      "values_compared": 314539,
+      "mismatches": 0,
+      "non_missing_share_pct": 18.6393
+    },
+    {
+      "feature": "market_premium_30d",
+      "cut": "2024-06-30",
+      "values_compared": 314539,
+      "mismatches": 0,
+      "non_missing_share_pct": 75.5312
+    },
+    {
+      "feature": "lag_90_change",
+      "cut": "2024-06-30",
+      "values_compared": 314539,
+      "mismatches": 0,
+      "non_missing_share_pct": 49.887
+    },
+    {
+      "feature": "yoy_gap",
+      "cut": "2024-06-30",
+      "values_compared": 314539,
+      "mismatches": 0,
+      "non_missing_share_pct": 19.21
+    },
+    {
+      "feature": "arr_vs_month_prior",
+      "cut": "2025-03-31",
+      "values_compared": 484541,
+      "mismatches": 0,
+      "non_missing_share_pct": 31.2991
+    },
+    {
+      "feature": "market_premium_30d",
+      "cut": "2025-03-31",
+      "values_compared": 484541,
+      "mismatches": 0,
+      "non_missing_share_pct": 74.7016
+    },
+    {
+      "feature": "lag_90_change",
+      "cut": "2025-03-31",
+      "values_compared": 484541,
+      "mismatches": 0,
+      "non_missing_share_pct": 52.7974
+    },
+    {
+      "feature": "yoy_gap",
+      "cut": "2025-03-31",
+      "values_compared": 484541,
+      "mismatches": 0,
+      "non_missing_share_pct": 32.3333
+    }
+  ],
+  "leakage_season": [
+    {
+      "feature": "season_change",
+      "check": "scramble every label from 2024 onward; table for 2024 unchanged",
+      "passed": true
+    },
+    {
+      "feature": "season_change",
+      "check": "scramble every label from 2025 onward; table for 2025 unchanged",
+      "passed": true
+    },
+    {
+      "feature": "season_change",
+      "check": "year 2023 has no earlier year -> all missing",
+      "passed": true
+    }
+  ],
+  "real_origin": {
+    "n_validation": 149444,
+    "n_test": 149426,
+    "test_overall": [
+      {
+        "method": "no_change",
+        "n": 149426,
+        "MAE": 464.8727,
+        "WAPE_pct": 23.3647,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": null
+      },
+      {
+        "method": "v1_refit (production features)",
+        "n": 149426,
+        "MAE": 444.063,
+        "WAPE_pct": 22.3188,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 62.7547
+      },
+      {
+        "method": "v1_shrunk",
+        "n": 149426,
+        "MAE": 429.1524,
+        "WAPE_pct": 21.5693,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 62.7547
+      },
+      {
+        "method": "v2_raw (new features)",
+        "n": 149426,
+        "MAE": 439.8032,
+        "WAPE_pct": 22.1047,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 63.1455
+      },
+      {
+        "method": "v2_shrunk (CANDIDATE)",
+        "n": 149426,
+        "MAE": 419.0092,
+        "WAPE_pct": 21.0595,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 60.8954,
+        "direction_acc_all_calls_pct": 63.2888,
+        "direction_acc_clear_calls_pct": 88.4049,
+        "clear_call_rate_pct": 8.5614
+      }
+    ],
+    "test_by_band": {
+      "1-7": [
+        {
+          "method": "no_change",
+          "n": 21455,
+          "MAE": 255.9599,
+          "WAPE_pct": 12.7909,
+          "n_meaningful": 11659,
+          "up_share_of_meaningful_pct": 48.2203,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 21455,
+          "MAE": 245.8783,
+          "WAPE_pct": 12.2871,
+          "n_meaningful": 11659,
+          "up_share_of_meaningful_pct": 48.2203,
+          "direction_acc_pct": 64.7654
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 21455,
+          "MAE": 244.0945,
+          "WAPE_pct": 12.198,
+          "n_meaningful": 11659,
+          "up_share_of_meaningful_pct": 48.2203,
+          "direction_acc_pct": 64.7654
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 21455,
+          "MAE": 251.0511,
+          "WAPE_pct": 12.5456,
+          "n_meaningful": 11659,
+          "up_share_of_meaningful_pct": 48.2203,
+          "direction_acc_pct": 62.1666
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 21455,
+          "MAE": 245.971,
+          "WAPE_pct": 12.2917,
+          "n_meaningful": 11659,
+          "up_share_of_meaningful_pct": 48.2203,
+          "direction_acc_pct": 62.1666,
+          "direction_acc_all_calls_pct": 62.1666,
+          "direction_acc_clear_calls_pct": 83.9344,
+          "clear_call_rate_pct": 7.863
+        }
+      ],
+      "8-14": [
+        {
+          "method": "no_change",
+          "n": 19707,
+          "MAE": 390.7623,
+          "WAPE_pct": 19.6575,
+          "n_meaningful": 13227,
+          "up_share_of_meaningful_pct": 46.458,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 19707,
+          "MAE": 371.6572,
+          "WAPE_pct": 18.6964,
+          "n_meaningful": 13227,
+          "up_share_of_meaningful_pct": 46.458,
+          "direction_acc_pct": 62.4027
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 19707,
+          "MAE": 364.586,
+          "WAPE_pct": 18.3407,
+          "n_meaningful": 13227,
+          "up_share_of_meaningful_pct": 46.458,
+          "direction_acc_pct": 62.4027
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 19707,
+          "MAE": 375.398,
+          "WAPE_pct": 18.8846,
+          "n_meaningful": 13227,
+          "up_share_of_meaningful_pct": 46.458,
+          "direction_acc_pct": 61.9188
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 19707,
+          "MAE": 360.9616,
+          "WAPE_pct": 18.1584,
+          "n_meaningful": 13227,
+          "up_share_of_meaningful_pct": 46.458,
+          "direction_acc_pct": 56.6871,
+          "direction_acc_all_calls_pct": 62.3068,
+          "direction_acc_clear_calls_pct": 86.1827,
+          "clear_call_rate_pct": 8.2762
+        }
+      ],
+      "15-30": [
+        {
+          "method": "no_change",
+          "n": 41826,
+          "MAE": 477.388,
+          "WAPE_pct": 24.0789,
+          "n_meaningful": 29802,
+          "up_share_of_meaningful_pct": 47.6747,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 41826,
+          "MAE": 461.377,
+          "WAPE_pct": 23.2713,
+          "n_meaningful": 29802,
+          "up_share_of_meaningful_pct": 47.6747,
+          "direction_acc_pct": 60.9758
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 41826,
+          "MAE": 445.7955,
+          "WAPE_pct": 22.4854,
+          "n_meaningful": 29802,
+          "up_share_of_meaningful_pct": 47.6747,
+          "direction_acc_pct": 60.9758
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 41826,
+          "MAE": 458.513,
+          "WAPE_pct": 23.1269,
+          "n_meaningful": 29802,
+          "up_share_of_meaningful_pct": 47.6747,
+          "direction_acc_pct": 61.5194
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 41826,
+          "MAE": 438.8644,
+          "WAPE_pct": 22.1358,
+          "n_meaningful": 29802,
+          "up_share_of_meaningful_pct": 47.6747,
+          "direction_acc_pct": 55.9593,
+          "direction_acc_all_calls_pct": 61.6593,
+          "direction_acc_clear_calls_pct": 87.8205,
+          "clear_call_rate_pct": 6.3979
+        }
+      ],
+      "31-60": [
+        {
+          "method": "no_change",
+          "n": 66438,
+          "MAE": 546.4412,
+          "WAPE_pct": 27.4469,
+          "n_meaningful": 49709,
+          "up_share_of_meaningful_pct": 51.9262,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 66438,
+          "MAE": 518.6405,
+          "WAPE_pct": 26.0505,
+          "n_meaningful": 49709,
+          "up_share_of_meaningful_pct": 51.9262,
+          "direction_acc_pct": 63.4432
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 66438,
+          "MAE": 497.5877,
+          "WAPE_pct": 24.9931,
+          "n_meaningful": 49709,
+          "up_share_of_meaningful_pct": 51.9262,
+          "direction_acc_pct": 63.4432
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 66438,
+          "MAE": 508.0826,
+          "WAPE_pct": 25.5202,
+          "n_meaningful": 49709,
+          "up_share_of_meaningful_pct": 51.9262,
+          "direction_acc_pct": 64.6764
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 66438,
+          "MAE": 479.6073,
+          "WAPE_pct": 24.09,
+          "n_meaningful": 49709,
+          "up_share_of_meaningful_pct": 51.9262,
+          "direction_acc_pct": 64.6764,
+          "direction_acc_all_calls_pct": 64.6764,
+          "direction_acc_clear_calls_pct": 90.0116,
+          "clear_call_rate_pct": 10.2336
+        }
+      ]
+    },
+    "test_by_crop": {
+      "Brinjal": [
+        {
+          "method": "no_change",
+          "n": 20144,
+          "MAE": 1143.0183,
+          "WAPE_pct": 35.8145,
+          "n_meaningful": 17149,
+          "up_share_of_meaningful_pct": 53.0352,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 20144,
+          "MAE": 1051.0725,
+          "WAPE_pct": 32.9336,
+          "n_meaningful": 17149,
+          "up_share_of_meaningful_pct": 53.0352,
+          "direction_acc_pct": 64.616
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 20144,
+          "MAE": 1050.538,
+          "WAPE_pct": 32.9168,
+          "n_meaningful": 17149,
+          "up_share_of_meaningful_pct": 53.0352,
+          "direction_acc_pct": 64.616
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 20144,
+          "MAE": 1008.1556,
+          "WAPE_pct": 31.5889,
+          "n_meaningful": 17149,
+          "up_share_of_meaningful_pct": 53.0352,
+          "direction_acc_pct": 67.8057
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 20144,
+          "MAE": 1007.2945,
+          "WAPE_pct": 31.5619,
+          "n_meaningful": 17149,
+          "up_share_of_meaningful_pct": 53.0352,
+          "direction_acc_pct": 67.8057,
+          "direction_acc_all_calls_pct": 67.8057,
+          "direction_acc_clear_calls_pct": 83.6756,
+          "clear_call_rate_pct": 26.112
+        }
+      ],
+      "Cabbage": [
+        {
+          "method": "no_change",
+          "n": 19493,
+          "MAE": 340.5252,
+          "WAPE_pct": 28.2828,
+          "n_meaningful": 16213,
+          "up_share_of_meaningful_pct": 51.6376,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 19493,
+          "MAE": 299.4656,
+          "WAPE_pct": 24.8725,
+          "n_meaningful": 16213,
+          "up_share_of_meaningful_pct": 51.6376,
+          "direction_acc_pct": 67.3102
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 19493,
+          "MAE": 299.2247,
+          "WAPE_pct": 24.8525,
+          "n_meaningful": 16213,
+          "up_share_of_meaningful_pct": 51.6376,
+          "direction_acc_pct": 67.3102
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 19493,
+          "MAE": 287.9125,
+          "WAPE_pct": 23.913,
+          "n_meaningful": 16213,
+          "up_share_of_meaningful_pct": 51.6376,
+          "direction_acc_pct": 70.1166
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 19493,
+          "MAE": 290.9413,
+          "WAPE_pct": 24.1645,
+          "n_meaningful": 16213,
+          "up_share_of_meaningful_pct": 51.6376,
+          "direction_acc_pct": 70.1166,
+          "direction_acc_all_calls_pct": 70.1166,
+          "direction_acc_clear_calls_pct": 91.4257,
+          "clear_call_rate_pct": 10.9373
+        }
+      ],
+      "Cauliflower": [
+        {
+          "method": "no_change",
+          "n": 18591,
+          "MAE": 615.8205,
+          "WAPE_pct": 32.5224,
+          "n_meaningful": 15860,
+          "up_share_of_meaningful_pct": 47.3266,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 18591,
+          "MAE": 496.1852,
+          "WAPE_pct": 26.2043,
+          "n_meaningful": 15860,
+          "up_share_of_meaningful_pct": 47.3266,
+          "direction_acc_pct": 72.7995
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 18591,
+          "MAE": 501.7745,
+          "WAPE_pct": 26.4994,
+          "n_meaningful": 15860,
+          "up_share_of_meaningful_pct": 47.3266,
+          "direction_acc_pct": 72.7995
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 18591,
+          "MAE": 480.0398,
+          "WAPE_pct": 25.3516,
+          "n_meaningful": 15860,
+          "up_share_of_meaningful_pct": 47.3266,
+          "direction_acc_pct": 73.575
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 18591,
+          "MAE": 486.8508,
+          "WAPE_pct": 25.7113,
+          "n_meaningful": 15860,
+          "up_share_of_meaningful_pct": 47.3266,
+          "direction_acc_pct": 73.575,
+          "direction_acc_all_calls_pct": 73.575,
+          "direction_acc_clear_calls_pct": 93.1105,
+          "clear_call_rate_pct": 11.1344
+        }
+      ],
+      "Onion": [
+        {
+          "method": "no_change",
+          "n": 27295,
+          "MAE": 189.3738,
+          "WAPE_pct": 15.1563,
+          "n_meaningful": 20005,
+          "up_share_of_meaningful_pct": 45.8035,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 27295,
+          "MAE": 298.2543,
+          "WAPE_pct": 23.8704,
+          "n_meaningful": 20005,
+          "up_share_of_meaningful_pct": 45.8035,
+          "direction_acc_pct": 47.7331
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 27295,
+          "MAE": 219.2288,
+          "WAPE_pct": 17.5457,
+          "n_meaningful": 20005,
+          "up_share_of_meaningful_pct": 45.8035,
+          "direction_acc_pct": 47.7331
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 27295,
+          "MAE": 318.127,
+          "WAPE_pct": 25.4609,
+          "n_meaningful": 20005,
+          "up_share_of_meaningful_pct": 45.8035,
+          "direction_acc_pct": 46.4034
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 27295,
+          "MAE": 207.9367,
+          "WAPE_pct": 16.642,
+          "n_meaningful": 20005,
+          "up_share_of_meaningful_pct": 45.8035,
+          "direction_acc_pct": 46.4034,
+          "direction_acc_all_calls_pct": 46.4034,
+          "direction_acc_clear_calls_pct": 84.3931,
+          "clear_call_rate_pct": 0.6924
+        }
+      ],
+      "Potato": [
+        {
+          "method": "no_change",
+          "n": 14724,
+          "MAE": 175.1154,
+          "WAPE_pct": 11.5483,
+          "n_meaningful": 9890,
+          "up_share_of_meaningful_pct": 44.2669,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 14724,
+          "MAE": 165.318,
+          "WAPE_pct": 10.9022,
+          "n_meaningful": 9890,
+          "up_share_of_meaningful_pct": 44.2669,
+          "direction_acc_pct": 63.4985
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 14724,
+          "MAE": 165.7001,
+          "WAPE_pct": 10.9274,
+          "n_meaningful": 9890,
+          "up_share_of_meaningful_pct": 44.2669,
+          "direction_acc_pct": 63.4985
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 14724,
+          "MAE": 177.7549,
+          "WAPE_pct": 11.7224,
+          "n_meaningful": 9890,
+          "up_share_of_meaningful_pct": 44.2669,
+          "direction_acc_pct": 61.3448
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 14724,
+          "MAE": 170.3988,
+          "WAPE_pct": 11.2372,
+          "n_meaningful": 9890,
+          "up_share_of_meaningful_pct": 44.2669,
+          "direction_acc_pct": 37.5935,
+          "direction_acc_all_calls_pct": 62.5715,
+          "direction_acc_clear_calls_pct": 94.5455,
+          "clear_call_rate_pct": 0.4143
+        }
+      ],
+      "Tomato": [
+        {
+          "method": "no_change",
+          "n": 22707,
+          "MAE": 806.9057,
+          "WAPE_pct": 38.4753,
+          "n_meaningful": 19716,
+          "up_share_of_meaningful_pct": 52.8251,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 22707,
+          "MAE": 756.1751,
+          "WAPE_pct": 36.0563,
+          "n_meaningful": 19716,
+          "up_share_of_meaningful_pct": 52.8251,
+          "direction_acc_pct": 63.2126
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 22707,
+          "MAE": 749.4377,
+          "WAPE_pct": 35.7351,
+          "n_meaningful": 19716,
+          "up_share_of_meaningful_pct": 52.8251,
+          "direction_acc_pct": 63.2126
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 22707,
+          "MAE": 757.8457,
+          "WAPE_pct": 36.136,
+          "n_meaningful": 19716,
+          "up_share_of_meaningful_pct": 52.8251,
+          "direction_acc_pct": 61.9903
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 22707,
+          "MAE": 750.9458,
+          "WAPE_pct": 35.807,
+          "n_meaningful": 19716,
+          "up_share_of_meaningful_pct": 52.8251,
+          "direction_acc_pct": 61.9903,
+          "direction_acc_all_calls_pct": 61.9903,
+          "direction_acc_clear_calls_pct": 92.9227,
+          "clear_call_rate_pct": 3.6553
+        }
+      ],
+      "Wheat": [
+        {
+          "method": "no_change",
+          "n": 26472,
+          "MAE": 86.233,
+          "WAPE_pct": 3.2476,
+          "n_meaningful": 5564,
+          "up_share_of_meaningful_pct": 51.3659,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 26472,
+          "MAE": 89.6883,
+          "WAPE_pct": 3.3778,
+          "n_meaningful": 5564,
+          "up_share_of_meaningful_pct": 51.3659,
+          "direction_acc_pct": 66.1754
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 26472,
+          "MAE": 89.2303,
+          "WAPE_pct": 3.3605,
+          "n_meaningful": 5564,
+          "up_share_of_meaningful_pct": 51.3659,
+          "direction_acc_pct": 66.1754
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 26472,
+          "MAE": 89.3057,
+          "WAPE_pct": 3.3634,
+          "n_meaningful": 5564,
+          "up_share_of_meaningful_pct": 51.3659,
+          "direction_acc_pct": 66.2293
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 26472,
+          "MAE": 89.1983,
+          "WAPE_pct": 3.3593,
+          "n_meaningful": 5564,
+          "up_share_of_meaningful_pct": 51.3659,
+          "direction_acc_pct": 66.2293,
+          "direction_acc_all_calls_pct": 66.2293,
+          "direction_acc_clear_calls_pct": 92.9254,
+          "clear_call_rate_pct": 8.5033
+        }
+      ]
+    },
+    "test_exact_horizon": {
+      "1": [
+        {
+          "method": "no_change",
+          "n": 3210,
+          "MAE": 147.8868,
+          "WAPE_pct": 7.3429,
+          "n_meaningful": 1105,
+          "up_share_of_meaningful_pct": 51.2217,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 3210,
+          "MAE": 152.466,
+          "WAPE_pct": 7.5703,
+          "n_meaningful": 1105,
+          "up_share_of_meaningful_pct": 51.2217,
+          "direction_acc_pct": 67.8733
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 3210,
+          "MAE": 150.6805,
+          "WAPE_pct": 7.4816,
+          "n_meaningful": 1105,
+          "up_share_of_meaningful_pct": 51.2217,
+          "direction_acc_pct": 67.8733
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 3210,
+          "MAE": 153.4471,
+          "WAPE_pct": 7.619,
+          "n_meaningful": 1105,
+          "up_share_of_meaningful_pct": 51.2217,
+          "direction_acc_pct": 64.4344
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 3210,
+          "MAE": 150.8998,
+          "WAPE_pct": 7.4925,
+          "n_meaningful": 1105,
+          "up_share_of_meaningful_pct": 51.2217,
+          "direction_acc_pct": 64.4344,
+          "direction_acc_all_calls_pct": 64.4344,
+          "direction_acc_clear_calls_pct": 90.9091,
+          "clear_call_rate_pct": 0.4984
+        }
+      ],
+      "7": [
+        {
+          "method": "no_change",
+          "n": 2986,
+          "MAE": 329.836,
+          "WAPE_pct": 16.5008,
+          "n_meaningful": 1934,
+          "up_share_of_meaningful_pct": 45.5016,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 2986,
+          "MAE": 315.4164,
+          "WAPE_pct": 15.7794,
+          "n_meaningful": 1934,
+          "up_share_of_meaningful_pct": 45.5016,
+          "direction_acc_pct": 61.789
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 2986,
+          "MAE": 310.4006,
+          "WAPE_pct": 15.5285,
+          "n_meaningful": 1934,
+          "up_share_of_meaningful_pct": 45.5016,
+          "direction_acc_pct": 61.789
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 2986,
+          "MAE": 323.832,
+          "WAPE_pct": 16.2004,
+          "n_meaningful": 1934,
+          "up_share_of_meaningful_pct": 45.5016,
+          "direction_acc_pct": 60.393
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 2986,
+          "MAE": 311.9594,
+          "WAPE_pct": 15.6065,
+          "n_meaningful": 1934,
+          "up_share_of_meaningful_pct": 45.5016,
+          "direction_acc_pct": 60.393,
+          "direction_acc_all_calls_pct": 60.393,
+          "direction_acc_clear_calls_pct": 81.2169,
+          "clear_call_rate_pct": 17.9169
+        }
+      ],
+      "14": [
+        {
+          "method": "no_change",
+          "n": 2682,
+          "MAE": 437.3619,
+          "WAPE_pct": 22.0266,
+          "n_meaningful": 1848,
+          "up_share_of_meaningful_pct": 46.4286,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 2682,
+          "MAE": 421.0121,
+          "WAPE_pct": 21.2032,
+          "n_meaningful": 1848,
+          "up_share_of_meaningful_pct": 46.4286,
+          "direction_acc_pct": 60.0108
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 2682,
+          "MAE": 413.7048,
+          "WAPE_pct": 20.8352,
+          "n_meaningful": 1848,
+          "up_share_of_meaningful_pct": 46.4286,
+          "direction_acc_pct": 60.0108
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 2682,
+          "MAE": 413.9867,
+          "WAPE_pct": 20.8494,
+          "n_meaningful": 1848,
+          "up_share_of_meaningful_pct": 46.4286,
+          "direction_acc_pct": 61.0931
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 2682,
+          "MAE": 406.503,
+          "WAPE_pct": 20.4725,
+          "n_meaningful": 1848,
+          "up_share_of_meaningful_pct": 46.4286,
+          "direction_acc_pct": 56.2229,
+          "direction_acc_all_calls_pct": 61.4066,
+          "direction_acc_clear_calls_pct": 89.4366,
+          "clear_call_rate_pct": 5.7793
+        }
+      ],
+      "30": [
+        {
+          "method": "no_change",
+          "n": 2507,
+          "MAE": 515.1705,
+          "WAPE_pct": 25.8119,
+          "n_meaningful": 1828,
+          "up_share_of_meaningful_pct": 49.8359,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 2507,
+          "MAE": 505.2001,
+          "WAPE_pct": 25.3123,
+          "n_meaningful": 1828,
+          "up_share_of_meaningful_pct": 49.8359,
+          "direction_acc_pct": 61.8162
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 2507,
+          "MAE": 478.596,
+          "WAPE_pct": 23.9794,
+          "n_meaningful": 1828,
+          "up_share_of_meaningful_pct": 49.8359,
+          "direction_acc_pct": 61.8162
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 2507,
+          "MAE": 509.7549,
+          "WAPE_pct": 25.5405,
+          "n_meaningful": 1828,
+          "up_share_of_meaningful_pct": 49.8359,
+          "direction_acc_pct": 62.1444
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 2507,
+          "MAE": 475.0323,
+          "WAPE_pct": 23.8008,
+          "n_meaningful": 1828,
+          "up_share_of_meaningful_pct": 49.8359,
+          "direction_acc_pct": 55.9081,
+          "direction_acc_all_calls_pct": 61.9394,
+          "direction_acc_clear_calls_pct": 91.4286,
+          "clear_call_rate_pct": 10.1316
+        }
+      ],
+      "60": [
+        {
+          "method": "no_change",
+          "n": 1982,
+          "MAE": 562.8636,
+          "WAPE_pct": 27.7947,
+          "n_meaningful": 1504,
+          "up_share_of_meaningful_pct": 51.4628,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit (production features)",
+          "n": 1982,
+          "MAE": 547.8627,
+          "WAPE_pct": 27.0539,
+          "n_meaningful": 1504,
+          "up_share_of_meaningful_pct": 51.4628,
+          "direction_acc_pct": 62.8989
+        },
+        {
+          "method": "v1_shrunk",
+          "n": 1982,
+          "MAE": 530.5142,
+          "WAPE_pct": 26.1972,
+          "n_meaningful": 1504,
+          "up_share_of_meaningful_pct": 51.4628,
+          "direction_acc_pct": 62.8989
+        },
+        {
+          "method": "v2_raw (new features)",
+          "n": 1982,
+          "MAE": 528.1968,
+          "WAPE_pct": 26.0828,
+          "n_meaningful": 1504,
+          "up_share_of_meaningful_pct": 51.4628,
+          "direction_acc_pct": 64.3617
+        },
+        {
+          "method": "v2_shrunk (CANDIDATE)",
+          "n": 1982,
+          "MAE": 504.8966,
+          "WAPE_pct": 24.9322,
+          "n_meaningful": 1504,
+          "up_share_of_meaningful_pct": 51.4628,
+          "direction_acc_pct": 64.3617,
+          "direction_acc_all_calls_pct": 64.3617,
+          "direction_acc_clear_calls_pct": 91.0053,
+          "clear_call_rate_pct": 11.4531
+        }
+      ]
+    },
+    "skill_candidate_vs_no_change": {
+      "skill_pct": 9.8658,
+      "ci_low_pct": 5.8967,
+      "ci_high_pct": 13.984,
+      "clusters": 27
+    },
+    "skill_raw_v2_vs_no_change": {
+      "skill_pct": 5.3928,
+      "ci_low_pct": 1.0794,
+      "ci_high_pct": 9.1771,
+      "clusters": 27
+    },
+    "skill_v1_refit_vs_no_change": {
+      "skill_pct": 4.4764,
+      "ci_low_pct": -0.2981,
+      "ci_high_pct": 9.175,
+      "clusters": 27
+    },
+    "skill_candidate_vs_v1_refit": {
+      "skill_pct": 5.6419,
+      "ci_low_pct": 3.8004,
+      "ci_high_pct": 7.5534,
+      "clusters": 27
+    },
+    "skill_candidate_vs_no_change_by_band": {
+      "1-7": {
+        "skill_pct": 3.9025,
+        "ci_low_pct": 1.4029,
+        "ci_high_pct": 6.0652,
+        "clusters": 27
+      },
+      "8-14": {
+        "skill_pct": 7.6263,
+        "ci_low_pct": 3.1186,
+        "ci_high_pct": 11.8593,
+        "clusters": 26
+      },
+      "15-30": {
+        "skill_pct": 8.0697,
+        "ci_low_pct": 3.5269,
+        "ci_high_pct": 11.7128,
+        "clusters": 25
+      },
+      "31-60": {
+        "skill_pct": 12.2308,
+        "ci_low_pct": 6.4988,
+        "ci_high_pct": 17.7428,
+        "clusters": 22
+      }
+    },
+    "skill_candidate_vs_no_change_by_crop": {
+      "Brinjal": {
+        "skill_pct": 11.8742,
+        "ci_low_pct": 1.4901,
+        "ci_high_pct": 21.9666,
+        "clusters": 27
+      },
+      "Cabbage": {
+        "skill_pct": 14.561,
+        "ci_low_pct": 10.8175,
+        "ci_high_pct": 18.0995,
+        "clusters": 27
+      },
+      "Cauliflower": {
+        "skill_pct": 20.9428,
+        "ci_low_pct": 15.4987,
+        "ci_high_pct": 25.8663,
+        "clusters": 27
+      },
+      "Onion": {
+        "skill_pct": -9.8023,
+        "ci_low_pct": -15.5366,
+        "ci_high_pct": -4.2774,
+        "clusters": 27
+      },
+      "Potato": {
+        "skill_pct": 2.6934,
+        "ci_low_pct": 1.3072,
+        "ci_high_pct": 4.0899,
+        "clusters": 27
+      },
+      "Tomato": {
+        "skill_pct": 6.9351,
+        "ci_low_pct": 1.7552,
+        "ci_high_pct": 11.9689,
+        "clusters": 27
+      },
+      "Wheat": {
+        "skill_pct": -3.4387,
+        "ci_low_pct": -11.4475,
+        "ci_high_pct": 4.0878,
+        "clusters": 27
+      }
+    },
+    "cells": [
+      {
+        "crop": "Brinjal",
+        "band": "1-7",
+        "n": 2834,
+        "w": 0.8,
+        "MAE_candidate": 601.7174,
+        "MAE_no_change": 631.153,
+        "MAE_v1_refit": 597.8113
+      },
+      {
+        "crop": "Brinjal",
+        "band": "8-14",
+        "n": 2680,
+        "w": 0.9,
+        "MAE_candidate": 886.554,
+        "MAE_no_change": 990.6379,
+        "MAE_v1_refit": 918.0643
+      },
+      {
+        "crop": "Brinjal",
+        "band": "15-30",
+        "n": 5649,
+        "w": 1.0,
+        "MAE_candidate": 1060.3064,
+        "MAE_no_change": 1197.5764,
+        "MAE_v1_refit": 1118.6121
+      },
+      {
+        "crop": "Brinjal",
+        "band": "31-60",
+        "n": 8981,
+        "w": 1.0,
+        "MAE_candidate": 1137.9622,
+        "MAE_no_change": 1315.6948,
+        "MAE_v1_refit": 1191.3099
+      },
+      {
+        "crop": "Cabbage",
+        "band": "1-7",
+        "n": 2762,
+        "w": 0.8,
+        "MAE_candidate": 172.5733,
+        "MAE_no_change": 189.1081,
+        "MAE_v1_refit": 170.8365
+      },
+      {
+        "crop": "Cabbage",
+        "band": "8-14",
+        "n": 2587,
+        "w": 0.6,
+        "MAE_candidate": 247.3966,
+        "MAE_no_change": 269.214,
+        "MAE_v1_refit": 245.7362
+      },
+      {
+        "crop": "Cabbage",
+        "band": "15-30",
+        "n": 5492,
+        "w": 0.6,
+        "MAE_candidate": 296.9075,
+        "MAE_no_change": 324.3093,
+        "MAE_v1_refit": 301.9838
+      },
+      {
+        "crop": "Cabbage",
+        "band": "31-60",
+        "n": 8652,
+        "w": 0.9,
+        "MAE_candidate": 337.9612,
+        "MAE_no_change": 420.4783,
+        "MAE_v1_refit": 354.9952
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "1-7",
+        "n": 2648,
+        "w": 0.8,
+        "MAE_candidate": 353.2391,
+        "MAE_no_change": 378.615,
+        "MAE_v1_refit": 353.0361
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "8-14",
+        "n": 2406,
+        "w": 0.8,
+        "MAE_candidate": 467.7085,
+        "MAE_no_change": 555.4456,
+        "MAE_v1_refit": 473.637
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "15-30",
+        "n": 5201,
+        "w": 0.7,
+        "MAE_candidate": 521.3023,
+        "MAE_no_change": 644.3858,
+        "MAE_v1_refit": 521.1818
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "31-60",
+        "n": 8336,
+        "w": 0.8,
+        "MAE_candidate": 513.3236,
+        "MAE_no_change": 690.7743,
+        "MAE_v1_refit": 532.5699
+      },
+      {
+        "crop": "Onion",
+        "band": "1-7",
+        "n": 4006,
+        "w": 0.3,
+        "MAE_candidate": 117.2505,
+        "MAE_no_change": 113.8219,
+        "MAE_v1_refit": 122.2527
+      },
+      {
+        "crop": "Onion",
+        "band": "8-14",
+        "n": 3629,
+        "w": 0.3,
+        "MAE_candidate": 184.2005,
+        "MAE_no_change": 175.9205,
+        "MAE_v1_refit": 210.8663
+      },
+      {
+        "crop": "Onion",
+        "band": "15-30",
+        "n": 7588,
+        "w": 0.3,
+        "MAE_candidate": 213.9198,
+        "MAE_no_change": 200.3698,
+        "MAE_v1_refit": 277.9315
+      },
+      {
+        "crop": "Onion",
+        "band": "31-60",
+        "n": 12072,
+        "w": 0.3,
+        "MAE_candidate": 241.4049,
+        "MAE_no_change": 211.5776,
+        "MAE_v1_refit": 395.7031
+      },
+      {
+        "crop": "Potato",
+        "band": "1-7",
+        "n": 2051,
+        "w": 0.3,
+        "MAE_candidate": 104.0303,
+        "MAE_no_change": 104.4842,
+        "MAE_v1_refit": 102.1296
+      },
+      {
+        "crop": "Potato",
+        "band": "8-14",
+        "n": 1957,
+        "w": 0.0,
+        "MAE_candidate": 138.0652,
+        "MAE_no_change": 138.0652,
+        "MAE_v1_refit": 134.6193
+      },
+      {
+        "crop": "Potato",
+        "band": "15-30",
+        "n": 4047,
+        "w": 0.0,
+        "MAE_candidate": 174.48,
+        "MAE_no_change": 174.48,
+        "MAE_v1_refit": 166.7766
+      },
+      {
+        "crop": "Potato",
+        "band": "31-60",
+        "n": 6669,
+        "w": 0.2,
+        "MAE_candidate": 197.8216,
+        "MAE_no_change": 208.0953,
+        "MAE_v1_refit": 192.8744
+      },
+      {
+        "crop": "Tomato",
+        "band": "1-7",
+        "n": 3176,
+        "w": 0.6,
+        "MAE_candidate": 393.6857,
+        "MAE_no_change": 402.9806,
+        "MAE_v1_refit": 394.5796
+      },
+      {
+        "crop": "Tomato",
+        "band": "8-14",
+        "n": 2939,
+        "w": 0.4,
+        "MAE_candidate": 600.0821,
+        "MAE_no_change": 625.4277,
+        "MAE_v1_refit": 612.3264
+      },
+      {
+        "crop": "Tomato",
+        "band": "15-30",
+        "n": 6494,
+        "w": 0.2,
+        "MAE_candidate": 780.2006,
+        "MAE_no_change": 803.9791,
+        "MAE_v1_refit": 799.7813
+      },
+      {
+        "crop": "Tomato",
+        "band": "31-60",
+        "n": 10098,
+        "w": 0.4,
+        "MAE_candidate": 888.4052,
+        "MAE_no_change": 988.6482,
+        "MAE_v1_refit": 883.7271
+      },
+      {
+        "crop": "Wheat",
+        "band": "1-7",
+        "n": 3978,
+        "w": 1.0,
+        "MAE_candidate": 56.9628,
+        "MAE_no_change": 57.2923,
+        "MAE_v1_refit": 55.8158
+      },
+      {
+        "crop": "Wheat",
+        "band": "8-14",
+        "n": 3509,
+        "w": 0.9,
+        "MAE_candidate": 76.9122,
+        "MAE_no_change": 75.8745,
+        "MAE_v1_refit": 74.162
+      },
+      {
+        "crop": "Wheat",
+        "band": "15-30",
+        "n": 7355,
+        "w": 1.0,
+        "MAE_candidate": 85.4379,
+        "MAE_no_change": 84.568,
+        "MAE_v1_refit": 85.8848
+      },
+      {
+        "crop": "Wheat",
+        "band": "31-60",
+        "n": 11630,
+        "w": 1.0,
+        "MAE_candidate": 106.3095,
+        "MAE_no_change": 100.3104,
+        "MAE_v1_refit": 108.3642
+      }
+    ],
+    "intervals": {
+      "candidate_conformal": {
+        "coverage_pct": 79.5591,
+        "below_pct": 9.2775,
+        "above_pct": 11.1634,
+        "mean_width_pct_of_start": 68.5837,
+        "n": 149426
+      },
+      "candidate_by_band": {
+        "1-7": {
+          "coverage_pct": 80.6199,
+          "below_pct": 9.3451,
+          "above_pct": 10.035,
+          "mean_width_pct_of_start": 39.9937,
+          "n": 21455
+        },
+        "8-14": {
+          "coverage_pct": 78.8857,
+          "below_pct": 10.5749,
+          "above_pct": 10.5394,
+          "mean_width_pct_of_start": 54.5267,
+          "n": 19707
+        },
+        "15-30": {
+          "coverage_pct": 78.04,
+          "below_pct": 10.8617,
+          "above_pct": 11.0984,
+          "mean_width_pct_of_start": 67.2485,
+          "n": 41826
+        },
+        "31-60": {
+          "coverage_pct": 80.3727,
+          "below_pct": 7.8735,
+          "above_pct": 11.7538,
+          "mean_width_pct_of_start": 82.8266,
+          "n": 66438
+        }
+      },
+      "candidate_by_crop": {
+        "Brinjal": {
+          "coverage_pct": 72.7313,
+          "below_pct": 10.0526,
+          "above_pct": 17.216,
+          "mean_width_pct_of_start": 89.9797,
+          "n": 20144
+        },
+        "Cabbage": {
+          "coverage_pct": 80.3314,
+          "below_pct": 7.4693,
+          "above_pct": 12.1993,
+          "mean_width_pct_of_start": 82.1589,
+          "n": 19493
+        },
+        "Cauliflower": {
+          "coverage_pct": 84.358,
+          "below_pct": 12.4523,
+          "above_pct": 3.1897,
+          "mean_width_pct_of_start": 123.6314,
+          "n": 18591
+        },
+        "Onion": {
+          "coverage_pct": 83.8981,
+          "below_pct": 4.1876,
+          "above_pct": 11.9143,
+          "mean_width_pct_of_start": 54.4496,
+          "n": 27295
+        },
+        "Potato": {
+          "coverage_pct": 79.9375,
+          "below_pct": 11.3692,
+          "above_pct": 8.6933,
+          "mean_width_pct_of_start": 34.9554,
+          "n": 14724
+        },
+        "Tomato": {
+          "coverage_pct": 63.9186,
+          "below_pct": 18.2367,
+          "above_pct": 17.8447,
+          "mean_width_pct_of_start": 96.2563,
+          "n": 22707
+        },
+        "Wheat": {
+          "coverage_pct": 89.5474,
+          "below_pct": 4.1893,
+          "above_pct": 6.2632,
+          "mean_width_pct_of_start": 13.1877,
+          "n": 26472
+        }
+      },
+      "candidate_exact_horizon": {
+        "1": {
+          "coverage_pct": 89.5639,
+          "below_pct": 4.2679,
+          "above_pct": 6.1682,
+          "mean_width_pct_of_start": 39.6401,
+          "n": 3210
+        },
+        "7": {
+          "coverage_pct": 72.572,
+          "below_pct": 14.0991,
+          "above_pct": 13.3289,
+          "mean_width_pct_of_start": 40.4433,
+          "n": 2986
+        },
+        "14": {
+          "coverage_pct": 75.9881,
+          "below_pct": 11.7823,
+          "above_pct": 12.2297,
+          "mean_width_pct_of_start": 54.5055,
+          "n": 2682
+        },
+        "30": {
+          "coverage_pct": 75.5485,
+          "below_pct": 12.4053,
+          "above_pct": 12.0463,
+          "mean_width_pct_of_start": 67.5104,
+          "n": 2507
+        },
+        "60": {
+          "coverage_pct": 79.2129,
+          "below_pct": 7.1645,
+          "above_pct": 13.6226,
+          "mean_width_pct_of_start": 83.6807,
+          "n": 1982
+        }
+      },
+      "v1_with_shipped_production_intervals": {
+        "coverage_pct": 81.5815,
+        "below_pct": 8.7789,
+        "above_pct": 9.6396,
+        "mean_width_pct_of_start": 73.1573,
+        "n": 149426
+      },
+      "v1_shipped_by_band": {
+        "1-7": {
+          "coverage_pct": 82.2093,
+          "below_pct": 9.1074,
+          "above_pct": 8.6833,
+          "mean_width_pct_of_start": 41.8044,
+          "n": 21455
+        },
+        "8-14": {
+          "coverage_pct": 80.3065,
+          "below_pct": 10.2603,
+          "above_pct": 9.4332,
+          "mean_width_pct_of_start": 58.6968,
+          "n": 19707
+        },
+        "15-30": {
+          "coverage_pct": 80.3209,
+          "below_pct": 9.4558,
+          "above_pct": 10.2233,
+          "mean_width_pct_of_start": 73.5177,
+          "n": 41826
+        },
+        "31-60": {
+          "coverage_pct": 82.5506,
+          "below_pct": 7.8073,
+          "above_pct": 9.6421,
+          "mean_width_pct_of_start": 87.3446,
+          "n": 66438
+        }
+      }
+    }
+  },
+  "projection": {
+    "n_validation": 132363,
+    "n_test": 127197,
+    "validation_mae_by_anchor": {
+      "ref_x1.05 (current)": 539.5447,
+      "latest_known_0pct": 668.4552,
+      "trailing_yoy": 841.8453
+    },
+    "chosen_anchor": "ref_x1.05 (current)",
+    "trailing_yoy_share_missing_pct": 0.5794,
+    "test_overall": [
+      {
+        "method": "reference_x1.05 (no model)",
+        "n": 127197,
+        "MAE": 1085.9999,
+        "WAPE_pct": 54.4787,
+        "n_meaningful": 112053,
+        "up_share_of_meaningful_pct": 20.1333,
+        "direction_acc_pct": null
+      },
+      {
+        "method": "latest_known (no model)",
+        "n": 127197,
+        "MAE": 1027.8557,
+        "WAPE_pct": 51.562,
+        "n_meaningful": 118576,
+        "up_share_of_meaningful_pct": 53.176,
+        "direction_acc_pct": null
+      },
+      {
+        "method": "trailing_yoy anchor (no model)",
+        "n": 127197,
+        "MAE": 1725.4532,
+        "WAPE_pct": 86.5566,
+        "n_meaningful": 118723,
+        "up_share_of_meaningful_pct": 14.0158,
+        "direction_acc_pct": null
+      },
+      {
+        "method": "v1_refit on ref x1.05 (as production)",
+        "n": 127197,
+        "MAE": 1005.509,
+        "WAPE_pct": 50.4409,
+        "n_meaningful": 112053,
+        "up_share_of_meaningful_pct": 20.1333,
+        "direction_acc_pct": 55.4452
+      },
+      {
+        "method": "v2_shrunk, anchor ref_x1.05 (current)",
+        "n": 127197,
+        "MAE": 1018.7388,
+        "WAPE_pct": 51.1046,
+        "n_meaningful": 112053,
+        "up_share_of_meaningful_pct": 20.1333,
+        "direction_acc_pct": 42.4469
+      },
+      {
+        "method": "v2_shrunk, anchor latest_known_0pct",
+        "n": 127197,
+        "MAE": 1051.0014,
+        "WAPE_pct": 52.723,
+        "n_meaningful": 118576,
+        "up_share_of_meaningful_pct": 53.176,
+        "direction_acc_pct": 17.5778
+      },
+      {
+        "method": "v2_shrunk, anchor trailing_yoy",
+        "n": 127197,
+        "MAE": 1631.8214,
+        "WAPE_pct": 81.8596,
+        "n_meaningful": 118723,
+        "up_share_of_meaningful_pct": 14.0158,
+        "direction_acc_pct": 33.8957
+      },
+      {
+        "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+        "n": 127197,
+        "MAE": 1018.7388,
+        "WAPE_pct": 51.1046,
+        "n_meaningful": 112053,
+        "up_share_of_meaningful_pct": 20.1333,
+        "direction_acc_pct": 42.4469
+      }
+    ],
+    "test_by_band": {
+      "1-7": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 18185,
+          "MAE": 1115.5957,
+          "WAPE_pct": 55.9206,
+          "n_meaningful": 16190,
+          "up_share_of_meaningful_pct": 22.0321,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 18185,
+          "MAE": 1024.2626,
+          "WAPE_pct": 51.3424,
+          "n_meaningful": 16885,
+          "up_share_of_meaningful_pct": 52.9938,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 18185,
+          "MAE": 1748.6596,
+          "WAPE_pct": 87.6536,
+          "n_meaningful": 17117,
+          "up_share_of_meaningful_pct": 15.9783,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 18185,
+          "MAE": 1066.2134,
+          "WAPE_pct": 53.4452,
+          "n_meaningful": 16190,
+          "up_share_of_meaningful_pct": 22.0321,
+          "direction_acc_pct": 59.7715
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 18185,
+          "MAE": 1082.6118,
+          "WAPE_pct": 54.2672,
+          "n_meaningful": 16190,
+          "up_share_of_meaningful_pct": 22.0321,
+          "direction_acc_pct": 48.147
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 18185,
+          "MAE": 1025.9441,
+          "WAPE_pct": 51.4267,
+          "n_meaningful": 16885,
+          "up_share_of_meaningful_pct": 52.9938,
+          "direction_acc_pct": 6.4732
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 18185,
+          "MAE": 1707.2528,
+          "WAPE_pct": 85.5781,
+          "n_meaningful": 17117,
+          "up_share_of_meaningful_pct": 15.9783,
+          "direction_acc_pct": 42.2854
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 18185,
+          "MAE": 1082.6118,
+          "WAPE_pct": 54.2672,
+          "n_meaningful": 16190,
+          "up_share_of_meaningful_pct": 22.0321,
+          "direction_acc_pct": 48.147
+        }
+      ],
+      "8-14": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 17030,
+          "MAE": 1085.0831,
+          "WAPE_pct": 54.9876,
+          "n_meaningful": 14995,
+          "up_share_of_meaningful_pct": 20.4268,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 17030,
+          "MAE": 998.8913,
+          "WAPE_pct": 50.6197,
+          "n_meaningful": 15816,
+          "up_share_of_meaningful_pct": 52.3584,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 17030,
+          "MAE": 1720.1566,
+          "WAPE_pct": 87.1705,
+          "n_meaningful": 15949,
+          "up_share_of_meaningful_pct": 14.4962,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 17030,
+          "MAE": 1008.9726,
+          "WAPE_pct": 51.1306,
+          "n_meaningful": 14995,
+          "up_share_of_meaningful_pct": 20.4268,
+          "direction_acc_pct": 58.5729
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17030,
+          "MAE": 1051.9277,
+          "WAPE_pct": 53.3074,
+          "n_meaningful": 14995,
+          "up_share_of_meaningful_pct": 20.4268,
+          "direction_acc_pct": 31.9507
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 17030,
+          "MAE": 1007.3737,
+          "WAPE_pct": 51.0496,
+          "n_meaningful": 15816,
+          "up_share_of_meaningful_pct": 52.3584,
+          "direction_acc_pct": 11.7223
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 17030,
+          "MAE": 1667.8611,
+          "WAPE_pct": 84.5204,
+          "n_meaningful": 15949,
+          "up_share_of_meaningful_pct": 14.4962,
+          "direction_acc_pct": 32.1211
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17030,
+          "MAE": 1051.9277,
+          "WAPE_pct": 53.3074,
+          "n_meaningful": 14995,
+          "up_share_of_meaningful_pct": 20.4268,
+          "direction_acc_pct": 31.9507
+        }
+      ],
+      "15-30": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 35647,
+          "MAE": 1078.3923,
+          "WAPE_pct": 54.5344,
+          "n_meaningful": 31393,
+          "up_share_of_meaningful_pct": 19.3132,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 35647,
+          "MAE": 1016.5596,
+          "WAPE_pct": 51.4076,
+          "n_meaningful": 33217,
+          "up_share_of_meaningful_pct": 52.8464,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 35647,
+          "MAE": 1733.8939,
+          "WAPE_pct": 87.6832,
+          "n_meaningful": 33290,
+          "up_share_of_meaningful_pct": 13.5086,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 35647,
+          "MAE": 990.9206,
+          "WAPE_pct": 50.111,
+          "n_meaningful": 31393,
+          "up_share_of_meaningful_pct": 19.3132,
+          "direction_acc_pct": 54.6874
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 35647,
+          "MAE": 1031.6834,
+          "WAPE_pct": 52.1724,
+          "n_meaningful": 31393,
+          "up_share_of_meaningful_pct": 19.3132,
+          "direction_acc_pct": 42.0858
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 35647,
+          "MAE": 1036.9881,
+          "WAPE_pct": 52.4406,
+          "n_meaningful": 33217,
+          "up_share_of_meaningful_pct": 52.8464,
+          "direction_acc_pct": 16.5548
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 35647,
+          "MAE": 1655.8618,
+          "WAPE_pct": 83.7371,
+          "n_meaningful": 33290,
+          "up_share_of_meaningful_pct": 13.5086,
+          "direction_acc_pct": 32.3911
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 35647,
+          "MAE": 1031.6834,
+          "WAPE_pct": 52.1724,
+          "n_meaningful": 31393,
+          "up_share_of_meaningful_pct": 19.3132,
+          "direction_acc_pct": 42.0858
+        }
+      ],
+      "31-60": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 56335,
+          "MAE": 1081.5374,
+          "WAPE_pct": 53.8308,
+          "n_meaningful": 49475,
+          "up_share_of_meaningful_pct": 19.9434,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 56335,
+          "MAE": 1044.9194,
+          "WAPE_pct": 52.0083,
+          "n_meaningful": 52658,
+          "up_share_of_meaningful_pct": 53.6879,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 56335,
+          "MAE": 1714.2222,
+          "WAPE_pct": 85.3211,
+          "n_meaningful": 52367,
+          "up_share_of_meaningful_pct": 13.5505,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 56335,
+          "MAE": 994.0975,
+          "WAPE_pct": 49.4787,
+          "n_meaningful": 49475,
+          "up_share_of_meaningful_pct": 19.9434,
+          "direction_acc_pct": 53.5624
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 56335,
+          "MAE": 979.8967,
+          "WAPE_pct": 48.7719,
+          "n_meaningful": 49475,
+          "up_share_of_meaningful_pct": 19.9434,
+          "direction_acc_pct": 43.9919
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 56335,
+          "MAE": 1081.1456,
+          "WAPE_pct": 53.8113,
+          "n_meaningful": 52658,
+          "up_share_of_meaningful_pct": 53.6879,
+          "direction_acc_pct": 23.5425
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 56335,
+          "MAE": 1581.3654,
+          "WAPE_pct": 78.7085,
+          "n_meaningful": 52367,
+          "up_share_of_meaningful_pct": 13.5505,
+          "direction_acc_pct": 32.6503
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 56335,
+          "MAE": 979.8967,
+          "WAPE_pct": 48.7719,
+          "n_meaningful": 49475,
+          "up_share_of_meaningful_pct": 19.9434,
+          "direction_acc_pct": 43.9919
+        }
+      ]
+    },
+    "test_by_crop": {
+      "Brinjal": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 17628,
+          "MAE": 1233.9417,
+          "WAPE_pct": 37.8269,
+          "n_meaningful": 15679,
+          "up_share_of_meaningful_pct": 58.0458,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 17628,
+          "MAE": 2076.6108,
+          "WAPE_pct": 63.6592,
+          "n_meaningful": 17242,
+          "up_share_of_meaningful_pct": 98.0629,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 17628,
+          "MAE": 1312.1443,
+          "WAPE_pct": 40.2242,
+          "n_meaningful": 16179,
+          "up_share_of_meaningful_pct": 50.7015,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 17628,
+          "MAE": 1144.7301,
+          "WAPE_pct": 35.0921,
+          "n_meaningful": 15679,
+          "up_share_of_meaningful_pct": 58.0458,
+          "direction_acc_pct": 67.7212
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17628,
+          "MAE": 1158.3181,
+          "WAPE_pct": 35.5086,
+          "n_meaningful": 15679,
+          "up_share_of_meaningful_pct": 58.0458,
+          "direction_acc_pct": 66.7708
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 17628,
+          "MAE": 2122.5408,
+          "WAPE_pct": 65.0672,
+          "n_meaningful": 17242,
+          "up_share_of_meaningful_pct": 98.0629,
+          "direction_acc_pct": 19.1161
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 17628,
+          "MAE": 1174.5323,
+          "WAPE_pct": 36.0057,
+          "n_meaningful": 16179,
+          "up_share_of_meaningful_pct": 50.7015,
+          "direction_acc_pct": 68.0635
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17628,
+          "MAE": 1158.3181,
+          "WAPE_pct": 35.5086,
+          "n_meaningful": 15679,
+          "up_share_of_meaningful_pct": 58.0458,
+          "direction_acc_pct": 66.7708
+        }
+      ],
+      "Cabbage": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 17148,
+          "MAE": 588.2411,
+          "WAPE_pct": 49.3609,
+          "n_meaningful": 15108,
+          "up_share_of_meaningful_pct": 22.9481,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 17148,
+          "MAE": 420.9375,
+          "WAPE_pct": 35.322,
+          "n_meaningful": 15432,
+          "up_share_of_meaningful_pct": 78.4539,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 17148,
+          "MAE": 1299.6518,
+          "WAPE_pct": 109.0573,
+          "n_meaningful": 16745,
+          "up_share_of_meaningful_pct": 3.0935,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 17148,
+          "MAE": 449.1789,
+          "WAPE_pct": 37.6918,
+          "n_meaningful": 15108,
+          "up_share_of_meaningful_pct": 22.9481,
+          "direction_acc_pct": 72.5841
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17148,
+          "MAE": 539.6923,
+          "WAPE_pct": 45.287,
+          "n_meaningful": 15108,
+          "up_share_of_meaningful_pct": 22.9481,
+          "direction_acc_pct": 62.2518
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 17148,
+          "MAE": 434.4338,
+          "WAPE_pct": 36.4545,
+          "n_meaningful": 15432,
+          "up_share_of_meaningful_pct": 78.4539,
+          "direction_acc_pct": 45.0557
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 17148,
+          "MAE": 1299.6518,
+          "WAPE_pct": 109.0573,
+          "n_meaningful": 16745,
+          "up_share_of_meaningful_pct": 3.0935,
+          "direction_acc_pct": 0.0
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17148,
+          "MAE": 539.6923,
+          "WAPE_pct": 45.287,
+          "n_meaningful": 15108,
+          "up_share_of_meaningful_pct": 22.9481,
+          "direction_acc_pct": 62.2518
+        }
+      ],
+      "Cauliflower": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 17055,
+          "MAE": 872.0285,
+          "WAPE_pct": 46.0853,
+          "n_meaningful": 15100,
+          "up_share_of_meaningful_pct": 26.5166,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 17055,
+          "MAE": 1146.1379,
+          "WAPE_pct": 60.5715,
+          "n_meaningful": 16831,
+          "up_share_of_meaningful_pct": 96.0371,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 17055,
+          "MAE": 1484.29,
+          "WAPE_pct": 78.4423,
+          "n_meaningful": 16395,
+          "up_share_of_meaningful_pct": 11.9,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 17055,
+          "MAE": 668.4043,
+          "WAPE_pct": 35.3241,
+          "n_meaningful": 15100,
+          "up_share_of_meaningful_pct": 26.5166,
+          "direction_acc_pct": 73.3841
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17055,
+          "MAE": 676.5406,
+          "WAPE_pct": 35.754,
+          "n_meaningful": 15100,
+          "up_share_of_meaningful_pct": 26.5166,
+          "direction_acc_pct": 72.8543
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 17055,
+          "MAE": 1194.2997,
+          "WAPE_pct": 63.1168,
+          "n_meaningful": 16831,
+          "up_share_of_meaningful_pct": 96.0371,
+          "direction_acc_pct": 27.0869
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 17055,
+          "MAE": 1129.7055,
+          "WAPE_pct": 59.7031,
+          "n_meaningful": 16395,
+          "up_share_of_meaningful_pct": 11.9,
+          "direction_acc_pct": 69.6432
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 17055,
+          "MAE": 676.5406,
+          "WAPE_pct": 35.754,
+          "n_meaningful": 15100,
+          "up_share_of_meaningful_pct": 26.5166,
+          "direction_acc_pct": 72.8543
+        }
+      ],
+      "Onion": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 22180,
+          "MAE": 2184.191,
+          "WAPE_pct": 176.8845,
+          "n_meaningful": 22138,
+          "up_share_of_meaningful_pct": 0.1852,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 22180,
+          "MAE": 1571.8595,
+          "WAPE_pct": 127.2954,
+          "n_meaningful": 21998,
+          "up_share_of_meaningful_pct": 0.6501,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 22180,
+          "MAE": 3812.0248,
+          "WAPE_pct": 308.7129,
+          "n_meaningful": 22178,
+          "up_share_of_meaningful_pct": 0.0586,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 22180,
+          "MAE": 2221.4468,
+          "WAPE_pct": 179.9016,
+          "n_meaningful": 22138,
+          "up_share_of_meaningful_pct": 0.1852,
+          "direction_acc_pct": 33.4177
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 22180,
+          "MAE": 2184.191,
+          "WAPE_pct": 176.8845,
+          "n_meaningful": 22138,
+          "up_share_of_meaningful_pct": 0.1852,
+          "direction_acc_pct": 0.0
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 22180,
+          "MAE": 1571.8595,
+          "WAPE_pct": 127.2954,
+          "n_meaningful": 21998,
+          "up_share_of_meaningful_pct": 0.6501,
+          "direction_acc_pct": 0.0
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 22180,
+          "MAE": 3809.0494,
+          "WAPE_pct": 308.472,
+          "n_meaningful": 22178,
+          "up_share_of_meaningful_pct": 0.0586,
+          "direction_acc_pct": 6.8356
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 22180,
+          "MAE": 2184.191,
+          "WAPE_pct": 176.8845,
+          "n_meaningful": 22138,
+          "up_share_of_meaningful_pct": 0.1852,
+          "direction_acc_pct": 0.0
+        }
+      ],
+      "Potato": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 13345,
+          "MAE": 1191.8962,
+          "WAPE_pct": 78.8089,
+          "n_meaningful": 13324,
+          "up_share_of_meaningful_pct": 0.2252,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 13345,
+          "MAE": 440.1266,
+          "WAPE_pct": 29.1015,
+          "n_meaningful": 12105,
+          "up_share_of_meaningful_pct": 8.9963,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 13345,
+          "MAE": 2494.1879,
+          "WAPE_pct": 164.9173,
+          "n_meaningful": 13344,
+          "up_share_of_meaningful_pct": 0.1499,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 13345,
+          "MAE": 1151.9434,
+          "WAPE_pct": 76.1672,
+          "n_meaningful": 13324,
+          "up_share_of_meaningful_pct": 0.2252,
+          "direction_acc_pct": 44.3936
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 13345,
+          "MAE": 1189.5121,
+          "WAPE_pct": 78.6513,
+          "n_meaningful": 13324,
+          "up_share_of_meaningful_pct": 0.2252,
+          "direction_acc_pct": 8.4134
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 13345,
+          "MAE": 440.1266,
+          "WAPE_pct": 29.1015,
+          "n_meaningful": 12105,
+          "up_share_of_meaningful_pct": 8.9963,
+          "direction_acc_pct": 0.0
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 13345,
+          "MAE": 2494.1879,
+          "WAPE_pct": 164.9173,
+          "n_meaningful": 13344,
+          "up_share_of_meaningful_pct": 0.1499,
+          "direction_acc_pct": 0.0
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 13345,
+          "MAE": 1189.5121,
+          "WAPE_pct": 78.6513,
+          "n_meaningful": 13324,
+          "up_share_of_meaningful_pct": 0.2252,
+          "direction_acc_pct": 8.4134
+        }
+      ],
+      "Tomato": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 18434,
+          "MAE": 1162.5198,
+          "WAPE_pct": 54.5262,
+          "n_meaningful": 16664,
+          "up_share_of_meaningful_pct": 29.9748,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 18434,
+          "MAE": 1128.6066,
+          "WAPE_pct": 52.9355,
+          "n_meaningful": 17654,
+          "up_share_of_meaningful_pct": 87.3287,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 18434,
+          "MAE": 1281.9526,
+          "WAPE_pct": 60.128,
+          "n_meaningful": 17419,
+          "up_share_of_meaningful_pct": 28.5493,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 18434,
+          "MAE": 986.8786,
+          "WAPE_pct": 46.288,
+          "n_meaningful": 16664,
+          "up_share_of_meaningful_pct": 29.9748,
+          "direction_acc_pct": 60.0156
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 18434,
+          "MAE": 990.0613,
+          "WAPE_pct": 46.4373,
+          "n_meaningful": 16664,
+          "up_share_of_meaningful_pct": 29.9748,
+          "direction_acc_pct": 59.7396
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 18434,
+          "MAE": 1187.2789,
+          "WAPE_pct": 55.6875,
+          "n_meaningful": 17654,
+          "up_share_of_meaningful_pct": 87.3287,
+          "direction_acc_pct": 34.1849
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 18434,
+          "MAE": 1086.9966,
+          "WAPE_pct": 50.9839,
+          "n_meaningful": 17419,
+          "up_share_of_meaningful_pct": 28.5493,
+          "direction_acc_pct": 60.4168
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 18434,
+          "MAE": 990.0613,
+          "WAPE_pct": 46.4373,
+          "n_meaningful": 16664,
+          "up_share_of_meaningful_pct": 29.9748,
+          "direction_acc_pct": 59.7396
+        }
+      ],
+      "Wheat": [
+        {
+          "method": "reference_x1.05 (no model)",
+          "n": 21407,
+          "MAE": 263.6194,
+          "WAPE_pct": 9.9925,
+          "n_meaningful": 14040,
+          "up_share_of_meaningful_pct": 6.567,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "latest_known (no model)",
+          "n": 21407,
+          "MAE": 272.1532,
+          "WAPE_pct": 10.316,
+          "n_meaningful": 17314,
+          "up_share_of_meaningful_pct": 7.081,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "trailing_yoy anchor (no model)",
+          "n": 21407,
+          "MAE": 339.7873,
+          "WAPE_pct": 12.8796,
+          "n_meaningful": 16463,
+          "up_share_of_meaningful_pct": 5.8434,
+          "direction_acc_pct": null
+        },
+        {
+          "method": "v1_refit on ref x1.05 (as production)",
+          "n": 21407,
+          "MAE": 269.9945,
+          "WAPE_pct": 10.2341,
+          "n_meaningful": 14040,
+          "up_share_of_meaningful_pct": 6.567,
+          "direction_acc_pct": 43.7963
+        },
+        {
+          "method": "v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 21407,
+          "MAE": 270.8675,
+          "WAPE_pct": 10.2672,
+          "n_meaningful": 14040,
+          "up_share_of_meaningful_pct": 6.567,
+          "direction_acc_pct": 39.9715
+        },
+        {
+          "method": "v2_shrunk, anchor latest_known_0pct",
+          "n": 21407,
+          "MAE": 272.1532,
+          "WAPE_pct": 10.316,
+          "n_meaningful": 17314,
+          "up_share_of_meaningful_pct": 7.081,
+          "direction_acc_pct": 0.0
+        },
+        {
+          "method": "v2_shrunk, anchor trailing_yoy",
+          "n": 21407,
+          "MAE": 350.2232,
+          "WAPE_pct": 13.2752,
+          "n_meaningful": 16463,
+          "up_share_of_meaningful_pct": 5.8434,
+          "direction_acc_pct": 35.0604
+        },
+        {
+          "method": "CANDIDATE = v2_shrunk, anchor ref_x1.05 (current)",
+          "n": 21407,
+          "MAE": 270.8675,
+          "WAPE_pct": 10.2672,
+          "n_meaningful": 14040,
+          "up_share_of_meaningful_pct": 6.567,
+          "direction_acc_pct": 39.9715
+        }
+      ]
+    },
+    "skill_candidate_vs_reference": {
+      "skill_pct": 6.1935,
+      "ci_low_pct": 4.1032,
+      "ci_high_pct": 8.6021,
+      "clusters": 27
+    },
+    "skill_candidate_vs_latest_known": {
+      "skill_pct": 0.887,
+      "ci_low_pct": -2.0114,
+      "ci_high_pct": 3.7355,
+      "clusters": 27
+    },
+    "skill_candidate_vs_v1_production_path": {
+      "skill_pct": -1.3157,
+      "ci_low_pct": -5.0684,
+      "ci_high_pct": 1.5825,
+      "clusters": 27
+    },
+    "intervals": {
+      "candidate_conformal": {
+        "coverage_pct": 60.2569,
+        "below_pct": 30.5188,
+        "above_pct": 9.2243,
+        "mean_width_pct_of_start": 78.9301,
+        "n": 127197
+      },
+      "by_band": {
+        "1-7": {
+          "coverage_pct": 55.4468,
+          "below_pct": 32.1364,
+          "above_pct": 12.4168,
+          "mean_width_pct_of_start": 82.255,
+          "n": 18185
+        },
+        "8-14": {
+          "coverage_pct": 57.6042,
+          "below_pct": 32.2783,
+          "above_pct": 10.1174,
+          "mean_width_pct_of_start": 82.3443,
+          "n": 17030
+        },
+        "15-30": {
+          "coverage_pct": 60.0836,
+          "below_pct": 31.638,
+          "above_pct": 8.2784,
+          "mean_width_pct_of_start": 82.7267,
+          "n": 35647
+        },
+        "31-60": {
+          "coverage_pct": 62.7212,
+          "below_pct": 28.7565,
+          "above_pct": 8.5222,
+          "mean_width_pct_of_start": 74.4224,
+          "n": 56335
+        }
+      },
+      "exact_horizon": {
+        "1": {
+          "coverage_pct": 54.1982,
+          "below_pct": 32.7568,
+          "above_pct": 13.045,
+          "mean_width_pct_of_start": 81.6113,
+          "n": 2775
+        },
+        "7": {
+          "coverage_pct": 56.6138,
+          "below_pct": 30.7285,
+          "above_pct": 12.6577,
+          "mean_width_pct_of_start": 82.4459,
+          "n": 2457
+        },
+        "14": {
+          "coverage_pct": 57.6293,
+          "below_pct": 34.4397,
+          "above_pct": 7.931,
+          "mean_width_pct_of_start": 81.7756,
+          "n": 2320
+        },
+        "30": {
+          "coverage_pct": 59.3928,
+          "below_pct": 31.3567,
+          "above_pct": 9.2505,
+          "mean_width_pct_of_start": 82.2123,
+          "n": 2108
+        },
+        "60": {
+          "coverage_pct": 64.7879,
+          "below_pct": 26.1818,
+          "above_pct": 9.0303,
+          "mean_width_pct_of_start": 76.4014,
+          "n": 1650
+        }
+      }
+    },
+    "cells": [
+      {
+        "crop": "Brinjal",
+        "band": "1-7",
+        "n": 2485,
+        "w": 1.0,
+        "MAE_candidate": 1257.9314,
+        "MAE_reference": 1320.7231,
+        "MAE_latest_known": 2044.0266
+      },
+      {
+        "crop": "Brinjal",
+        "band": "8-14",
+        "n": 2280,
+        "w": 1.0,
+        "MAE_candidate": 1145.4571,
+        "MAE_reference": 1236.3953,
+        "MAE_latest_known": 1967.8526
+      },
+      {
+        "crop": "Brinjal",
+        "band": "15-30",
+        "n": 4917,
+        "w": 1.0,
+        "MAE_candidate": 1110.5874,
+        "MAE_reference": 1161.4957,
+        "MAE_latest_known": 2013.1005
+      },
+      {
+        "crop": "Brinjal",
+        "band": "31-60",
+        "n": 7946,
+        "w": 1.0,
+        "MAE_candidate": 1160.3915,
+        "MAE_reference": 1250.9278,
+        "MAE_latest_known": 2157.3081
+      },
+      {
+        "crop": "Cabbage",
+        "band": "1-7",
+        "n": 2410,
+        "w": 0.6,
+        "MAE_candidate": 498.513,
+        "MAE_reference": 526.8562,
+        "MAE_latest_known": 420.1463
+      },
+      {
+        "crop": "Cabbage",
+        "band": "8-14",
+        "n": 2346,
+        "w": 0.0,
+        "MAE_candidate": 554.3358,
+        "MAE_reference": 554.3358,
+        "MAE_latest_known": 404.1223
+      },
+      {
+        "crop": "Cabbage",
+        "band": "15-30",
+        "n": 4776,
+        "w": 0.1,
+        "MAE_candidate": 582.4782,
+        "MAE_reference": 603.5969,
+        "MAE_latest_known": 414.2149
+      },
+      {
+        "crop": "Cabbage",
+        "band": "31-60",
+        "n": 7616,
+        "w": 0.3,
+        "MAE_candidate": 521.3812,
+        "MAE_reference": 608.4801,
+        "MAE_latest_known": 430.5834
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "1-7",
+        "n": 2399,
+        "w": 1.0,
+        "MAE_candidate": 749.9179,
+        "MAE_reference": 815.3698,
+        "MAE_latest_known": 1182.2997
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "8-14",
+        "n": 2237,
+        "w": 1.0,
+        "MAE_candidate": 727.7989,
+        "MAE_reference": 814.6696,
+        "MAE_latest_known": 1173.3429
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "15-30",
+        "n": 4870,
+        "w": 1.0,
+        "MAE_candidate": 700.7385,
+        "MAE_reference": 857.6567,
+        "MAE_latest_known": 1103.108
+      },
+      {
+        "crop": "Cauliflower",
+        "band": "31-60",
+        "n": 7549,
+        "w": 1.0,
+        "MAE_candidate": 622.422,
+        "MAE_reference": 916.3029,
+        "MAE_latest_known": 1154.3438
+      },
+      {
+        "crop": "Onion",
+        "band": "1-7",
+        "n": 3313,
+        "w": 0.0,
+        "MAE_candidate": 2185.1904,
+        "MAE_reference": 2185.1904,
+        "MAE_latest_known": 1528.6427
+      },
+      {
+        "crop": "Onion",
+        "band": "8-14",
+        "n": 2992,
+        "w": 0.0,
+        "MAE_candidate": 2208.6029,
+        "MAE_reference": 2208.6029,
+        "MAE_latest_known": 1547.5406
+      },
+      {
+        "crop": "Onion",
+        "band": "15-30",
+        "n": 6245,
+        "w": 0.0,
+        "MAE_candidate": 2235.8338,
+        "MAE_reference": 2235.8338,
+        "MAE_latest_known": 1573.1544
+      },
+      {
+        "crop": "Onion",
+        "band": "31-60",
+        "n": 9630,
+        "w": 0.0,
+        "MAE_candidate": 2142.7725,
+        "MAE_reference": 2142.7725,
+        "MAE_latest_known": 1593.4434
+      },
+      {
+        "crop": "Potato",
+        "band": "1-7",
+        "n": 1890,
+        "w": 0.6,
+        "MAE_candidate": 1144.253,
+        "MAE_reference": 1161.0868,
+        "MAE_latest_known": 439.0151
+      },
+      {
+        "crop": "Potato",
+        "band": "8-14",
+        "n": 1772,
+        "w": 0.0,
+        "MAE_candidate": 1179.9661,
+        "MAE_reference": 1179.9661,
+        "MAE_latest_known": 446.8203
+      },
+      {
+        "crop": "Potato",
+        "band": "15-30",
+        "n": 3697,
+        "w": 0.0,
+        "MAE_candidate": 1196.4741,
+        "MAE_reference": 1196.4741,
+        "MAE_latest_known": 436.7986
+      },
+      {
+        "crop": "Potato",
+        "band": "31-60",
+        "n": 5986,
+        "w": 0.0,
+        "MAE_candidate": 1202.3281,
+        "MAE_reference": 1202.3281,
+        "MAE_latest_known": 440.5515
+      },
+      {
+        "crop": "Tomato",
+        "band": "1-7",
+        "n": 2601,
+        "w": 1.0,
+        "MAE_candidate": 1261.401,
+        "MAE_reference": 1323.9117,
+        "MAE_latest_known": 1135.7322
+      },
+      {
+        "crop": "Tomato",
+        "band": "8-14",
+        "n": 2477,
+        "w": 0.5,
+        "MAE_candidate": 1164.3861,
+        "MAE_reference": 1227.996,
+        "MAE_latest_known": 1108.6302
+      },
+      {
+        "crop": "Tomato",
+        "band": "15-30",
+        "n": 5139,
+        "w": 0.3,
+        "MAE_candidate": 993.5668,
+        "MAE_reference": 1104.6495,
+        "MAE_latest_known": 1154.7761
+      },
+      {
+        "crop": "Tomato",
+        "band": "31-60",
+        "n": 8217,
+        "w": 0.4,
+        "MAE_candidate": 849.4296,
+        "MAE_reference": 1127.888,
+        "MAE_latest_known": 1116.0063
+      },
+      {
+        "crop": "Wheat",
+        "band": "1-7",
+        "n": 3087,
+        "w": 1.0,
+        "MAE_candidate": 284.3501,
+        "MAE_reference": 292.1383,
+        "MAE_latest_known": 275.2666
+      },
+      {
+        "crop": "Wheat",
+        "band": "8-14",
+        "n": 2926,
+        "w": 1.0,
+        "MAE_candidate": 270.3023,
+        "MAE_reference": 272.1498,
+        "MAE_latest_known": 267.7687
+      },
+      {
+        "crop": "Wheat",
+        "band": "15-30",
+        "n": 6003,
+        "w": 1.0,
+        "MAE_candidate": 271.3745,
+        "MAE_reference": 267.8444,
+        "MAE_latest_known": 269.0105
+      },
+      {
+        "crop": "Wheat",
+        "band": "31-60",
+        "n": 9391,
+        "w": 1.0,
+        "MAE_candidate": 266.2876,
+        "MAE_reference": 248.8862,
+        "MAE_latest_known": 274.5048
+      }
+    ]
+  },
+  "shap": {
+    "group_share_pct": {
+      "supply": 1.633,
+      "seasonal": 32.5789,
+      "market_premium": 5.4108,
+      "recent_trend": 18.401,
+      "last_year": 8.181,
+      "other": 33.7954
+    },
+    "top_features": {
+      "log_price": 0.0719,
+      "doy_cos": 0.0359,
+      "target_doy_cos": 0.0275,
+      "lag_90_change": 0.0217,
+      "commodity_code": 0.0211,
+      "target_doy_sin": 0.0194,
+      "yoy_gap": 0.0163,
+      "state_price_gap": 0.0131,
+      "lag_30_change": 0.0121,
+      "season_change": 0.012,
+      "horizon_days": 0.0112,
+      "roll_mean_30_gap": 0.0092,
+      "week_of_year": 0.0077,
+      "doy_sin": 0.0071,
+      "roll_mean_7_gap": 0.0054
+    },
+    "n_cases": 2000,
+    "max_reconstruction_error": 0.0
+  },
+  "shrink_weights": {
+    "Brinjal": {
+      "1-7": 0.8,
+      "8-14": 0.9,
+      "15-30": 1.0,
+      "31-60": 1.0
+    },
+    "Cabbage": {
+      "1-7": 0.8,
+      "8-14": 0.6,
+      "15-30": 0.6,
+      "31-60": 0.9
+    },
+    "Cauliflower": {
+      "1-7": 0.8,
+      "8-14": 0.8,
+      "15-30": 0.7,
+      "31-60": 0.8
+    },
+    "Onion": {
+      "1-7": 0.3,
+      "8-14": 0.3,
+      "15-30": 0.3,
+      "31-60": 0.3
+    },
+    "Potato": {
+      "1-7": 0.3,
+      "8-14": 0.0,
+      "15-30": 0.0,
+      "31-60": 0.2
+    },
+    "Tomato": {
+      "1-7": 0.6,
+      "8-14": 0.4,
+      "15-30": 0.2,
+      "31-60": 0.4
+    },
+    "Wheat": {
+      "1-7": 1.0,
+      "8-14": 0.9,
+      "15-30": 1.0,
+      "31-60": 1.0
+    }
+  },
+  "phase1_reference": {
+    "real_origin": [
+      {
+        "method": "model",
+        "n": 149426,
+        "MAE": 444.063,
+        "WAPE_pct": 22.3188,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 62.7547
+      },
+      {
+        "method": "no_change",
+        "n": 149426,
+        "MAE": 464.8727,
+        "WAPE_pct": 23.3647,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": null
+      },
+      {
+        "method": "year_ago_x1.05",
+        "n": 149426,
+        "MAE": 1131.633,
+        "WAPE_pct": 56.8763,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 60.6761
+      },
+      {
+        "method": "seasonal_naive",
+        "n": 149426,
+        "MAE": 729.5438,
+        "WAPE_pct": 36.6671,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 45.1229
+      },
+      {
+        "method": "seasonal_ratio",
+        "n": 149426,
+        "MAE": 582.3535,
+        "WAPE_pct": 29.2693,
+        "n_meaningful": 104397,
+        "up_share_of_meaningful_pct": 49.6058,
+        "direction_acc_pct": 48.8098
+      }
+    ],
+    "projection": [
+      {
+        "method": "model",
+        "n": 127144,
+        "MAE": 1010.092,
+        "WAPE_pct": 50.6427,
+        "n_meaningful": 112127,
+        "up_share_of_meaningful_pct": 20.1744,
+        "direction_acc_pct": 55.3899
+      },
+      {
+        "method": "reference_x1.05",
+        "n": 127144,
+        "MAE": 1090.0527,
+        "WAPE_pct": 54.6517,
+        "n_meaningful": 112127,
+        "up_share_of_meaningful_pct": 20.1744,
+        "direction_acc_pct": null
+      },
+      {
+        "method": "latest_known",
+        "n": 127144,
+        "MAE": 1031.6593,
+        "WAPE_pct": 51.7241,
+        "n_meaningful": 112127,
+        "up_share_of_meaningful_pct": 20.1744,
+        "direction_acc_pct": null
+      },
+      {
+        "method": "year_ago_x1.05",
+        "n": 127144,
+        "MAE": 1124.715,
+        "WAPE_pct": 56.3896,
+        "n_meaningful": 112127,
+        "up_share_of_meaningful_pct": 20.1744,
+        "direction_acc_pct": 51.3043
+      },
+      {
+        "method": "seasonal_ratio",
+        "n": 127144,
+        "MAE": 1476.6366,
+        "WAPE_pct": 74.0338,
+        "n_meaningful": 112127,
+        "up_share_of_meaningful_pct": 20.1744,
+        "direction_acc_pct": 37.6564
+      }
+    ],
+    "projection_intervals": {
+      "coverage_pct": 45.3069,
+      "n": 127144,
+      "mean_width_pct_of_start_price": 69.7569,
+      "below_pct": 49.2772,
+      "above_pct": 5.4159
+    }
+  }
+}
