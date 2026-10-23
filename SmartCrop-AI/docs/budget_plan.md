@@ -19,11 +19,10 @@ Stored with the history record in three nullable columns: `budget_inr`, `priorit
 ## Risk level (per crop)
 `downside = net_profit_low / upfront cost` (negative = a loss at the low end)
 
-| Level | Rule |
-|---|---|
-| Low | reliable forecast **and** downside >= -10% |
-| Medium | reliable forecast **and** downside >= -40% |
-| High | anything worse, **or** no reliable forecast |
+| Forecast | Low | Medium | High |
+|---|---|---|---|
+| Reliable (`beats_baseline`) | downside >= -10% | downside >= -40% | anything worse |
+| **Not** reliable | **never Low** | downside >= -40% | anything worse |
 
 Thresholds: `RISK_THRESHOLDS = {"low": 0.10, "medium": 0.40}`. The supply note is shown for information; it does not change the level.
 
@@ -38,5 +37,5 @@ Thresholds: `RISK_THRESHOLDS = {"low": 0.10, "medium": 0.40}`. The supply note i
    * **Highest profit**: highest profit first (tie: smaller downside).
 5. `best_for_you` is the first; up to two more are alternatives. `matches_standard` says whether it equals the standard #1.
 
-If nothing passes, the plan says so plainly and offers the cheapest *suitable* crop, with the extra money needed and the area the
-budget does cover. Costs are approximate estimates (2024 prices + 5% a year).
+If nothing passes, the plan says so plainly and offers the cheapest *suitable* crop, with its full cost for the field, the extra money
+needed and the area the budget does cover. Costs are approximate estimates (2024 prices + 5% a year).

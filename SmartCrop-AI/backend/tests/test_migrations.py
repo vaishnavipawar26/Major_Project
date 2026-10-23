@@ -70,3 +70,40 @@ def test_budget_plan_migration_up_and_down_keeps_old_rows(monkeypatch):
         command.upgrade(cfg, "head")        # and up again
     finally:
         get_settings.cache_clear()
+
+
+def test_startup_check_stops_with_a_clear_message_when_the_database_is_behind(monkeypatch):
+    from app.database.schema_check import SchemaOutOfDate, check_schema
+    db = Path(tempfile.mkdtemp()) / "behind.db"
+    url = f"sqlite:///{db.as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    get_settings.cache_clear()
+    try:
+        cfg = Config(str(BACKEND / "alembic.ini"))
+        cfg.set_main_option("script_location", str(BACKEND / "alembic"))
+        engine = create_engine(url)
+        command.upgrade(cfg, "0002_economic")
+        try:
+            check_schema(engine)
+            raise AssertionError("should have refused an out-of-date database")
+        except SchemaOutOfDate as e:
+            assert "alembic upgrade head" in str(e) and "mysqldump" in str(e) and "0002_economic" in str(e)
+        command.upgrade(cfg, "head")
+        check_schema(engine)                                   # at head: fine
+    finally:
+        get_settings.cache_clear()
+
+
+def test_startup_check_accepts_a_database_made_from_the_models_and_rejects_one_missing_columns():
+    from sqlalchemy import text
+    from app.database.schema_check import SchemaOutOfDate, check_schema
+    engine = create_engine(f"sqlite:///{(Path(tempfile.mkdtemp()) / 'plain.db').as_posix()}")
+    Base.metadata.create_all(engine)
+    check_schema(engine)                                       # no alembic history but nothing missing
+    with engine.begin() as c:
+        c.execute(text("ALTER TABLE crop_recommendations DROP COLUMN budget_inr"))
+    try:
+        check_schema(engine)
+        raise AssertionError("should have refused a database missing a column")
+    except SchemaOutOfDate as e:
+        assert "crop_recommendations.budget_inr" in str(e)

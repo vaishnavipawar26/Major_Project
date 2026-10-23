@@ -15,9 +15,11 @@ RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
 # ---- the rules, in one place ---------------------------------------------------------------------------------------------
 # Risk is judged from the profit at the LOW end of the monthly model's expected price range (economics.net_profit_low),
 # as a share of the upfront cost, together with whether the monthly model beat its simple baseline for that crop in testing.
-#   Low    : reliable forecast AND net_profit_low >= -10% of upfront cost
-#   Medium : reliable forecast AND net_profit_low >= -40% of upfront cost
-#   High   : anything worse, OR no reliable forecast (beats_baseline is false)
+#   reliable forecast (beats_baseline):
+#       Low    : net_profit_low >= -10% of upfront cost
+#       Medium : net_profit_low >= -40% of upfront cost
+#       High   : anything worse
+#   NO reliable forecast: never Low.  Medium if net_profit_low >= -40% of upfront cost, otherwise High.
 RISK_THRESHOLDS = {"low": 0.10, "medium": 0.40}
 # Balanced priority: score = profit / upfront cost - BALANCED_DOWNSIDE_WEIGHT * (share of upfront cost lost at the low end)
 BALANCED_DOWNSIDE_WEIGHT = 0.5
@@ -35,7 +37,7 @@ def risk_level(downside_pct: float, reliable: bool) -> str:
     """``downside_pct``: low-end profit as a share of upfront cost (negative = a loss)."""
     if reliable and downside_pct >= -RISK_THRESHOLDS["low"]:
         return "low"
-    if reliable and downside_pct >= -RISK_THRESHOLDS["medium"]:
+    if downside_pct >= -RISK_THRESHOLDS["medium"]:      # also the best an unreliable forecast can get
         return "medium"
     return "high"
 
@@ -86,7 +88,7 @@ def _sort_key(priority: str):
     return lambda f: -(f["profit"] / f["upfront"] - BALANCED_DOWNSIDE_WEIGHT * max(0.0, -f["downside_pct"]))
 
 
-def build_plan(analysis: dict, budget: float | None, priority: str | None, risk: str | None) -> dict:
+def build_plan(analysis: dict, budget: float | None, priority: str | None, risk: str | None, cost_basis: dict | None = None) -> dict:
     priority, risk = priority or "balanced", risk or "medium"
     area = analysis["area_acres"]
     facts = [crop_facts(r, area, budget) for r in analysis["results"]]
@@ -107,7 +109,7 @@ def build_plan(analysis: dict, budget: float | None, priority: str | None, risk:
             "alternatives": [f["crop"] for f in passing[1:3]],
             "matches_standard": bool(best) and best == analysis.get("best_overall"),
             "crops": facts, "excluded": [x for x in excluded if x["crop"] != best],
-            "fallback": None, "no_fit_reason": None,
+            "fallback": None, "no_fit_reason": None, "cost_basis": cost_basis,
             "rules": {"risk_thresholds": RISK_THRESHOLDS, "balanced_downside_weight": BALANCED_DOWNSIDE_WEIGHT,
                       "supply_note_pct": SUPPLY_NOTE_PCT}}
     if not passing:
@@ -118,5 +120,5 @@ def build_plan(analysis: dict, budget: float | None, priority: str | None, risk:
             affordable = [f for f in suitable if f["fits_budget"] is not False]
             plan["no_fit_reason"] = "risk" if affordable else "budget"
             pick = min(affordable or suitable, key=lambda f: f["upfront"])
-            plan["fallback"] = {k: pick[k] for k in ("crop", "upfront", "extra_needed", "affordable_area", "risk_level", "profit", "downside_profit")}
+            plan["fallback"] = {k: pick[k] for k in ("crop", "upfront", "upfront_per_acre", "extra_needed", "affordable_area", "risk_level", "profit", "downside_profit")}
     return plan

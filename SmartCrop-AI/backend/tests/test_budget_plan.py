@@ -21,7 +21,7 @@ def analysis(*results, best="A", area=1.0):
 # A: cheap and steady, B: dearer with more profit and a deeper downside, C: cheapest but a rough forecast
 A = lambda **k: crop("A", 50000, 20000, -2000, **k)       # downside -4% of cost: Low
 B = lambda **k: crop("B", 80000, 60000, -20000, **k)      # downside -25%: Medium
-C = lambda **k: crop("C", 30000, 15000, -20000, reliable=False, **k)   # no reliable forecast: High
+C = lambda **k: crop("C", 30000, 15000, -20000, reliable=False, **k)   # no reliable forecast, -67% at the low end: High
 
 
 def test_upfront_cost_is_cultivation_plus_storage_not_marketing():
@@ -30,10 +30,18 @@ def test_upfront_cost_is_cultivation_plus_storage_not_marketing():
 
 @pytest.mark.parametrize("pct,reliable,expected", [
     (0.05, True, "low"), (-0.10, True, "low"), (-0.1001, True, "medium"), (-0.40, True, "medium"), (-0.4001, True, "high"),
-    (0.20, False, "high"), (-0.01, False, "high")])
+    # no reliable forecast: never Low; Medium down to -40%, else High
+    (0.20, False, "medium"), (-0.01, False, "medium"), (-0.40, False, "medium"), (-0.4001, False, "high")])
 def test_risk_level_thresholds(pct, reliable, expected):
     assert risk_level(pct, reliable) == expected
     assert RISK_THRESHOLDS == {"low": 0.10, "medium": 0.40}
+
+
+def test_an_unreliable_forecast_is_never_low_but_can_be_medium():
+    mild = crop("M", 50000, 20000, -2000, reliable=False)        # -4% at the low end: Low if reliable
+    assert build_plan(analysis(mild), None, "balanced", "high")["crops"][0]["risk_level"] == "medium"
+    assert build_plan(analysis(mild), None, "balanced", "low")["best_for_you"] is None      # so a Low-risk farmer is not offered it
+    assert build_plan(analysis(C()), None, "balanced", "high")["crops"][0]["risk_level"] == "high"
 
 
 def test_budget_filter_affordable_area_and_extra_needed():

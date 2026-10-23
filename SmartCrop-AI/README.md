@@ -1171,6 +1171,17 @@ Edit `backend\.env` (see the table below), then create the tables:
 alembic upgrade head
 ```
 
+**Upgrading an existing installation?** Back up MySQL first, then apply the new migrations (for example `0003_budget_plan`,
+which adds three optional columns and leaves every existing row unchanged):
+
+```powershell
+mysqldump -u smartcrop_user -p smartcrop_ai > smartcrop_ai_backup.sql
+alembic upgrade head
+```
+
+The API checks the database version when it starts. If it is behind, it stops with the message
+`Run: alembic upgrade head` instead of failing later inside a page.
+
 The trained models and processed data are included, so no training is needed to run the app.
 
 ### 12.5 Frontend (terminal 2)

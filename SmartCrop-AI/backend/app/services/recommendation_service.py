@@ -64,6 +64,12 @@ def _check_city(rec: CropRecommender, city: str) -> str:
     return match
 
 
+def cost_basis(rec: CropRecommender) -> dict:
+    """Where the costs come from, for the note "approximate estimates (2024 prices + 5% a year)"."""
+    years = {e.cost_reference_year for e in rec.economics.values()}
+    return {"reference_year": years.pop() if len(years) == 1 else None, "inflation_annual_pct": round(rec.forecaster.inflation * 100, 1)}
+
+
 def analyze(rec: CropRecommender, body: CropRequest) -> dict:
     city = _check_city(rec, body.city)
     out = rec.analyze(model_inputs(rec, body), city=city, planting_month=body.planting_month,
@@ -76,7 +82,7 @@ def analyze(rec: CropRecommender, body: CropRequest) -> dict:
                         "check your inputs.")
     result = {**out, "season_used": season_for_month(body.planting_month), "warnings": warnings}
     if body.budget_inr is not None or body.priority or body.risk_level:       # otherwise the output is exactly the standard one
-        result["personal_plan"] = build_plan(out, body.budget_inr, body.priority, body.risk_level)
+        result["personal_plan"] = build_plan(out, body.budget_inr, body.priority, body.risk_level, cost_basis(rec))
     return result
 
 

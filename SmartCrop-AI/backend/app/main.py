@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config.settings import get_settings
+from app.database.connection import engine
+from app.database.schema_check import check_schema
 from app.ml.registry import ModelRegistry
 from app.routes import auth, crop_recommendation, history, price_prediction, weather
 
@@ -16,6 +18,7 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    check_schema(engine)        # stop here with "Run: alembic upgrade head" rather than failing inside a page
     app.state.registry = ModelRegistry().load()
     reg = app.state.registry
     log.info("Models loaded: price=%s monthly=%s crop=%s", reg.price is not None,
