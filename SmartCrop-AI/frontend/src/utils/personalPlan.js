@@ -69,9 +69,16 @@ const exText = (x, t) => {
     const area = x.params.area;
     return `${t("cr.pp.ex.over_budget", { extra: rupees(x.params.extra) })}${area != null ? ` · ${t("cr.pp.covers", { area: String(area), unit: t(area <= 1 ? "cr.pp.acreWord" : "cr.pp.acresWord") })}` : ""}`;
   }
-  if (x.code === "risk") return t(`cr.pp.ex.risk.${x.params.level}`);
+  if (x.code === "risk") return t(`cr.pp.ex.risk.${x.params?.level}`);
   return t(`cr.pp.ex.${x.code}`);
 };
+/** "<Crop> — <reason>", never empty and never a raw dictionary key: an unknown code falls back to a plain generic reason. */
+function exLine(x, t) {
+  const crop = cropName(t, x.crop) || String(x.crop);
+  let reason = exText(x, t);
+  if (!reason || /^cr\.pp\./.test(reason) || /\{\w+\}/.test(reason)) reason = t("cr.pp.ex.other");
+  return `${crop} — ${reason}`;
+}
 
 /** The sentence(s) shown when no crop passes the filters, with the cheapest suitable crop's full cost for the field. */
 export function noFitText(plan, response, t) {
@@ -91,7 +98,7 @@ export function planView(response, t) {
   const best = plan.best_for_you ? facts[plan.best_for_you] : null;
   const view = {
     header: headerLine(plan, t), ok: plan.outcome === "ok", matches: !!plan.matches_standard, cards: [], noFit: null, matchLine: null,
-    excluded: plan.excluded.map((x) => ({ crop: x.crop, text: `${cropName(t, x.crop)} — ${exText(x, t)}` })), costNote: costNote(plan, t),
+    excluded: (plan.excluded || []).filter((x) => x?.crop).map((x) => ({ crop: x.crop, text: exLine(x, t) })), costNote: costNote(plan, t),
   };
   if (!best) {
     view.noFit = noFitText(plan, response, t);

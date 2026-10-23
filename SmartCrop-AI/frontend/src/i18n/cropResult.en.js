@@ -103,6 +103,7 @@ export default {
   "cr.pp.ex.poor_fit": "does not suit your soil and weather",
   "cr.pp.ex.loss": "expected to lose money",
   "cr.pp.ex.not_sellable": "cannot be sold in your selling month",
+  "cr.pp.ex.other": "not a fit for your plan",
   "cr.pp.ex.no_price": "no price forecast",
   "cr.pp.noFit.noSuitable": "No crop is suitable for your soil, weather and months, so there is no plan to show.",
   "cr.pp.noFit.budget": "No suitable crop fits your budget.",
