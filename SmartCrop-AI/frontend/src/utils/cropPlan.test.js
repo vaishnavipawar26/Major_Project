@@ -183,4 +183,3 @@ describe("indicatorRows: the edge of a usual range", () => {
     expect(mainConcern(r, { ...ok, temperature: 20.5 }, tt)).toMatchObject({ feature: "temperature", low: true });
   });
 });
-});
