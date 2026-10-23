@@ -22,6 +22,8 @@ import { cropService } from "../services/cropService";
 import { buildRanges, fieldStatus, fmtRange, likelyFits } from "../utils/featureRanges";
 import { cropName, monthLong } from "../utils/format";
 import { numberInRange } from "../utils/validation";
+import BudgetStep from "../components/crop/BudgetStep";
+import { DEFAULT_PRIORITY, DEFAULT_RISK, budgetError, cleanBudget, planPayload } from "../utils/budgetPlan";
 
 export const LAST_CROP_RESULT_KEY = "smartcrop_last_crop_result";
 
@@ -38,7 +40,7 @@ const FIELDS = [
 ];
 const SOIL_KEYS = FIELDS.filter((f) => f.group === "soil").map((f) => f.key);
 const WEATHER_KEYS = FIELDS.filter((f) => f.group === "weather").map((f) => f.key);
-const FIELD_ORDER = [...SOIL_KEYS, "area_acres", "selling_month", ...WEATHER_KEYS];
+const FIELD_ORDER = [...SOIL_KEYS, "area_acres", "selling_month", ...WEATHER_KEYS, "budget_inr"];
 const STATE = "Maharashtra";
 const MONTH_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 // stored (and sent) in English; shown in the chosen language
@@ -79,6 +81,8 @@ const blankForm = (thisMonth) => ({
   nitrogen: "", phosphorus: "", potassium: "", ph: "", temperature: "", humidity: "", rainfall: "",
   city: "Pune", planting_month: thisMonth, selling_month: ((thisMonth + 3) % 12) + 1,
   area_acres: "1", soil_type: "unknown",
+  // optional "Budget & priorities" card; left as they are, the request is exactly the standard one
+  budget_inr: "", priority: DEFAULT_PRIORITY, risk_level: DEFAULT_RISK,
 });
 
 /** Progress step: a number, the current step highlighted, a green check once the section is valid. */
@@ -119,8 +123,9 @@ export default function CropRecommendation() {
 
   const set = (k) => (e) => {
     if (k === "planting_month" || k === "selling_month") exampleWeather.current = false;
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+    setForm((f) => ({ ...f, [k]: k === "budget_inr" ? cleanBudget(e.target.value) : e.target.value }));
   };
+  const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const touch = (k) => () => setTouched((x) => ({ ...x, [k]: true }));
   const plant = Number(form.planting_month), sell = Number(form.selling_month);
   const crops = useMemo(() => readyCrops(opts?.calendar, plant, sell), [opts, plant, sell]);
@@ -162,6 +167,8 @@ export default function CropRecommendation() {
     const areaErr = numberInRange(form.area_acres, AREA_MIN, AREA_MAX, t("crop.form.validLabel.area_acres"), t);
     if (areaErr) errs.area_acres = areaErr;
     if (monthsError) errs.selling_month = monthsError;
+    const budgetKey = budgetError(form.budget_inr);
+    if (budgetKey) errs.budget_inr = t(budgetKey);
     return errs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, ranges, t, manual, monthsError]);
@@ -177,6 +184,7 @@ export default function CropRecommendation() {
   const placeDone = Boolean(form.city) && !errors.area_acres;
   const weatherDone = WEATHER_KEYS.every((k) => !errors[k]);
   const dones = [soilDone, placeDone, weatherDone];
+  const budgetDone = form.budget_inr !== "" && !errors.budget_inr;
   const current = dones.findIndex((d) => !d);
   const invalid = Object.keys(errors).length > 0;
   const fits = likelyFits(form, ranges);
@@ -204,6 +212,7 @@ export default function CropRecommendation() {
       city: form.city, planting_month: plant,
       selling_month: sell, area_acres: Number(form.area_acres),
       state: STATE, soil_type: form.soil_type,
+      ...planPayload(form),
     };
     setSubmitting(true);
     setApiError(null);
@@ -251,6 +260,7 @@ export default function CropRecommendation() {
         <Step n={1} label={t("crop.form.step1")} done={dones[0]} current={current === 0} />
         <Step n={2} label={t("crop.form.step2")} done={dones[1]} current={current === 1} />
         <Step n={3} label={t("crop.form.step3")} done={dones[2]} current={current === 2} />
+        <Step n={4} label={t("crop.form.step4")} done={budgetDone} current={false} />
       </ol>
 
       <form onSubmit={submit} noValidate>
@@ -341,6 +351,9 @@ export default function CropRecommendation() {
             )}
           </section>
         </div>
+
+        <BudgetStep form={form} set={set} setField={setField} error={shown("budget_inr")} onBlur={touch("budget_inr")}
+          economics={opts.economics} inflationPct={opts.inflation_annual_pct} SectionHead={SectionHead} />
 
         <div className="cf-card cf-bottom">
           <div className="crop-chips-box">
