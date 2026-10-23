@@ -8,6 +8,8 @@ const mr = {
   "chart.inShort": "थोडक्यात:",
   "unit.rsPerQuintal": "₹ प्रति क्विंटल",
   "unit.perQuintal": "प्रति क्विंटल",
+  // NEEDS REVIEW: Marathi wording for widget.error was written without a native review.
+  "widget.error": "हा भाग लोड होऊ शकला नाही.",
   "common.retry": "पुन्हा प्रयत्न करा",
   "common.backToHistory": "इतिहासाकडे परत",
   "form.fixErrors": "खाली लाल रंगात दाखवलेली {n} माहिती दुरुस्त करा.",

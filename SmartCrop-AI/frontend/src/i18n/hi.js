@@ -8,6 +8,8 @@ const hi = {
   "chart.inShort": "संक्षेप में:",
   "unit.rsPerQuintal": "₹ प्रति क्विंटल",
   "unit.perQuintal": "प्रति क्विंटल",
+  // NEEDS REVIEW: Hindi wording for widget.error was written without a native review.
+  "widget.error": "यह हिस्सा लोड नहीं हो सका.",
   "common.retry": "फिर से कोशिश करें",
   "common.backToHistory": "इतिहास पर वापस",
   "form.fixErrors": "नीचे लाल रंग में दिखाई गई {n} जानकारी ठीक करें.",

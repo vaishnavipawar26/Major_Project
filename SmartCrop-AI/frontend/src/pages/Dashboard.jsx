@@ -14,6 +14,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useT } from "../i18n/LanguageContext";
 import { cropService } from "../services/cropService";
 import { historyService } from "../services/historyService";
+import WidgetBoundary from "../components/WidgetBoundary";
+import { fieldSizeText } from "../utils/fieldSize";
 import { addDays, compactRupees, cropName, fmtDate, monthLabel, monthShort, rupees, titleCase, topCrops } from "../utils/format";
 import { isAboutSame, isContextOnly, latestText } from "../utils/priceView";
 import heroPhoto from "../assets/photos/hero-farmer.webp";
@@ -183,6 +185,7 @@ export default function Dashboard() {
 
   return (
     <>
+      <WidgetBoundary name="hero">
       <section className={`home-hero hero-v2${intro ? " hero-intro" : ""}`} aria-labelledby="dash-title">
         <svg className="hero-grass" viewBox="0 0 320 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <defs>
@@ -223,6 +226,7 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+      </WidgetBoundary>
 
       <Tip id="dashboard" className="mb-4">{t("tip.dashboard")}</Tip>
 
@@ -241,12 +245,13 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="recent-grid">
-            <RecentPrices items={s.recent_predictions} total={s.total_price_predictions} />
-            <RecentCrops items={s.recent_recommendations} total={s.total_crop_recommendations} calendar={options.data?.calendar} />
+            <WidgetBoundary name="recent-prices"><RecentPrices items={s.recent_predictions} total={s.total_price_predictions} /></WidgetBoundary>
+            <WidgetBoundary name="recent-crops"><RecentCrops items={s.recent_recommendations} total={s.total_crop_recommendations} calendar={options.data?.calendar} /></WidgetBoundary>
           </div>
         )}
       </section>
 
+      <WidgetBoundary name="benefits">
       <section className="section benefits" aria-labelledby="benefits-title">
         <h2 id="benefits-title" className="section-heading">{t("dash.benefitsTitle")}</h2>
         <ul className="benefit-list">
@@ -258,6 +263,7 @@ export default function Dashboard() {
           ))}
         </ul>
       </section>
+      </WidgetBoundary>
     </>
   );
 }

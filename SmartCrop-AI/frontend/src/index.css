@@ -2181,3 +2181,5 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 /* ---------- price form: State | Crop | Market in one row (State narrower), stacked State -> Crop -> Market on a phone ---------- */
 .price-form .form-grid.form-grid-3 { grid-template-columns: minmax(9.5rem, 0.7fr) minmax(0, 1fr) minmax(0, 1.3fr); align-items: start; }
 @media (max-width: 900px) { .price-form .form-grid.form-grid-3 { grid-template-columns: minmax(0, 1fr); } }
+
+.widget-error { display: flex; align-items: center; gap: 0.5rem; color: var(--warn-text); background: var(--harvest-soft); border: 1px solid var(--harvest-line); }
