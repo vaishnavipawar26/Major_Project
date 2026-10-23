@@ -341,3 +341,15 @@ def test_tomato_is_context_only_through_the_api_with_no_rupee_effects(client, us
     assert all(c["inr_effect"] is None for c in e["cards"])
     assert all(re.search(r"\b20\d\d\b", c["evidence"]) for c in e["cards"] if c["evidence_available"])
     assert e["banner"]["text"].startswith("No 2026 market data yet")
+
+
+# ------------------------------------------------------------------ range display rule
+def test_explanation_range_is_hidden_below_40_percent_coverage_and_otherwise_carries_its_coverage():
+    shown, _ = build()                                                       # coverage 46 %
+    assert shown["headline"]["range"] is not None and shown["headline"]["range_coverage_pct"] == 46.0 and shown["headline"]["range_hidden"] is False
+    hidden, _ = build(cell={**CELL, "range_coverage_pct": 39.9})
+    assert hidden["headline"]["range"] is None and hidden["headline"]["range_hidden"] is True
+    edge, _ = build(cell={**CELL, "range_coverage_pct": 40.0})
+    assert edge["headline"]["range"] is not None
+    ctx, _ = build(context_only=True)
+    assert ctx["headline"]["range"] is None                                  # no model price, so no model range

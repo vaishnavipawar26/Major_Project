@@ -17,6 +17,7 @@ import { historyService } from "../services/historyService";
 import { priceService } from "../services/priceService";
 import { ADVICE_STYLE, STATE_MARKET } from "../utils/constants";
 import { addDays, cropName, dayRanges, fmtDate, pct, rupees, signedRupees, priceSourceKey } from "../utils/format";
+import { isContextOnly, rangeText, rangeView } from "../utils/priceView";
 import { LAST_PRICE_REQUEST_KEY } from "./PricePrediction";
 
 const ALGORITHMS = { random_forest: "Random Forest", xgboost: "XGBoost" };
@@ -117,13 +118,30 @@ function SellCell({ label, date, price, value, sub, rec, tone }) {
  * Smart selling recommendation (codes from app/ml/price_prediction/selling_advice.py). Everything shown
  * is built from the API's numbers; the wording is short, translated and never repeats a price.
  */
-function SellRecommendation({ advice, commodity }) {
+function SellRecommendation({ advice, commodity, contextOnly }) {
   const t = useT();
   const style = ADVICE_STYLE[advice.code] || ADVICE_STYLE.UNAVAILABLE;
   const Icon = style.icon;
   const crop = cropName(t, commodity);
   const s = advice.storage;
   const farmDays = s.farm_hold_days ?? s.max_hold_days;
+  if (contextOnly) {
+    // the model is not used to claim a direction here: no model price, no dates compared
+    return (
+      <div className={`sell-card ${style.tone}`} data-testid="sell-context-only">
+        <div className="sell-badge"><Icon size={18} aria-hidden="true" />{labelFor(t, "price.advice.code.UNAVAILABLE", advice.label)}</div>
+        <div className="sell-why">
+          <h3><Lightbulb size={16} aria-hidden="true" />{t("price.sell.whyTitle")}</h3>
+          <p><ServerText>{advice.explanation}</ServerText></p>
+          <p><ServerText>{advice.reason}</ServerText></p>
+        </div>
+        <div className="sell-store">
+          <h3><Warehouse size={16} aria-hidden="true" />{t("price.sell.storageTitle")}</h3>
+          <p className="sell-store-general"><ServerText>{s.note}</ServerText> {t("price.advice.keepsFarm", { days: days(t, farmDays) })}</p>
+        </div>
+      </div>
+    );
+  }
   const wait = advice.code === "WAIT";
   const noPrice = advice.target_price == null;
   // the best other date the backend reports (the recommended date when waiting is advised)
@@ -252,6 +270,10 @@ export default function PriceResult() {
   const sourceKey = priceSourceKey(forecast.source);
   const estimated = forecast.source?.method === "historical_baseline";
   const marketName = series.market === STATE_MARKET ? tr("price.form.allMarkets") : series.market;
+  const ctxOnly = isContextOnly(forecast);
+  const range = rangeView(forecast);
+  const rt = rangeText(range);
+  const latest = forecast.latest_recorded;
 
   return (
     <>
@@ -272,19 +294,33 @@ export default function PriceResult() {
           <div className="hero-card-head">
             <span className="stat-label">{tr("price.result.expectedOn", { date: fmtDate(t.date) })}</span>
           </div>
-          <div className="hero-price">{rupees(t.predicted_price)}<span className="unit"> {tr("unit.perQuintal")}</span></div>
-          <div className="stat-sub">{tr("price.result.likelyRange", { low: rupees(t.lower), high: rupees(t.upper) })}</div>
+          {ctxOnly ? (
+            <div data-testid="no-direction">
+              <p className="hero-nodir">
+                {latest ? tr("price.result.noDirection", { price: rupees(latest.price), date: fmtDate(latest.date) }) : tr("price.result.noDirectionNoPrice")}
+              </p>
+              <div className="stat-sub">{tr("price.result.noDirectionNote")}
+                {forecast.range_info?.typical_miss_inr != null && <> {tr("price.result.typicalMiss", { amount: rupees(forecast.range_info.typical_miss_inr) })}</>}</div>
+            </div>
+          ) : (
+            <>
+              <div className="hero-price">{rupees(t.predicted_price)}<span className="unit"> {tr("unit.perQuintal")}</span></div>
+              {rt && <div className="stat-sub" data-testid="range-line">{tr(rt.key, { low: rupees(range.low), high: rupees(range.high), pct: range.pct })}</div>}
+            </>
+          )}
           <div className="hero-meta">
-            <div><span className="stat-label">{tr(forecast.projection || estimated ? "price.result.startingPriceEstimated" : "price.result.startingPriceLatest")}</span><strong>{rupees(forecast.current_price)}</strong>
-              <span className="muted small">{forecast.projection
-                ? tr("price.result.basedOnRecords", { date: fmtDate(forecast.projection.reference_origin_date) })
-                : tr(estimated ? "price.result.estimatedOn" : "price.result.latestOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
+            {!ctxOnly && (
+              <div><span className="stat-label">{tr(forecast.projection || estimated ? "price.result.startingPriceEstimated" : "price.result.startingPriceLatest")}</span><strong>{rupees(forecast.current_price)}</strong>
+                <span className="muted small">{forecast.projection
+                  ? tr("price.result.basedOnRecords", { date: fmtDate(forecast.projection.reference_origin_date) })
+                  : tr(estimated ? "price.result.estimatedOn" : "price.result.latestOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
+            )}
             <div><span className="stat-label">{tr("price.result.daysAhead")}</span><strong>{t.horizon_days}</strong></div>
           </div>
           {sourceKey && <p className="price-source">{tr(sourceKey)}</p>}
           {forecast.source?.note && <p className="price-source"><ServerText>{forecast.source.note}</ServerText></p>}
           {/* only the caution is shown; a forecast that passed testing needs no label */}
-          {!validated && (
+          {!validated && !ctxOnly && (
             <span className="reliability weak"><TriangleAlert size={15} aria-hidden="true" />{tr("price.result.roughGuide")}</span>
           )}
           {t.actual_price != null && (
@@ -309,14 +345,17 @@ export default function PriceResult() {
       </div>
 
       <ResultStep n={3} id="step-chart" title={tr("price.chart.title", { crop: cropName(tr, series.commodity) })} className="reveal">
-        <PriceTrendChart history={forecast.history} historyIsReference={forecast.history_is_reference}
-          actualAfter={forecast.actual_after_origin} path={forecast.path}
-          originDate={forecast.forecast_origin_date} currentPrice={forecast.current_price}
-          targetDate={forecast.target_date} recommendedDate={advice.recommended_date} peak={advice.peak} />
+        {ctxOnly ? <p className="muted" data-testid="no-forecast-line">{tr("price.chart.noForecastLine")}</p> : (
+          <PriceTrendChart history={forecast.history} historyIsReference={forecast.history_is_reference}
+            actualAfter={forecast.actual_after_origin} path={forecast.path}
+            originDate={forecast.forecast_origin_date} currentPrice={forecast.current_price}
+            targetDate={forecast.target_date} recommendedDate={advice.recommended_date} peak={advice.peak}
+            showRange={range.kind === "measured" || range.kind === "unmeasured"} rangePct={range.pct ?? null} />
+        )}
       </ResultStep>
 
       <ResultStep n={4} id="step-sell" title={tr("price.sell.title")} className="sell-step">
-        <SellRecommendation advice={advice} commodity={series.commodity} />
+        <SellRecommendation advice={advice} commodity={series.commodity} contextOnly={ctxOnly} />
       </ResultStep>
 
       <div className="row" style={{ margin: "1rem 0" }}>

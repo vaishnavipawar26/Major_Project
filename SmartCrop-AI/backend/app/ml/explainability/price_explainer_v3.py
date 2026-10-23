@@ -62,6 +62,7 @@ SEASON_READING_PCT = 1.0
 MIN_DIRECTION_MOVES = 100       # direction accuracy is quoted only with at least this many moves behind it
 MIN_CELL_CASES = 300
 RANGE_OK_COVERAGE = 75.0
+MIN_RANGE_COVERAGE_TO_SHOW = 40.0   # below this measured coverage the range is not shown at all
 BANDS = ["1-7", "8-14", "15-30", "31-60"]
 METHOD = ("SHAP values of the model are summed per group in log space; the predicted change in rupees is split in "
           "proportion: inr_g = start * s_g * (exp(L) - 1) / L, with L the model's log price ratio, so the group effects "
@@ -303,7 +304,7 @@ def _context_only(*, facts, values, crop, market, requested_market, series_is_st
         "schema_version": 3, "method": METHOD, "context_only": True, "context_reason": why,
         "headline": {"code": "no_clear_direction", "text": headline, "predicted_price": None, "start_price": round(start_price, 2),
                      "change_inr": None, "change_pct": None, "typical_miss_inr": None if mae_inr is None else round(mae_inr, 2),
-                     "range": None if lower is None else [round(lower, 2), round(upper, 2)], "target_date": target_date.isoformat(),
+                     "range": None, "range_hidden": False, "range_coverage_pct": None, "target_date": target_date.isoformat(),
                      "horizon_days": horizon, "band": band},
         "banner": banner, "cards": cards, "other_factors": None, "evidence_not_used_by_model": [],
         "market_breakdown": mkt, "trust": _trust_block(cell, crop, band, baseline_label, reliability_scope, projected),
@@ -481,12 +482,14 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
                   "reference_date": ref_origin_date.isoformat()}
 
     recon = None if model_output_log is None else abs(alloc["L"] - float(model_output_log))
+    range_hidden = bool(cell and cell["range_coverage_pct"] < MIN_RANGE_COVERAGE_TO_SHOW)
     return {
         "schema_version": 3, "method": METHOD,
         "headline": {"code": code, "text": headline, "predicted_price": round(predicted_price, 2), "start_price": round(start_price, 2),
                      "change_inr": round(dP, 2), "change_pct": round(pct_change, 2), "typical_miss_inr": None if mae_inr is None else round(mae_inr, 2),
-                     "range": None if lower is None else [round(lower, 2), round(upper, 2)], "target_date": target_date.isoformat(),
-                     "horizon_days": horizon, "band": band},
+                     "range": None if (lower is None or range_hidden) else [round(lower, 2), round(upper, 2)],
+                     "range_hidden": range_hidden, "range_coverage_pct": None if not cell else cell["range_coverage_pct"],
+                     "target_date": target_date.isoformat(), "horizon_days": horizon, "band": band},
         "banner": banner, "cards": shown, "other_factors": other, "evidence_not_used_by_model": unused,
         "market_breakdown": mkt, "trust": trust,
         "checks": {"inr_sum": round(sum(c["inr_effect"] for c in shown) + other_total, 6), "predicted_change_inr": round(dP, 6),

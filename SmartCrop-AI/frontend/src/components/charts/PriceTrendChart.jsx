@@ -11,7 +11,7 @@ const ts = (iso) => Date.parse(`${iso}T00:00:00Z`);
 const isoOf = (t) => new Date(t).toISOString().slice(0, 10);
 const fmtTick = (t) => shortDate(isoOf(t));
 
-function TrendTooltip({ active, payload, originDate, pastLabel, pastColor }) {
+function TrendTooltip({ active, payload, originDate, pastLabel, pastColor, showRange }) {
   const t = useT();
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
@@ -43,8 +43,8 @@ function TrendTooltip({ active, payload, originDate, pastLabel, pastColor }) {
           <strong>{rupees(forecast)}</strong>
         </div>
       )}
-      {p.band && !p.isOrigin && (
-        <div className="muted small">{t("price.chart.rangeTooltip", { low: rupees(p.band[0]), high: rupees(p.band[1]) })}</div>
+      {showRange && p.band && !p.isOrigin && (
+        <div className="muted small">{t("price.chart.rangeTooltipPlain", { low: rupees(p.band[0]), high: rupees(p.band[1]) })}</div>
       )}
     </div>
   );
@@ -60,6 +60,7 @@ function TrendTooltip({ active, payload, originDate, pastLabel, pastColor }) {
  */
 export default function PriceTrendChart({
   history, historyIsReference, actualAfter, path, originDate, currentPrice, targetDate, recommendedDate, peak,
+  showRange = true, rangePct = null,
 }) {
   const t = useT();
   const narrow = useNarrow();
@@ -110,7 +111,7 @@ export default function PriceTrendChart({
         </span>
         <span><span className="swatch-dash" style={{ borderColor: "var(--series-forecast)" }} />{t("price.chart.predicted")}</span>
         {hasWeak && <span><span className="swatch-dash" style={{ borderColor: "var(--series-weak)" }} />{t("price.chart.predictedWeak")}</span>}
-        <span><span className="swatch" style={{ background: "var(--series-forecast)", opacity: 0.25 }} />{t("price.chart.range")}</span>
+        {showRange && <span><span className="swatch" style={{ background: "var(--series-forecast)", opacity: 0.25 }} />{rangePct != null ? t("price.chart.rangeTested", { pct: rangePct }) : t("price.chart.rangeUnmeasured")}</span>}
         <span><span className="swatch-vline" style={{ borderColor: "var(--brand)" }} />{t("price.chart.selectedDate")}</span>
         {recommended && <span><span className="swatch-dot" style={{ background: "var(--good)" }} />{t("price.chart.suggestedDate")}</span>}
       </div>
@@ -124,10 +125,10 @@ export default function PriceTrendChart({
             <YAxis tickFormatter={(v) => `₹${Math.round(v).toLocaleString("en-IN")}`} stroke="var(--axis)" width={narrow ? 58 : 70}
               tick={{ fill: "var(--muted)", fontSize: narrow ? 11 : 12 }} domain={["auto", "auto"]}
               label={{ value: t("unit.rsPerQuintal"), angle: -90, position: "insideLeft", offset: 10, fill: "var(--muted)", fontSize: 12, dy: 40 }} />
-            <Tooltip content={<TrendTooltip originDate={originDate} pastLabel={pastLabel} pastColor={pastColor} />}
+            <Tooltip content={<TrendTooltip originDate={originDate} pastLabel={pastLabel} pastColor={pastColor} showRange={showRange} />}
               cursor={{ stroke: "var(--axis)", strokeWidth: 1 }} />
-            <Area dataKey="band" stroke="none" fill="var(--series-forecast)" fillOpacity={0.14}
-              connectNulls isAnimationActive={false} activeDot={false} />
+            {showRange && <Area dataKey="band" stroke="none" fill="var(--series-forecast)" fillOpacity={0.14}
+              connectNulls isAnimationActive={false} activeDot={false} />}
             <Line dataKey="past" stroke={pastColor} strokeWidth={historyIsReference ? 2.5 : 2}
               strokeDasharray={historyIsReference ? "1 5" : undefined} strokeLinecap="round" dot={false}
               connectNulls isAnimationActive={false} activeDot={{ r: 4 }} />
@@ -163,7 +164,7 @@ export default function PriceTrendChart({
           <table>
             <thead>
               <tr><th>{t("table.date")}</th><th className="num">{t("table.daysAhead")}</th><th className="num">{t("table.predictedPrice")}</th>
-                <th className="num">{t("table.likelyRange")}</th><th>{t("table.reliability")}</th>
+                {showRange && <th className="num">{t("table.range")}</th>}<th>{t("table.reliability")}</th>
                 {actualAfter.length > 0 && <th className="num">{t("table.actual")}</th>}</tr>
             </thead>
             <tbody>
@@ -172,7 +173,7 @@ export default function PriceTrendChart({
                   <td>{fmtDate(f.date)}{f.date === targetDate && <span className="badge badge-brand" style={{ marginLeft: 6 }}>{t("price.chart.yourDate")}</span>}</td>
                   <td className="num">{f.horizon_days}</td>
                   <td className="num">{rupees(f.predicted_price)}</td>
-                  <td className="num">{rupees(f.lower)} – {rupees(f.upper)}</td>
+                  {showRange && <td className="num">{rupees(f.lower)} – {rupees(f.upper)}</td>}
                   <td>{f.beats_baseline ? "" : t("table.lessReliable")}</td>
                   {actualAfter.length > 0 && <td className="num">{f.actual_price == null ? "—" : rupees(f.actual_price)}</td>}
                 </tr>

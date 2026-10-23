@@ -156,3 +156,21 @@ describe("evidence-first explanation page", () => {
     expect(screen.getByRole("heading", { name: "Predicted price" })).toBeTruthy();
   });
 });
+
+describe("explanation page range line", () => {
+  const withRange = (h) => response(exp({ v3: v3({ headline: { ...v3().headline, ...h } }) }));
+
+  it("labels the range by its measured coverage, never as 'likely'", () => {
+    renderPage(withRange({ range: [2100, 2900], range_coverage_pct: 46.2, range_hidden: false }));
+    const r = screen.getByTestId("v3-range").textContent;
+    expect(r).toContain("₹2,100 – ₹2,900");
+    expect(r).toContain("The real price fell in this range in about 46% of past tests.");
+    expect(document.body.textContent).not.toMatch(/likely range/i);
+  });
+
+  it("says the range is not shown when its coverage was too low", () => {
+    renderPage(withRange({ range: null, range_coverage_pct: 3, range_hidden: true }));
+    expect(screen.getByTestId("v3-range-hidden").textContent).toBe("Range not shown — in testing the real price rarely fell inside it");
+    expect(screen.queryByTestId("v3-range")).toBeNull();
+  });
+});

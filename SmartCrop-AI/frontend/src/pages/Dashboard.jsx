@@ -15,6 +15,7 @@ import { useT } from "../i18n/LanguageContext";
 import { cropService } from "../services/cropService";
 import { historyService } from "../services/historyService";
 import { addDays, compactRupees, cropName, fmtDate, monthLabel, monthShort, rupees, titleCase, topCrops } from "../utils/format";
+import { isContextOnly } from "../utils/priceView";
 import heroPhoto from "../assets/photos/hero-farmer.webp";
 
 const RECENT = 3;
@@ -87,11 +88,13 @@ function RecentPrices({ items, total }) {
                 <span className="recent-main">
                   <strong>{cropName(t, p.commodity)}</strong>
                   <span className="muted small">{p.market === "All markets (state median)" ? t("price.form.allMarkets") : p.market} · {t("dash.savedOn", { date: fmtDate(p.created_at) })}</span>
-                  <span className="recent-value">{t("dash.expectedOn", { price: rupees(p.predicted_price), date: fmtDate(addDays(p.input_date, p.horizon_days)) })}</span>
+                  <span className="recent-value">{isContextOnly(p)
+                    ? t("dash.noDirection", { price: p.latest_recorded ? rupees(p.latest_recorded.price) : "—", date: p.latest_recorded ? fmtDate(p.latest_recorded.date) : "—" })
+                    : t("dash.expectedOn", { price: rupees(p.predicted_price), date: fmtDate(addDays(p.input_date, p.horizon_days)) })}</span>
                 </span>
                 <span className="recent-side">
-                  <Sparkline start={p.current_price} path={p.future_trend || []} />
-                  <DirectionBadge direction={p.predicted_direction} />
+                  {!isContextOnly(p) && <Sparkline start={p.current_price} path={p.future_trend || []} />}
+                  {!isContextOnly(p) && <DirectionBadge direction={p.predicted_direction} />}
                 </span>
                 <span className="recent-open">{t("dash.open")}<ChevronRight size={16} aria-hidden="true" /></span>
               </Link>

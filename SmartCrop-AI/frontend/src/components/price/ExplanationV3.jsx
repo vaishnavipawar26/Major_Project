@@ -83,7 +83,11 @@ export default function ExplanationV3({ exp, explain }) {
             <dt>{t("price.expl.expectedChange")}</dt><dd>{sign}{rupees(Math.abs(h.change_inr))} ({sign}{Math.abs(h.change_pct).toFixed(1)}%)</dd>
           </>)}
           {h.range && (<><dt>{t("price.v3.rangeLabel")}</dt>
-            <dd>{rupees(h.range[0])} – {rupees(h.range[1])} <span className="muted small">{t("price.expl.perQuintal")}</span></dd></>)}
+            <dd data-testid="v3-range">{rupees(h.range[0])} – {rupees(h.range[1])} <span className="muted small">{t("price.expl.perQuintal")}</span>
+              <div className="muted small">{h.range_coverage_pct != null
+                ? t("price.v3.rangeMeasured", { pct: Math.round(h.range_coverage_pct) })
+                : t("price.v3.rangeUnmeasured")}</div></dd></>)}
+          {h.range_hidden && (<><dt>{t("price.v3.rangeLabel")}</dt><dd data-testid="v3-range-hidden">{t("price.result.rangeHidden")}</dd></>)}
         </dl>
         <p className={`xai-line ${verdictClass}`} data-testid="v3-headline" style={{ fontSize: "1.05rem" }}>
           {verdictClass && <TriangleAlert size={16} aria-hidden="true" />}<ServerText>{h.text}</ServerText>
