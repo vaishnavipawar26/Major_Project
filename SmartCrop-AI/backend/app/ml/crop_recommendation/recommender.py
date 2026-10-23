@@ -68,6 +68,7 @@ from app.ml.price_prediction.monthly_forecaster import MonthlyForecastError
 
 WEIGHTS = {"agronomic": 0.40, "timing": 0.20, "profit": 0.40}
 RELIABILITY_SHRINK = 0.75  # weight kept on (P - 50) when the price forecast is limited
+POLICY_BAND = "31-60"   # the longest daily-price band: selling months are weeks to months away
 MATERIAL_POINTS = 0.5  # weighted score difference below which a part is not named as a reason
 MIN_RANGE_FIT = 5  # of 7 soil and weather values
 TOP_N = 3
@@ -165,6 +166,12 @@ class CropRecommender:
         self.calendar = calendar()
         self.economics = economics()
         self.forecaster = monthly_forecaster
+        # per crop x distance-band "model" / "context_only" of the daily price model (scripts/build_crop_policy.py); used here
+        # only to LABEL a crop's profit as a rough estimate. It does not change any price or score.
+        try:
+            self.price_policy = json.loads((paths.MODELS_DIR / "price_reliability" / "crop_policy.json").read_text(encoding="utf-8"))["cells"]
+        except (OSError, KeyError, ValueError):
+            self.price_policy = {}
 
     # ------------------------------------------------------------------ model
     def _frame(self, inputs: dict) -> pd.DataFrame:
@@ -264,6 +271,7 @@ class CropRecommender:
                 "agronomic_score": round(a, 2), "timing_score": round(t, 1),
                 "profit_score": p_score, "profit_score_used": round(p_used, 1),
                 "forecast_reliability": reliability, "recommendation_score": round(overall, 2),
+                "price_policy": self.price_policy.get(f"{crop}|{POLICY_BAND}", {}).get("mode", "model"),
                 "seasonal_score": float(100 if planting_month in cal.planting_months else 0),
                 "price_score": market["forecast"]["price_score"] if market["forecast"] else None,
                 "eligible": eligible, "profitable": profitable,

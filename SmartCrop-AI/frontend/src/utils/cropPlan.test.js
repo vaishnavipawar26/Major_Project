@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { compareRows, rankingCompare, reliabilityOf } from "./cropPlan";
+import { chartNote, compareRows, defaultCrop, rankingCompare, reliabilityOf } from "./cropPlan";
+import en from "../i18n/cropResult.en";
 
 // t echoes the key and its numbers so the tests can see what was asked for
 const t = (key, p = {}) => `${key}${Object.keys(p).length ? ` ${JSON.stringify(p)}` : ""}`;
@@ -96,5 +97,59 @@ describe("rankingCompare", () => {
     r.best_overall = null;
     r.results.forEach((x) => { x.recommended = false; });
     expect(rankingCompare(r)).toBeNull();
+  });
+});
+
+// the Potato example: Potato is the only eligible crop, Brinjal earns more but fits the soil and weather poorly
+const potatoCase = () => ({
+  best_overall: "Potato", highest_profit: "Brinjal", weights: { agronomic: 0.4, timing: 0.2, profit: 0.4 },
+  results: [
+    crop("Potato", 1, 18816, 2, { key: "best", tone: "good" }, { price_policy: "context_only", forecast_reliability: "limited" }),
+    crop("Cauliflower", 2, -7968, null, { key: "loss", tone: "bad" }, { price_policy: "model" }),
+    crop("Brinjal", 4, 48467, 1, { key: "poorFit", tone: "warn" }, { price_policy: "model", recommended: false }),
+  ],
+  ranking_explanation: { best_overall: "Potato", highest_profit: "Brinjal", same_crop: false, profit_gap: 29651,
+    reasons: [{ code: "fit", points: 22.9, params: { best_in: 7, top_in: 3, total: 7 } }] },
+});
+const tEn = (k, v = {}) => (en[k] ?? k).replace(/\{(\w+)\}/g, (_, n) => v[n]);
+
+describe("default selection (the bold bar outline)", () => {
+  it("is the recommended #1 crop, found by name, not the most profitable one or the first bar of the profit-sorted chart", () => {
+    const r = potatoCase();
+    expect(defaultCrop(r.results, r, null).crop_name).toBe("Potato");
+    expect(defaultCrop(r.results, r, "Brinjal").crop_name).toBe("Brinjal");           // a click wins
+    expect(defaultCrop([...r.results].reverse(), r, null).crop_name).toBe("Potato");  // any order of the results
+    expect(defaultCrop(r.results, { ...r, best_overall: null }, null).crop_name).toBe("Brinjal"); // no recommendation: the profit leader
+  });
+});
+
+describe("compareRows rough estimates", () => {
+  it("flags the crops with no reliable price forecast and flags the recommended one", () => {
+    const r = potatoCase();
+    const rows = compareRows(r.results, r, t);
+    expect(rows.map((x) => [x.crop, x.rough, x.isBest])).toEqual([["Potato", true, true], ["Cauliflower", false, false], ["Brinjal", false, false]]);
+    expect(rows.map((x) => x.profit)).toEqual([18816, -7968, 48467]);                  // the profit maths is untouched
+  });
+});
+
+describe("chartNote", () => {
+  it("explains from the real reasons and numbers why the recommended crop is not the most profitable one", () => {
+    const note = chartNote(potatoCase(), tEn);
+    expect(note).toBe("Potato is recommended because it fits your soil and weather better. Brinjal earns ₹30K more but fits your conditions less well (3 of 7 soil and weather values in its usual range, against 7).");
+  });
+
+  it("names the timing, return and forecast reasons when those are what moved the score", () => {
+    const r = potatoCase();
+    r.ranking_explanation.reasons = [{ code: "timing", points: 3, params: {} }, { code: "forecast", points: 1, params: {} }];
+    const note = chartNote(r, tEn);
+    expect(note).toContain("because it suits your planting and selling months better and its price forecast is more reliable.");
+    expect(note).toContain("earns ₹30K more but scores lower overall.");
+  });
+
+  it("is null when the recommended crop is also the most profitable one, or the data is missing", () => {
+    const r = potatoCase();
+    expect(chartNote({ ...r, ranking_explanation: { ...r.ranking_explanation, same_crop: true } }, tEn)).toBeNull();
+    expect(chartNote({ ...r, ranking_explanation: undefined }, tEn)).toBeNull();
+    expect(chartNote({ ...r, best_overall: null, ranking_explanation: { ...r.ranking_explanation, best_overall: null } }, tEn)).toBeNull();
   });
 });

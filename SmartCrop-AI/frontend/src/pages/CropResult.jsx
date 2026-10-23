@@ -15,6 +15,7 @@ import { errorMessage } from "../services/api";
 import { cropService } from "../services/cropService";
 import { historyService } from "../services/historyService";
 import { cropName, fmtDateTime, titleCase } from "../utils/format";
+import { defaultCrop } from "../utils/cropPlan";
 import { LAST_CROP_RESULT_KEY, SOILS } from "./CropRecommendation";
 
 export const INPUT_KEYS = ["nitrogen", "phosphorus", "potassium", "temperature", "humidity", "ph", "rainfall"];
@@ -57,9 +58,7 @@ export default function CropResult() {
   const response = data?.response;
   const results = response?.results;
   // details start with the best overall crop, else the highest-profit one, else the first-ranked crop
-  const current = useMemo(() => results && (results.find((r) => r.crop_name === selected)
-    || results.find((r) => r.crop_name === response.best_overall)
-    || results.find((r) => r.crop_name === response.highest_profit) || results[0]), [results, selected, response]);
+  const current = useMemo(() => results && defaultCrop(results, response, selected), [results, selected, response]);
 
   const backLinks = (
     <div className="row">

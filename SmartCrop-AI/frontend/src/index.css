@@ -2113,3 +2113,5 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .pe-badge.is-medium { color: var(--warn-text); }
 .pe-badge.is-low { color: #9b2c20; }
 .pe-notice { margin: -0.3rem 0 0; padding: 0 0.2rem; }
+
+.compare-note { margin: 0.7rem 0 0; padding: 0.55rem 0.8rem; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); font-size: 0.92rem; color: var(--text-2); }

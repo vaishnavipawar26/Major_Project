@@ -1,7 +1,7 @@
 // Pure helpers for the crop result page: they turn the API response into the short, farmer-facing
 // facts the page shows. No React and no calculations of money here - prices, profit and scores are
 // always the API's own numbers; these helpers only classify and phrase them.
-import { cropName, monthLabel, monthLong, rupees } from "./format";
+import { compactRupees, cropName, monthLabel, monthLong, rupees } from "./format";
 
 const INPUT_OF = { N: "nitrogen", P: "phosphorus", K: "potassium", ph: "ph", temperature: "temperature", humidity: "humidity", rainfall: "rainfall" };
 export const SOIL = ["N", "P", "K", "ph"];
@@ -90,6 +90,16 @@ export function rankingCompare(response) {
   };
 }
 
+/**
+ * The crop whose details (and bold bar outline) are shown: the one the farmer clicked, else the best overall crop (the
+ * recommended #1, which need not be the most profitable one), else the highest-profit crop, else the first-ranked crop.
+ * Always found by crop name, never by position, so the chart's profit order cannot shift it.
+ */
+export function defaultCrop(results, response, selected) {
+  return results.find((r) => r.crop_name === selected) || results.find((r) => r.crop_name === response.best_overall)
+    || results.find((r) => r.crop_name === response.highest_profit) || results[0];
+}
+
 /** Rows for the all-crops chart and table: every number comes straight from the API. */
 export function compareRows(results, response, t) {
   return results.map((r) => {
@@ -102,8 +112,32 @@ export function compareRows(results, response, t) {
       timing: e?.status ?? r.timeline.status, feasible: r.feasible,
       reliability: reliabilityOf(r), status: r.status, rank: r.rank, profitRank: r.profit_rank,
       isBest: r.crop_name === response.best_overall, isTop: r.crop_name === response.highest_profit,
+      // no reliable price forecast for this crop (crop_policy.json): its profit bar is a rough estimate
+      rough: r.price_policy === "context_only",
     };
   });
+}
+
+/** "a", "a and b", "a, b and c" */
+const joinWords = (xs, and) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} ${and} ${xs[xs.length - 1]}`);
+
+/**
+ * One line under the profit chart for when the recommended crop is not the most profitable one. Built from the API's own
+ * ranking_explanation (the reasons that really moved the overall score, with their points) and the real profit gap;
+ * nothing is hardcoded about any crop. Null when the recommended crop is also the most profitable, or the data is missing.
+ */
+export function chartNote(response, t) {
+  const ex = response.ranking_explanation;
+  const results = response.results || [];
+  if (!ex || ex.same_crop || !ex.best_overall || !ex.highest_profit) return null;
+  const best = results.find((r) => r.crop_name === ex.best_overall), top = results.find((r) => r.crop_name === ex.highest_profit);
+  const gap = (top?.economics?.net_profit ?? NaN) - (best?.economics?.net_profit ?? NaN);
+  if (!(gap > 0)) return null;
+  const reasons = (ex.reasons || []).filter((x) => ["fit", "timing", "returns", "forecast"].includes(x.code));
+  const fit = reasons.find((x) => x.code === "fit");
+  const because = reasons.length ? joinWords(reasons.map((x) => t(`cr.chart.because.${x.code}`)), t("cr.chart.and")) : t("cr.chart.because.overall");
+  const p = { best: cropName(t, best.crop_name), top: cropName(t, top.crop_name), gap: compactRupees(gap) };
+  return t("cr.chart.note", { ...p, because, tail: fit ? t("cr.chart.tail.fit", fit.params) : t("cr.chart.tail.other") });
 }
 
 /**

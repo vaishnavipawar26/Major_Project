@@ -38,6 +38,7 @@ function ProfitTooltip({ active, payload }) {
           <div className="muted small">{t("cr.chart.tipLine", { price: rupees(d.price), roi: `${d.roi > 0 ? "+" : ""}${Math.round(d.roi)}%` })}</div>
         </>
       )}
+      {d.rough && <div className="small mt-1" data-testid="rough-tip">≈ {t("cr.chart.roughTip")}</div>}
       <div className="muted small mt-1">{t("cr.chart.tipEstimate")}</div>
     </div>
   );
@@ -53,7 +54,7 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
   const narrow = useNarrow();
   const tiny = useNarrow(480);
   const data = rows.map((r) => ({
-    crop: r.crop, name: r.name, feasible: r.feasible, timing: r.timing, price: r.price, roi: r.roi,
+    crop: r.crop, name: r.name, feasible: r.feasible, timing: r.timing, price: r.price, roi: r.roi, isBest: r.isBest, rough: r.rough && r.feasible,
     revenue: r.feasible ? r.revenue : null, cost: r.feasible ? r.cost : null, profit: r.feasible ? r.profit : null,
     label: r.feasible ? r.name : `${r.name} ✕`,
   })).sort((a, b) => (b.profit ?? -Infinity) - (a.profit ?? -Infinity));
@@ -70,16 +71,17 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
     return (
       <g>
         {src && !tiny && <image href={src} x={x - nameW} y={y - 10} width={20} height={20} preserveAspectRatio="xMidYMid slice" />}
-        <text x={x - 8} y={y} dy={4} textAnchor="end" fontSize={narrow ? 11 : 12.5} fontWeight={sel ? 700 : 500} fill="var(--text)">{payload.value}</text>
+        <text x={x - 8} y={y} dy={d?.isBest ? -1 : 4} textAnchor="end" fontSize={narrow ? 11 : 12.5} fontWeight={sel ? 700 : 500} fill="var(--text)">{payload.value}</text>
+        {d?.isBest && <text x={x - 8} y={y} dy={13} textAnchor="end" fontSize={10.5} fontWeight={700} fill="var(--brand-strong, #1c5a36)" data-testid="recommended-badge">★ {t("cr.chart.recommended")}</text>}
       </g>
     );
   };
 
   // One value label per bar: right of profit bars; for losses, left of the bar end inside the plot
   // area, or right of the zero line when the gap to the name column is too small.
-  const ValueLabel = ({ x, y, width, height, value }) => {
+  const ValueLabel = ({ x, y, width, height, value, index }) => {
     if (value == null) return null;
-    const loss = value < 0, text = compactRupees(value), textW = text.length * 7.6;
+    const loss = value < 0, text = `${data[index]?.rough ? "≈ " : ""}${compactRupees(value)}`, textW = text.length * 7.6;
     const left = Math.min(x, x + width), right = Math.max(x, x + width);
     let lx, anchor;
     if (!loss) { lx = right + LABEL_PAD; anchor = "start"; }
@@ -101,6 +103,8 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
         <span><span className="swatch" style={{ background: "var(--profit-pos)" }} />{t("cr.chart.profit")}</span>
         <span><span className="swatch" style={{ background: "var(--profit-neg)" }} />{t("cr.chart.loss")}</span>
         <span className="text-ink-muted">{t("cr.chart.notPossible")}</span>
+        {data.some((d) => d.rough) && <span data-testid="rough-legend">{t("cr.chart.rough")}</span>}
+        {selected && <span>{t("cr.chart.selectedLegend")}</span>}
       </div>
       <div style={{ width: "100%", height: data.length * rowH + 44 }} role="img" aria-label={t("cr.chart.aria")}>
         <ResponsiveContainer>
@@ -115,7 +119,7 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
             {breakdown && <Bar dataKey="revenue" fill="var(--series-actual)" radius={3} maxBarSize={14} isAnimationActive={false} cursor="pointer" onClick={select} />}
             {breakdown && <Bar dataKey="cost" fill="var(--series-reference)" radius={3} maxBarSize={14} isAnimationActive={false} cursor="pointer" onClick={select} />}
             <Bar dataKey="profit" radius={3} maxBarSize={breakdown ? 14 : 22} isAnimationActive={false} cursor="pointer" onClick={select}>
-              {data.map((d) => <Cell key={d.crop} fill={(d.profit ?? 0) < 0 ? "var(--profit-neg)" : "var(--profit-pos)"}
+              {data.map((d) => <Cell key={d.crop} fill={(d.profit ?? 0) < 0 ? "var(--profit-neg)" : "var(--profit-pos)"} fillOpacity={d.rough ? 0.5 : 1}
                 stroke={d.crop === selected ? "var(--text)" : "none"} strokeWidth={2} />)}
               <LabelList dataKey="profit" content={<ValueLabel />} />
             </Bar>

@@ -384,3 +384,24 @@ def test_displayed_roi_is_net_profit_over_the_displayed_total_cost(client, user)
             e = x["economics"]
             if e["total_cost"]:
                 assert abs(e["roi_pct"] - 100 * e["net_profit"] / e["total_cost"]) < 0.3
+
+
+POTATO_EXAMPLE = {"nitrogen": 120, "phosphorus": 85, "potassium": 135, "temperature": 19, "humidity": 68, "ph": 5.8, "rainfall": 60,
+                  "city": "Ahilyanagar", "soil_type": "sandy_loam", "area_acres": 1, "planting_month": 10, "selling_month": 2, "planting_year": 2026}
+
+
+def test_best_overall_is_by_score_not_profit_and_price_policy_labels_the_unreliable_crops(client, user):
+    """The Potato example: Brinjal earns the most but fits the soil and weather poorly, so Potato (the only eligible crop) is #1.
+    price_policy only labels a crop's profit as a rough estimate (crop_policy.json); no price, score or ranking depends on it."""
+    b = post(client, user, POTATO_EXAMPLE).json()
+    by = {x["crop_name"]: x for x in b["results"]}
+    assert b["best_overall"] == "Potato" and b["highest_profit"] == "Brinjal"
+    assert by["Brinjal"]["economics"]["net_profit"] > by["Potato"]["economics"]["net_profit"]
+    assert by["Brinjal"]["eligible"] is False and by["Brinjal"]["low_agronomic_suitability"] is True
+    assert b["ranking_explanation"]["reasons"][0]["code"] == "fit" and b["ranking_explanation"]["profit_gap"] > 0
+    w = b["weights"]
+    for x in b["results"]:                     # Overall = 0.40 agronomic + 0.20 timing + 0.40 profit (after the reliability adjustment)
+        assert math.isclose(x["recommendation_score"], w["agronomic"] * x["agronomic_score"] + w["timing"] * x["timing_score"]
+                            + w["profit"] * x["profit_score_used"], abs_tol=0.02)
+    assert {k for k, x in by.items() if x["price_policy"] == "context_only"} == {"Potato", "Tomato", "Onion", "Wheat"}
+    assert {k for k, x in by.items() if x["price_policy"] == "model"} == {"Brinjal", "Cabbage", "Cauliflower"}

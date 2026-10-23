@@ -1,0 +1,44 @@
+// @vitest-environment jsdom
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import CropCompare from "./CropCompare";
+
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
+afterEach(cleanup);
+
+const crop = (name, rank, profit, extra = {}) => ({
+  crop_name: name, rank, profit_rank: null, feasible: true, eligible: true, recommended: rank === 1, forecast_reliability: "tested", price_policy: "model",
+  status: { key: "notTop", tone: "neutral" }, economics: { selling_price: 1500, gross_revenue: profit + 90000, total_cost: 90000, net_profit: profit, roi_pct: 10, status: "fresh" },
+  range_fit: { soil: { within: 4, total: 4 }, weather: { within: 3, total: 3 } }, timeline: { status: "fresh" }, ...extra,
+});
+const response = (over = {}) => ({
+  selling_date: "2027-02", area_acres: 1, best_overall: "Potato", highest_profit: "Brinjal",
+  results: [crop("Potato", 1, 18816, { price_policy: "context_only", profit_rank: 2 }), crop("Brinjal", 4, 48467, { eligible: false, recommended: false, profit_rank: 1 })],
+  ranking_explanation: { best_overall: "Potato", highest_profit: "Brinjal", same_crop: false, profit_gap: 29651,
+    reasons: [{ code: "fit", points: 22.9, params: { best_in: 7, top_in: 3, total: 7 } }] },
+  ...over,
+});
+
+describe("profit chart section", () => {
+  it("shows one line under the chart when the recommended crop is not the most profitable, built from the real scores", () => {
+    render(<CropCompare response={response()} selected="Potato" onSelect={() => {}} />);
+    expect(screen.getByTestId("chart-note").textContent).toBe(
+      "Potato is recommended because it fits your soil and weather better. Brinjal earns ₹30K more but fits your conditions less well (3 of 7 soil and weather values in its usual range, against 7).");
+  });
+
+  it("shows no such line when the recommended crop is also the most profitable", () => {
+    const r = response({ highest_profit: "Potato", ranking_explanation: { best_overall: "Potato", highest_profit: "Potato", same_crop: true, reasons: [] } });
+    render(<CropCompare response={r} selected="Potato" onSelect={() => {}} />);
+    expect(screen.queryByTestId("chart-note")).toBeNull();
+  });
+
+  it("has a legend entry for rough estimates only when a crop has no reliable price forecast, and one for the bold outline", () => {
+    render(<CropCompare response={response()} selected="Potato" onSelect={() => {}} />);
+    expect(screen.getByTestId("rough-legend").textContent).toBe("≈ rough estimate — no reliable price forecast for this crop");
+    expect(document.body.textContent).toContain("Bold outline: the crop shown below");
+    cleanup();
+    const r = response(); r.results[0].price_policy = "model";
+    render(<CropCompare response={r} selected="Potato" onSelect={() => {}} />);
+    expect(screen.queryByTestId("rough-legend")).toBeNull();
+  });
+});

@@ -195,6 +195,8 @@ class CropResult(BaseModel):
     profit_score: float
     profit_score_used: float
     forecast_reliability: str
+    # "context_only" when the price model is not reliable enough for this crop (crop_policy.json): its profit is a rough estimate
+    price_policy: Literal["model", "context_only"] = "model"
     score_points: ScorePoints
     status: CropStatus
     seasonal_score: float
