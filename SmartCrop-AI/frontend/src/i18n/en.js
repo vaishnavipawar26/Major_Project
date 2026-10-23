@@ -923,6 +923,8 @@ const en = {
   "hist.confirmDelete": "Confirm delete",
   "hist.cancel": "Cancel",
   "hist.deleted": "Deleted.",
+  "hist.planPick": "Your plan: {crop}",
+  "hist.planNone": "Your plan: no crop fits",
   "hist.noneSuitable": "None suitable",
   "hist.showing": "Showing {from}–{to} of {total}",
   "hist.previous": "Previous",

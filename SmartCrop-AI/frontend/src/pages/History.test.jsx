@@ -54,3 +54,18 @@ describe("history table", () => {
     expect(row.textContent).toContain("₹3,100");
   });
 });
+
+describe("history of crop recommendations: the personalised pick", () => {
+  const rec = (id, over = {}) => ({ id, nitrogen: 80, phosphorus: 45, potassium: 85, temperature: 23, humidity: 58, ph: 6.8, rainfall: 70, soil_type: "loam", month: 10, season: "Rabi", state: "Maharashtra",
+    city: "Pune", selling_month: 2, planting_date: "2026-10", selling_date: "2027-02", area_acres: 1, created_at: "2026-10-23T10:00:00", results: [], budget_inr: null, priority: null, risk_level: null, personal_pick: null, ...over });
+
+  it("shows one small extra line only on records that have a budget plan", async () => {
+    historyService.recommendations.mockResolvedValue({ total: 3, limit: 10, offset: 0, items: [
+      rec(1), rec(2, { budget_inr: 60000, priority: "balanced", risk_level: "medium", personal_pick: "Cabbage" }), rec(3, { budget_inr: 10000, priority: "spend_less", risk_level: "low" })] });
+    render(<MemoryRouter initialEntries={["/history?tab=recommendations"]}><History /></MemoryRouter>);
+    await waitFor(() => screen.getByTestId("hist-plan-2"));
+    expect(screen.getByTestId("hist-plan-2").textContent).toBe("Your plan: Cabbage");
+    expect(screen.getByTestId("hist-plan-3").textContent).toBe("Your plan: no crop fits");
+    expect(screen.queryByTestId("hist-plan-1")).toBeNull();
+  });
+});

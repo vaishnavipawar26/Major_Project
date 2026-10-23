@@ -156,7 +156,12 @@ function RecommendationHistory({ onChanged }) {
                 <td data-label={t("hist.col.weather")} className="small">{r.temperature} °C, {r.humidity}%, {r.rainfall} mm</td>
                 <td data-label={t("hist.col.crops")} className="wrap"><Link to={`/crop-recommendation/result?id=${r.id}`} className="font-semibold">
                   {topCrops(r.results).map((x) => `${cropName(t, titleCase(x.crop_name))}${x.expected_profit != null ? ` (${compactRupees(x.expected_profit)})` : ""}`).join(", ") || t("hist.noneSuitable")}
-                </Link></td>
+                </Link>
+                {(r.budget_inr != null || r.priority || r.risk_level) && (
+                  <div className="muted small" data-testid={`hist-plan-${r.id}`}>
+                    {r.personal_pick ? t("hist.planPick", { crop: cropName(t, r.personal_pick) }) : t("hist.planNone")}
+                  </div>
+                )}</td>
                 <td className="resp-actions">
                   <Link className="btn btn-secondary" to={`/crop-recommendation/result?id=${r.id}`}><ExternalLink size={15} aria-hidden="true" />{t("hist.open")}</Link>
                   <DeleteButton onDelete={() => remove(r.id)} />

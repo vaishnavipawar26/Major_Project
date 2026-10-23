@@ -8,6 +8,7 @@ import ServerText from "../components/ServerText";
 import BestCropCard from "../components/crop/BestCropCard";
 import CropCompare from "../components/crop/CropCompare";
 import Financials from "../components/crop/Financials";
+import PersonalPlan from "../components/crop/PersonalPlan";
 import PlanSummary from "../components/crop/PlanSummary";
 import TimelineSection from "../components/crop/TimelineSection";
 import { useT } from "../i18n/LanguageContext";
@@ -29,6 +30,10 @@ export async function loadFromHistory(id) {
     city: rec.city, planting_month: rec.month, selling_month: rec.selling_month,
     area_acres: rec.area_acres || 1, state: "Maharashtra", soil_type: SOILS.includes(rec.soil_type) ? rec.soil_type : "unknown",   // older records may hold free text
     planting_year: rec.planting_date ? Number(rec.planting_date.slice(0, 4)) : null,
+    // the optional budget plan: only the inputs that were saved, so an old record asks for exactly what it always did
+    ...(rec.budget_inr != null ? { budget_inr: rec.budget_inr } : {}),
+    ...(rec.priority ? { priority: rec.priority } : {}),
+    ...(rec.risk_level ? { risk_level: rec.risk_level } : {}),
   };
   const response = await cropService.analyze(req);
   return { fromHistory: true, createdAt: rec.created_at, req, response: { ...response, id: rec.id } };
@@ -104,6 +109,7 @@ export default function CropResult() {
           <PlanSummary response={response} crop={best || current} />
           <BestCropCard response={response} onSelect={setSelected} />
         </div>
+        <PersonalPlan response={response} />
         <CropCompare response={response} selected={current.crop_name} onSelect={setSelected} />
         <Financials result={current} response={response} />
         <TimelineSection result={current} />

@@ -742,6 +742,8 @@ const mr = {
   "hist.confirmDelete": "हटवण्याची खात्री करा",
   "hist.cancel": "रद्द करा",
   "hist.deleted": "हटवले.",
+  "hist.planPick": "तुमची योजना: {crop}",
+  "hist.planNone": "तुमची योजना: कोणतेही पीक बसत नाही",
   "hist.noneSuitable": "एकही योग्य नाही",
   "hist.showing": "{total} पैकी {from}–{to} दाखवत आहोत",
   "hist.previous": "मागील",

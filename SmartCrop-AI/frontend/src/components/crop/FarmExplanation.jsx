@@ -1,6 +1,7 @@
-import { CalendarDays, CircleAlert, CircleCheck, CloudRain, IndianRupee, Layers, MapPin, Thermometer, TriangleAlert } from "lucide-react";
+import { CalendarDays, CircleAlert, CircleCheck, CloudRain, IndianRupee, Layers, MapPin, Thermometer, TriangleAlert, Wallet } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { buildExplanation } from "../../utils/farmerExplanation";
+import { planStep } from "../../utils/personalPlan";
 
 const TONE_ICON = { good: CircleCheck, warn: TriangleAlert, bad: CircleAlert };
 
@@ -113,6 +114,12 @@ export default function FarmExplanation({ result, response, inputs }) {
       ) : <p className="xp-text">{t("cr.fx.profit.na")}</p>,
     },
   ];
+
+  // the optional budget step: only when the farmer gave a budget, priority or risk level
+  const budget = planStep(response, t);
+  if (budget) {
+    steps.push({ key: "budget", icon: Wallet, headline: budget.headline, tone: budget.tone, body: <>{budget.lines.map((l) => <p key={l} className="xp-text">{l}</p>)}</> });
+  }
 
   return (
     <section className="card xp-section" aria-labelledby="xp-why-title">

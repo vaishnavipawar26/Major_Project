@@ -742,6 +742,8 @@ const hi = {
   "hist.confirmDelete": "हटाने की पुष्टि करें",
   "hist.cancel": "रद्द करें",
   "hist.deleted": "हटा दिया गया.",
+  "hist.planPick": "आपकी योजना: {crop}",
+  "hist.planNone": "आपकी योजना: कोई फसल नहीं बैठती",
   "hist.noneSuitable": "कोई उपयुक्त नहीं",
   "hist.showing": "{total} में से {from}–{to} दिखा रहे हैं",
   "hist.previous": "पिछला",
