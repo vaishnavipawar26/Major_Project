@@ -1,0 +1,1864 @@
+{
+  "created": "2026-10-23T08:03:00+00:00",
+  "smoke_run": false,
+  "criteria": {
+    "feature_or_group_supported_if": "pooled raw-MAE gain >= 0.5% in BOTH validation folds AND no crop (n >= 1500) worse than -2.0% in either fold",
+    "crop_strategy_adopted_if": "cross-fold skill vs no-change >= 0 in both folds AND mean >= 0.5%; otherwise the crop falls back to no-change",
+    "eligible_strategies": [
+      "shrink (final features)",
+      "no_change",
+      "v1_features + shrink",
+      "crop-specific model (Onion/Wheat only)"
+    ],
+    "informational_only": "validation gate (selected on both folds, so its numbers are optimistic)"
+  },
+  "n_validation": {
+    "C": 100000,
+    "A": 100000
+  },
+  "n_train_pairs": 200000,
+  "variant_rows": [
+    {
+      "variant": "v1",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 566.8027,
+      "WAPE_pct": 23.4955,
+      "direction_acc_pct": 65.1389,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "v1",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 366.0415,
+      "WAPE_pct": 21.2499,
+      "direction_acc_pct": 69.3539,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "v2",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 562.5648,
+      "WAPE_pct": 23.3199,
+      "direction_acc_pct": 67.3375,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "v2",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 373.5504,
+      "WAPE_pct": 21.6858,
+      "direction_acc_pct": 68.7256,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "add_arr_vs_month_prior",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 567.8037,
+      "WAPE_pct": 23.537,
+      "direction_acc_pct": 64.5831,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "add_arr_vs_month_prior",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 367.6475,
+      "WAPE_pct": 21.3431,
+      "direction_acc_pct": 69.6938,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "add_season_change",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 568.8413,
+      "WAPE_pct": 23.58,
+      "direction_acc_pct": 65.4896,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "add_season_change",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 370.6236,
+      "WAPE_pct": 21.5159,
+      "direction_acc_pct": 69.5559,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "add_market_premium_30d",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 575.6859,
+      "WAPE_pct": 23.8638,
+      "direction_acc_pct": 65.3763,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "add_market_premium_30d",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 365.8359,
+      "WAPE_pct": 21.238,
+      "direction_acc_pct": 69.4542,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "add_lag_90_change",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 557.0387,
+      "WAPE_pct": 23.0908,
+      "direction_acc_pct": 66.7885,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "add_lag_90_change",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 371.0507,
+      "WAPE_pct": 21.5407,
+      "direction_acc_pct": 68.5306,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "add_yoy_gap",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 568.062,
+      "WAPE_pct": 23.5477,
+      "direction_acc_pct": 64.5966,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "add_yoy_gap",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 369.3158,
+      "WAPE_pct": 21.44,
+      "direction_acc_pct": 69.7161,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "drop_supply",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 560.994,
+      "WAPE_pct": 23.2547,
+      "direction_acc_pct": 67.0502,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "drop_supply",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 372.9525,
+      "WAPE_pct": 21.6511,
+      "direction_acc_pct": 68.9778,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "drop_seasonal",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 592.4301,
+      "WAPE_pct": 24.5579,
+      "direction_acc_pct": 64.4968,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "drop_seasonal",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 386.9975,
+      "WAPE_pct": 22.4665,
+      "direction_acc_pct": 63.8624,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "drop_market_premium",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 553.2102,
+      "WAPE_pct": 22.9321,
+      "direction_acc_pct": 67.4521,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "drop_market_premium",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 377.5447,
+      "WAPE_pct": 21.9177,
+      "direction_acc_pct": 68.7883,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "drop_recent_trend",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 586.8558,
+      "WAPE_pct": 24.3268,
+      "direction_acc_pct": 64.486,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "drop_recent_trend",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 386.7801,
+      "WAPE_pct": 22.4538,
+      "direction_acc_pct": 69.6214,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    },
+    {
+      "variant": "drop_last_year",
+      "fold": "C",
+      "n": 100000,
+      "MAE": 563.2371,
+      "WAPE_pct": 23.3477,
+      "direction_acc_pct": 66.6509,
+      "n_meaningful": 74137,
+      "up_share_pct": 44.4704
+    },
+    {
+      "variant": "drop_last_year",
+      "fold": "A",
+      "n": 100000,
+      "MAE": 370.9273,
+      "WAPE_pct": 21.5335,
+      "direction_acc_pct": 69.007,
+      "n_meaningful": 71784,
+      "up_share_pct": 54.4216
+    }
+  ],
+  "verdicts": {
+    "v2": {
+      "with": "v2",
+      "without": "v1",
+      "kind": "combined",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": 0.7477,
+          "ci_low_pct": -0.1449,
+          "ci_high_pct": 1.6609,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 3.6181,
+            "Cabbage": 2.2893,
+            "Cauliflower": 1.1401,
+            "Onion": -2.2201,
+            "Potato": -0.4376,
+            "Tomato": 0.9518,
+            "Wheat": -3.331
+          },
+          "worst_crop": "Wheat",
+          "worst_crop_skill_pct": -3.331
+        },
+        "A": {
+          "skill_pct": -2.0514,
+          "ci_low_pct": -3.276,
+          "ci_high_pct": -0.9265,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 2.6173,
+            "Cabbage": -2.9889,
+            "Cauliflower": 1.2123,
+            "Onion": -22.8643,
+            "Potato": -23.9802,
+            "Tomato": 9.3102,
+            "Wheat": -2.4741
+          },
+          "worst_crop": "Potato",
+          "worst_crop_skill_pct": -23.9802
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "add_arr_vs_month_prior": {
+      "with": "add_arr_vs_month_prior",
+      "without": "v1",
+      "kind": "add-on",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": -0.1766,
+          "ci_low_pct": -0.7119,
+          "ci_high_pct": 0.2851,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": -0.2298,
+            "Cabbage": -0.2032,
+            "Cauliflower": 0.4308,
+            "Onion": -0.9702,
+            "Potato": -0.663,
+            "Tomato": 0.1704,
+            "Wheat": 0.5595
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -0.9702
+        },
+        "A": {
+          "skill_pct": -0.4388,
+          "ci_low_pct": -1.1706,
+          "ci_high_pct": 0.1874,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": -0.1267,
+            "Cabbage": 0.5261,
+            "Cauliflower": 0.003,
+            "Onion": -9.8336,
+            "Potato": -20.1647,
+            "Tomato": 9.1739,
+            "Wheat": -1.0185
+          },
+          "worst_crop": "Potato",
+          "worst_crop_skill_pct": -20.1647
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "add_season_change": {
+      "with": "add_season_change",
+      "without": "v1",
+      "kind": "add-on",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": -0.3597,
+          "ci_low_pct": -1.2284,
+          "ci_high_pct": 0.3389,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": -0.2496,
+            "Cabbage": -1.3361,
+            "Cauliflower": 0.3929,
+            "Onion": 1.0982,
+            "Potato": -1.3839,
+            "Tomato": -0.892,
+            "Wheat": -4.9953
+          },
+          "worst_crop": "Wheat",
+          "worst_crop_skill_pct": -4.9953
+        },
+        "A": {
+          "skill_pct": -1.2518,
+          "ci_low_pct": -2.1852,
+          "ci_high_pct": -0.3813,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 1.0443,
+            "Cabbage": -0.2257,
+            "Cauliflower": -0.1529,
+            "Onion": -12.0115,
+            "Potato": -21.6897,
+            "Tomato": 6.5585,
+            "Wheat": -0.8082
+          },
+          "worst_crop": "Potato",
+          "worst_crop_skill_pct": -21.6897
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "add_market_premium_30d": {
+      "with": "add_market_premium_30d",
+      "without": "v1",
+      "kind": "add-on",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": -1.5672,
+          "ci_low_pct": -2.1805,
+          "ci_high_pct": -0.8968,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": -0.4073,
+            "Cabbage": -0.4576,
+            "Cauliflower": 0.4542,
+            "Onion": -6.1684,
+            "Potato": -1.3351,
+            "Tomato": 0.0972,
+            "Wheat": -3.0763
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -6.1684
+        },
+        "A": {
+          "skill_pct": 0.0562,
+          "ci_low_pct": -0.3603,
+          "ci_high_pct": 0.4396,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": -0.096,
+            "Cabbage": -0.6424,
+            "Cauliflower": 0.3129,
+            "Onion": 0.992,
+            "Potato": -0.0813,
+            "Tomato": -0.3489,
+            "Wheat": 0.1081
+          },
+          "worst_crop": "Cabbage",
+          "worst_crop_skill_pct": -0.6424
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "add_lag_90_change": {
+      "with": "add_lag_90_change",
+      "without": "v1",
+      "kind": "add-on",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": 1.7226,
+          "ci_low_pct": 0.9244,
+          "ci_high_pct": 2.5861,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 2.3263,
+            "Cabbage": 2.4786,
+            "Cauliflower": -0.0193,
+            "Onion": 3.8547,
+            "Potato": -3.6235,
+            "Tomato": 1.135,
+            "Wheat": 1.0773
+          },
+          "worst_crop": "Potato",
+          "worst_crop_skill_pct": -3.6235
+        },
+        "A": {
+          "skill_pct": -1.3685,
+          "ci_low_pct": -1.995,
+          "ci_high_pct": -0.7686,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 0.3722,
+            "Cabbage": -2.9789,
+            "Cauliflower": 0.7299,
+            "Onion": -7.1786,
+            "Potato": -1.07,
+            "Tomato": -0.3893,
+            "Wheat": -2.1811
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -7.1786
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "add_yoy_gap": {
+      "with": "add_yoy_gap",
+      "without": "v1",
+      "kind": "add-on",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": -0.2222,
+          "ci_low_pct": -0.9556,
+          "ci_high_pct": 0.485,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 0.9385,
+            "Cabbage": 0.2391,
+            "Cauliflower": 0.6779,
+            "Onion": -2.2471,
+            "Potato": 0.6919,
+            "Tomato": -0.4321,
+            "Wheat": -0.0329
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -2.2471
+        },
+        "A": {
+          "skill_pct": -0.8945,
+          "ci_low_pct": -1.7567,
+          "ci_high_pct": 0.0363,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 1.6261,
+            "Cabbage": -1.0357,
+            "Cauliflower": 0.632,
+            "Onion": -10.0831,
+            "Potato": -17.0562,
+            "Tomato": 4.6783,
+            "Wheat": -0.1107
+          },
+          "worst_crop": "Potato",
+          "worst_crop_skill_pct": -17.0562
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "drop_supply": {
+      "with": "v2",
+      "without": "drop_supply",
+      "kind": "drop-out",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": -0.28,
+          "ci_low_pct": -0.6712,
+          "ci_high_pct": 0.1293,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": -0.0335,
+            "Cabbage": -0.7284,
+            "Cauliflower": 0.2063,
+            "Onion": -0.6143,
+            "Potato": 0.0327,
+            "Tomato": -0.0787,
+            "Wheat": -1.766
+          },
+          "worst_crop": "Wheat",
+          "worst_crop_skill_pct": -1.766
+        },
+        "A": {
+          "skill_pct": -0.1603,
+          "ci_low_pct": -0.4184,
+          "ci_high_pct": 0.1388,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 0.1421,
+            "Cabbage": -0.1697,
+            "Cauliflower": 0.0552,
+            "Onion": -0.2283,
+            "Potato": -3.919,
+            "Tomato": 0.42,
+            "Wheat": 0.0368
+          },
+          "worst_crop": "Potato",
+          "worst_crop_skill_pct": -3.919
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "drop_seasonal": {
+      "with": "v2",
+      "without": "drop_seasonal",
+      "kind": "drop-out",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": 5.0411,
+          "ci_low_pct": 1.5886,
+          "ci_high_pct": 8.8591,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": -0.9595,
+            "Cabbage": -11.3862,
+            "Cauliflower": -6.1039,
+            "Onion": 24.7404,
+            "Potato": 12.5066,
+            "Tomato": -3.4975,
+            "Wheat": 5.9921
+          },
+          "worst_crop": "Cabbage",
+          "worst_crop_skill_pct": -11.3862
+        },
+        "A": {
+          "skill_pct": 3.4747,
+          "ci_low_pct": -5.7278,
+          "ci_high_pct": 12.8638,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 14.227,
+            "Cabbage": 17.8179,
+            "Cauliflower": 3.4945,
+            "Onion": -21.6572,
+            "Potato": -16.4434,
+            "Tomato": 6.3979,
+            "Wheat": 2.7575
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -21.6572
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "drop_market_premium": {
+      "with": "v2",
+      "without": "drop_market_premium",
+      "kind": "drop-out",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": -1.691,
+          "ci_low_pct": -2.6129,
+          "ci_high_pct": -0.671,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 0.89,
+            "Cabbage": -1.4783,
+            "Cauliflower": 2.2363,
+            "Onion": -10.3115,
+            "Potato": 0.7134,
+            "Tomato": 0.7287,
+            "Wheat": -3.7851
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -10.3115
+        },
+        "A": {
+          "skill_pct": 1.0579,
+          "ci_low_pct": 0.7702,
+          "ci_high_pct": 1.3577,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 0.3395,
+            "Cabbage": 3.8276,
+            "Cauliflower": 0.0339,
+            "Onion": 3.0326,
+            "Potato": 2.6273,
+            "Tomato": -0.3054,
+            "Wheat": -0.0168
+          },
+          "worst_crop": "Tomato",
+          "worst_crop_skill_pct": -0.3054
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    },
+    "drop_recent_trend": {
+      "with": "v2",
+      "without": "drop_recent_trend",
+      "kind": "drop-out",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": 4.1392,
+          "ci_low_pct": 1.5357,
+          "ci_high_pct": 6.2932,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 8.0101,
+            "Cabbage": -4.7392,
+            "Cauliflower": -2.1127,
+            "Onion": 9.514,
+            "Potato": 3.8414,
+            "Tomato": 1.7799,
+            "Wheat": 9.3467
+          },
+          "worst_crop": "Cabbage",
+          "worst_crop_skill_pct": -4.7392
+        },
+        "A": {
+          "skill_pct": 3.4205,
+          "ci_low_pct": 1.2553,
+          "ci_high_pct": 5.0961,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 2.1884,
+            "Cabbage": 12.6609,
+            "Cauliflower": -0.1031,
+            "Onion": 1.8714,
+            "Potato": 14.0086,
+            "Tomato": 3.2207,
+            "Wheat": -2.4724
+          },
+          "worst_crop": "Wheat",
+          "worst_crop_skill_pct": -2.4724
+        }
+      },
+      "ci_excludes_zero_in_both": true
+    },
+    "drop_last_year": {
+      "with": "v2",
+      "without": "drop_last_year",
+      "kind": "drop-out",
+      "supported": false,
+      "folds": {
+        "C": {
+          "skill_pct": 0.1194,
+          "ci_low_pct": -0.5399,
+          "ci_high_pct": 0.8239,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 1.3054,
+            "Cabbage": 0.7487,
+            "Cauliflower": 0.375,
+            "Onion": -0.8715,
+            "Potato": 2.2584,
+            "Tomato": -0.855,
+            "Wheat": -0.241
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -0.8715
+        },
+        "A": {
+          "skill_pct": -0.7072,
+          "ci_low_pct": -1.1267,
+          "ci_high_pct": -0.2182,
+          "clusters": 27,
+          "crop_skill_pct": {
+            "Brinjal": 0.6586,
+            "Cabbage": -1.0963,
+            "Cauliflower": -0.0612,
+            "Onion": -2.5713,
+            "Potato": -0.8806,
+            "Tomato": -1.0723,
+            "Wheat": -0.4418
+          },
+          "worst_crop": "Onion",
+          "worst_crop_skill_pct": -2.5713
+        }
+      },
+      "ci_excludes_zero_in_both": false
+    }
+  },
+  "cross_shrunk_rows": [
+    {
+      "variant": "v1",
+      "fold": "C",
+      "MAE_cross_shrunk": 565.055,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 10.1628
+    },
+    {
+      "variant": "v1",
+      "fold": "A",
+      "MAE_cross_shrunk": 354.5205,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 4.7631
+    },
+    {
+      "variant": "v2",
+      "fold": "C",
+      "MAE_cross_shrunk": 562.4464,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 10.5775
+    },
+    {
+      "variant": "v2",
+      "fold": "A",
+      "MAE_cross_shrunk": 360.8769,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 3.0555
+    },
+    {
+      "variant": "add_arr_vs_month_prior",
+      "fold": "C",
+      "MAE_cross_shrunk": 567.1311,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 9.8327
+    },
+    {
+      "variant": "add_arr_vs_month_prior",
+      "fold": "A",
+      "MAE_cross_shrunk": 356.2211,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 4.3062
+    },
+    {
+      "variant": "add_season_change",
+      "fold": "C",
+      "MAE_cross_shrunk": 567.8415,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 9.7197
+    },
+    {
+      "variant": "add_season_change",
+      "fold": "A",
+      "MAE_cross_shrunk": 352.4613,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 5.3163
+    },
+    {
+      "variant": "add_market_premium_30d",
+      "fold": "C",
+      "MAE_cross_shrunk": 568.7702,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 9.5721
+    },
+    {
+      "variant": "add_market_premium_30d",
+      "fold": "A",
+      "MAE_cross_shrunk": 354.7516,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 4.701
+    },
+    {
+      "variant": "add_lag_90_change",
+      "fold": "C",
+      "MAE_cross_shrunk": 562.2122,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 10.6147
+    },
+    {
+      "variant": "add_lag_90_change",
+      "fold": "A",
+      "MAE_cross_shrunk": 363.3851,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 2.3818
+    },
+    {
+      "variant": "add_yoy_gap",
+      "fold": "C",
+      "MAE_cross_shrunk": 566.4967,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 9.9335
+    },
+    {
+      "variant": "add_yoy_gap",
+      "fold": "A",
+      "MAE_cross_shrunk": 349.9912,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 5.9798
+    },
+    {
+      "variant": "drop_supply",
+      "fold": "C",
+      "MAE_cross_shrunk": 562.0655,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 10.6381
+    },
+    {
+      "variant": "drop_supply",
+      "fold": "A",
+      "MAE_cross_shrunk": 358.532,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 3.6855
+    },
+    {
+      "variant": "drop_seasonal",
+      "fold": "C",
+      "MAE_cross_shrunk": 577.7895,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 8.1381
+    },
+    {
+      "variant": "drop_seasonal",
+      "fold": "A",
+      "MAE_cross_shrunk": 380.1971,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": -2.1346
+    },
+    {
+      "variant": "drop_market_premium",
+      "fold": "C",
+      "MAE_cross_shrunk": 564.1914,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 10.3001
+    },
+    {
+      "variant": "drop_market_premium",
+      "fold": "A",
+      "MAE_cross_shrunk": 363.8658,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 2.2526
+    },
+    {
+      "variant": "drop_recent_trend",
+      "fold": "C",
+      "MAE_cross_shrunk": 574.9876,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 8.5836
+    },
+    {
+      "variant": "drop_recent_trend",
+      "fold": "A",
+      "MAE_cross_shrunk": 365.7552,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 1.7451
+    },
+    {
+      "variant": "drop_last_year",
+      "fold": "C",
+      "MAE_cross_shrunk": 566.1372,
+      "MAE_no_change": 628.9763,
+      "skill_vs_no_change_pct": 9.9907
+    },
+    {
+      "variant": "drop_last_year",
+      "fold": "A",
+      "MAE_cross_shrunk": 360.0593,
+      "MAE_no_change": 372.2512,
+      "skill_vs_no_change_pct": 3.2752
+    }
+  ],
+  "coverage_rows": [
+    {
+      "fold": "C",
+      "crop": "Brinjal",
+      "n": 13356,
+      "arr_vs_month_prior": 99.3336,
+      "season_change": 89.8248,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 98.6897,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "C",
+      "crop": "Cabbage",
+      "n": 13003,
+      "arr_vs_month_prior": 99.3924,
+      "season_change": 89.8177,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 98.7234,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "C",
+      "crop": "Cauliflower",
+      "n": 13295,
+      "arr_vs_month_prior": 99.2253,
+      "season_change": 89.4697,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 97.6533,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "C",
+      "crop": "Onion",
+      "n": 17588,
+      "arr_vs_month_prior": 98.9481,
+      "season_change": 90.0728,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 89.0209,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "C",
+      "crop": "Potato",
+      "n": 9799,
+      "arr_vs_month_prior": 99.9592,
+      "season_change": 88.1519,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 98.8366,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "C",
+      "crop": "Tomato",
+      "n": 14262,
+      "arr_vs_month_prior": 99.1376,
+      "season_change": 89.2301,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 98.1279,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "C",
+      "crop": "Wheat",
+      "n": 18697,
+      "arr_vs_month_prior": 97.8981,
+      "season_change": 89.64,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 94.0793,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "A",
+      "crop": "Brinjal",
+      "n": 13396,
+      "arr_vs_month_prior": 99.8656,
+      "season_change": 100.0,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 99.3431,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "A",
+      "crop": "Cabbage",
+      "n": 13155,
+      "arr_vs_month_prior": 99.9468,
+      "season_change": 100.0,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 99.1714,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "A",
+      "crop": "Cauliflower",
+      "n": 12823,
+      "arr_vs_month_prior": 99.922,
+      "season_change": 100.0,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 99.1422,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "A",
+      "crop": "Onion",
+      "n": 16825,
+      "arr_vs_month_prior": 99.7444,
+      "season_change": 100.0,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 79.9168,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "A",
+      "crop": "Potato",
+      "n": 9860,
+      "arr_vs_month_prior": 99.8377,
+      "season_change": 100.0,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 98.3063,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "A",
+      "crop": "Tomato",
+      "n": 14819,
+      "arr_vs_month_prior": 99.6693,
+      "season_change": 100.0,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 99.5006,
+      "yoy_gap": 100.0
+    },
+    {
+      "fold": "A",
+      "crop": "Wheat",
+      "n": 19122,
+      "arr_vs_month_prior": 99.0482,
+      "season_change": 100.0,
+      "market_premium_30d": 100.0,
+      "lag_90_change": 96.0098,
+      "yoy_gap": 100.0
+    }
+  ],
+  "stratified_v2_vs_v1": {
+    "C": {
+      "all_three_available": {
+        "n": 88664,
+        "v2_vs_v1_skill_pct": 0.6314
+      },
+      "some_missing": {
+        "n": 11336,
+        "v2_vs_v1_skill_pct": 1.7444
+      }
+    },
+    "A": {
+      "all_three_available": {
+        "n": 99675,
+        "v2_vs_v1_skill_pct": -2.0444
+      },
+      "some_missing": {
+        "n": 325,
+        "v2_vs_v1_skill_pct": -4.7219
+      }
+    }
+  },
+  "strategy_rows": [
+    {
+      "crop": "Brinjal",
+      "strategy": "no_change",
+      "skill_C_pct": 0.0,
+      "skill_A_pct": 0.0,
+      "n_C": 13356,
+      "n_A": 13396,
+      "mean_skill_pct": 0.0
+    },
+    {
+      "crop": "Brinjal",
+      "strategy": "shrink (final features)",
+      "skill_C_pct": 8.9031,
+      "skill_A_pct": 15.5072,
+      "n_C": 13356,
+      "n_A": 13396,
+      "mean_skill_pct": 12.2051
+    },
+    {
+      "crop": "Brinjal",
+      "strategy": "v1_features + shrink",
+      "skill_C_pct": 8.9031,
+      "skill_A_pct": 15.5072,
+      "n_C": 13356,
+      "n_A": 13396,
+      "mean_skill_pct": 12.2051
+    },
+    {
+      "crop": "Brinjal",
+      "strategy": "validation gate (informational, optimistic)",
+      "skill_C_pct": 9.1169,
+      "skill_A_pct": 15.2942,
+      "n_C": 13356,
+      "n_A": 13396,
+      "mean_skill_pct": 12.2055
+    },
+    {
+      "crop": "Cabbage",
+      "strategy": "no_change",
+      "skill_C_pct": 0.0,
+      "skill_A_pct": 0.0,
+      "n_C": 13003,
+      "n_A": 13155,
+      "mean_skill_pct": 0.0
+    },
+    {
+      "crop": "Cabbage",
+      "strategy": "shrink (final features)",
+      "skill_C_pct": 4.0812,
+      "skill_A_pct": 11.7658,
+      "n_C": 13003,
+      "n_A": 13155,
+      "mean_skill_pct": 7.9235
+    },
+    {
+      "crop": "Cabbage",
+      "strategy": "v1_features + shrink",
+      "skill_C_pct": 4.0812,
+      "skill_A_pct": 11.7658,
+      "n_C": 13003,
+      "n_A": 13155,
+      "mean_skill_pct": 7.9235
+    },
+    {
+      "crop": "Cabbage",
+      "strategy": "validation gate (informational, optimistic)",
+      "skill_C_pct": 5.1541,
+      "skill_A_pct": 10.186,
+      "n_C": 13003,
+      "n_A": 13155,
+      "mean_skill_pct": 7.67
+    },
+    {
+      "crop": "Cauliflower",
+      "strategy": "no_change",
+      "skill_C_pct": 0.0,
+      "skill_A_pct": 0.0,
+      "n_C": 13295,
+      "n_A": 12823,
+      "mean_skill_pct": 0.0
+    },
+    {
+      "crop": "Cauliflower",
+      "strategy": "shrink (final features)",
+      "skill_C_pct": 9.882,
+      "skill_A_pct": 5.0196,
+      "n_C": 13295,
+      "n_A": 12823,
+      "mean_skill_pct": 7.4508
+    },
+    {
+      "crop": "Cauliflower",
+      "strategy": "v1_features + shrink",
+      "skill_C_pct": 9.882,
+      "skill_A_pct": 5.0196,
+      "n_C": 13295,
+      "n_A": 12823,
+      "mean_skill_pct": 7.4508
+    },
+    {
+      "crop": "Cauliflower",
+      "strategy": "validation gate (informational, optimistic)",
+      "skill_C_pct": 9.882,
+      "skill_A_pct": 5.0196,
+      "n_C": 13295,
+      "n_A": 12823,
+      "mean_skill_pct": 7.4508
+    },
+    {
+      "crop": "Onion",
+      "strategy": "no_change",
+      "skill_C_pct": 0.0,
+      "skill_A_pct": 0.0,
+      "n_C": 17588,
+      "n_A": 16825,
+      "mean_skill_pct": 0.0
+    },
+    {
+      "crop": "Onion",
+      "strategy": "shrink (final features)",
+      "skill_C_pct": 9.963,
+      "skill_A_pct": 10.1118,
+      "n_C": 17588,
+      "n_A": 16825,
+      "mean_skill_pct": 10.0374
+    },
+    {
+      "crop": "Onion",
+      "strategy": "v1_features + shrink",
+      "skill_C_pct": 9.963,
+      "skill_A_pct": 10.1118,
+      "n_C": 17588,
+      "n_A": 16825,
+      "mean_skill_pct": 10.0374
+    },
+    {
+      "crop": "Onion",
+      "strategy": "crop-specific model + shrink",
+      "skill_C_pct": 19.7586,
+      "skill_A_pct": 5.1176,
+      "n_C": 17588,
+      "n_A": 16825,
+      "mean_skill_pct": 12.4381
+    },
+    {
+      "crop": "Onion",
+      "strategy": "validation gate (informational, optimistic)",
+      "skill_C_pct": 9.963,
+      "skill_A_pct": 10.1118,
+      "n_C": 17588,
+      "n_A": 16825,
+      "mean_skill_pct": 10.0374
+    },
+    {
+      "crop": "Potato",
+      "strategy": "no_change",
+      "skill_C_pct": 0.0,
+      "skill_A_pct": 0.0,
+      "n_C": 9799,
+      "n_A": 9860,
+      "mean_skill_pct": 0.0
+    },
+    {
+      "crop": "Potato",
+      "strategy": "shrink (final features)",
+      "skill_C_pct": 9.08,
+      "skill_A_pct": -3.3423,
+      "n_C": 9799,
+      "n_A": 9860,
+      "mean_skill_pct": 2.8688
+    },
+    {
+      "crop": "Potato",
+      "strategy": "v1_features + shrink",
+      "skill_C_pct": 9.08,
+      "skill_A_pct": -3.3423,
+      "n_C": 9799,
+      "n_A": 9860,
+      "mean_skill_pct": 2.8688
+    },
+    {
+      "crop": "Potato",
+      "strategy": "validation gate (informational, optimistic)",
+      "skill_C_pct": 2.5652,
+      "skill_A_pct": 0.9022,
+      "n_C": 9799,
+      "n_A": 9860,
+      "mean_skill_pct": 1.7337
+    },
+    {
+      "crop": "Tomato",
+      "strategy": "no_change",
+      "skill_C_pct": 0.0,
+      "skill_A_pct": 0.0,
+      "n_C": 14262,
+      "n_A": 14819,
+      "mean_skill_pct": 0.0
+    },
+    {
+      "crop": "Tomato",
+      "strategy": "shrink (final features)",
+      "skill_C_pct": 14.6632,
+      "skill_A_pct": -23.6468,
+      "n_C": 14262,
+      "n_A": 14819,
+      "mean_skill_pct": -4.4918
+    },
+    {
+      "crop": "Tomato",
+      "strategy": "v1_features + shrink",
+      "skill_C_pct": 14.6632,
+      "skill_A_pct": -23.6468,
+      "n_C": 14262,
+      "n_A": 14819,
+      "mean_skill_pct": -4.4918
+    },
+    {
+      "crop": "Tomato",
+      "strategy": "validation gate (informational, optimistic)",
+      "skill_C_pct": 0.1779,
+      "skill_A_pct": 0.3711,
+      "n_C": 14262,
+      "n_A": 14819,
+      "mean_skill_pct": 0.2745
+    },
+    {
+      "crop": "Wheat",
+      "strategy": "no_change",
+      "skill_C_pct": 0.0,
+      "skill_A_pct": 0.0,
+      "n_C": 18697,
+      "n_A": 19122,
+      "mean_skill_pct": 0.0
+    },
+    {
+      "crop": "Wheat",
+      "strategy": "shrink (final features)",
+      "skill_C_pct": 7.0566,
+      "skill_A_pct": 12.2716,
+      "n_C": 18697,
+      "n_A": 19122,
+      "mean_skill_pct": 9.6641
+    },
+    {
+      "crop": "Wheat",
+      "strategy": "v1_features + shrink",
+      "skill_C_pct": 7.0566,
+      "skill_A_pct": 12.2716,
+      "n_C": 18697,
+      "n_A": 19122,
+      "mean_skill_pct": 9.6641
+    },
+    {
+      "crop": "Wheat",
+      "strategy": "crop-specific model + shrink",
+      "skill_C_pct": 15.0679,
+      "skill_A_pct": 13.5346,
+      "n_C": 18697,
+      "n_A": 19122,
+      "mean_skill_pct": 14.3012
+    },
+    {
+      "crop": "Wheat",
+      "strategy": "validation gate (informational, optimistic)",
+      "skill_C_pct": 7.0566,
+      "skill_A_pct": 12.2716,
+      "n_C": 18697,
+      "n_A": 19122,
+      "mean_skill_pct": 9.6641
+    }
+  ],
+  "diagnostics": {
+    "Onion": {
+      "C": {
+        "n": 17588,
+        "share_of_error_from_worst_5pct_cases": 16.0069,
+        "state_median_series_share_pct": 3.4796,
+        "markets": 81,
+        "weeks": 27,
+        "start_or_target_day_outlier_capped_pct": 0.0,
+        "model_MAE": 700.2818,
+        "no_change_MAE": 703.1208,
+        "v1_MAE": 700.2818,
+        "market_cluster_skill": {
+          "skill_pct": 0.4038,
+          "ci_low_pct": -5.316,
+          "ci_high_pct": 5.6884,
+          "clusters": 81
+        },
+        "week_cluster_skill": {
+          "skill_pct": 0.4038,
+          "ci_low_pct": -18.0715,
+          "ci_high_pct": 16.7158,
+          "clusters": 27
+        },
+        "by_band": {
+          "1-7": {
+            "n": 2270,
+            "mean_signed_log_error": -0.017,
+            "model_MAE": 291.9186,
+            "no_change_MAE": 279.513
+          },
+          "8-14": {
+            "n": 2177,
+            "mean_signed_log_error": -0.0725,
+            "model_MAE": 508.4765,
+            "no_change_MAE": 473.183
+          },
+          "15-30": {
+            "n": 4702,
+            "mean_signed_log_error": -0.1507,
+            "model_MAE": 681.3732,
+            "no_change_MAE": 653.1418
+          },
+          "31-60": {
+            "n": 8439,
+            "mean_signed_log_error": -0.2408,
+            "model_MAE": 870.1423,
+            "no_change_MAE": 904.2306
+          }
+        },
+        "by_variety": {
+          "All varieties": {
+            "n": 612,
+            "model_MAE": 628.7033,
+            "no_change_MAE": 656.5723
+          },
+          "Local": {
+            "n": 4053,
+            "model_MAE": 685.5409,
+            "no_change_MAE": 735.9615
+          },
+          "Other": {
+            "n": 9029,
+            "model_MAE": 761.6993,
+            "no_change_MAE": 677.9092
+          },
+          "Pole": {
+            "n": 201,
+            "model_MAE": 500.9361,
+            "no_change_MAE": 911.2587
+          },
+          "Red": {
+            "n": 3211,
+            "model_MAE": 587.3249,
+            "no_change_MAE": 725.1492
+          },
+          "White": {
+            "n": 270,
+            "model_MAE": 657.2393,
+            "no_change_MAE": 666.3148
+          }
+        }
+      },
+      "A": {
+        "n": 16825,
+        "share_of_error_from_worst_5pct_cases": 15.3573,
+        "state_median_series_share_pct": 2.9123,
+        "markets": 85,
+        "weeks": 27,
+        "start_or_target_day_outlier_capped_pct": 0.0535,
+        "model_MAE": 328.1592,
+        "no_change_MAE": 309.6796,
+        "v1_MAE": 328.1592,
+        "market_cluster_skill": {
+          "skill_pct": -5.9673,
+          "ci_low_pct": -11.656,
+          "ci_high_pct": -0.849,
+          "clusters": 85
+        },
+        "week_cluster_skill": {
+          "skill_pct": -5.9673,
+          "ci_low_pct": -26.9069,
+          "ci_high_pct": 11.4565,
+          "clusters": 27
+        },
+        "by_band": {
+          "1-7": {
+            "n": 2141,
+            "mean_signed_log_error": 0.0143,
+            "model_MAE": 153.6478,
+            "no_change_MAE": 154.4352
+          },
+          "8-14": {
+            "n": 2092,
+            "mean_signed_log_error": 0.03,
+            "model_MAE": 239.9753,
+            "no_change_MAE": 236.5855
+          },
+          "15-30": {
+            "n": 4500,
+            "mean_signed_log_error": 0.0618,
+            "model_MAE": 323.0538,
+            "no_change_MAE": 290.3626
+          },
+          "31-60": {
+            "n": 8092,
+            "mean_signed_log_error": 0.1826,
+            "model_MAE": 399.9689,
+            "no_change_MAE": 380.3937
+          }
+        },
+        "by_variety": {
+          "1st Sort": {
+            "n": 233,
+            "model_MAE": 389.2584,
+            "no_change_MAE": 339.9142
+          },
+          "All varieties": {
+            "n": 490,
+            "model_MAE": 313.0737,
+            "no_change_MAE": 297.3011
+          },
+          "Local": {
+            "n": 3801,
+            "model_MAE": 338.1562,
+            "no_change_MAE": 332.5912
+          },
+          "Other": {
+            "n": 7740,
+            "model_MAE": 297.0204,
+            "no_change_MAE": 271.1808
+          },
+          "Pole": {
+            "n": 254,
+            "model_MAE": 487.4341,
+            "no_change_MAE": 464.6811
+          },
+          "Red": {
+            "n": 3989,
+            "model_MAE": 370.0923,
+            "no_change_MAE": 358.6262
+          },
+          "White": {
+            "n": 274,
+            "model_MAE": 288.9333,
+            "no_change_MAE": 244.2518
+          }
+        }
+      }
+    },
+    "Wheat": {
+      "C": {
+        "n": 18697,
+        "share_of_error_from_worst_5pct_cases": 21.4306,
+        "state_median_series_share_pct": 3.0968,
+        "markets": 115,
+        "weeks": 27,
+        "start_or_target_day_outlier_capped_pct": 0.0,
+        "model_MAE": 130.2001,
+        "no_change_MAE": 139.8007,
+        "v1_MAE": 130.2001,
+        "market_cluster_skill": {
+          "skill_pct": 6.8673,
+          "ci_low_pct": 0.0139,
+          "ci_high_pct": 11.9112,
+          "clusters": 115
+        },
+        "week_cluster_skill": {
+          "skill_pct": 6.8673,
+          "ci_low_pct": 1.7455,
+          "ci_high_pct": 11.4578,
+          "clusters": 27
+        },
+        "by_band": {
+          "1-7": {
+            "n": 2338,
+            "mean_signed_log_error": -0.0038,
+            "model_MAE": 87.3649,
+            "no_change_MAE": 94.5406
+          },
+          "8-14": {
+            "n": 2148,
+            "mean_signed_log_error": -0.0104,
+            "model_MAE": 109.0083,
+            "no_change_MAE": 116.2379
+          },
+          "15-30": {
+            "n": 5071,
+            "mean_signed_log_error": -0.0141,
+            "model_MAE": 131.1535,
+            "no_change_MAE": 136.0935
+          },
+          "31-60": {
+            "n": 9140,
+            "mean_signed_log_error": -0.0232,
+            "model_MAE": 145.6087,
+            "no_change_MAE": 158.9724
+          }
+        },
+        "by_variety": {
+          "All varieties": {
+            "n": 579,
+            "model_MAE": 77.4216,
+            "no_change_MAE": 92.0933
+          },
+          "Bansi": {
+            "n": 315,
+            "model_MAE": 182.3074,
+            "no_change_MAE": 188.2127
+          },
+          "Maharashtra 2189": {
+            "n": 2533,
+            "model_MAE": 165.4917,
+            "no_change_MAE": 186.348
+          },
+          "Other": {
+            "n": 14397,
+            "model_MAE": 124.8935,
+            "no_change_MAE": 135.8206
+          },
+          "Sharbati": {
+            "n": 840,
+            "model_MAE": 133.555,
+            "no_change_MAE": 84.5869
+          }
+        }
+      },
+      "A": {
+        "n": 19122,
+        "share_of_error_from_worst_5pct_cases": 21.6569,
+        "state_median_series_share_pct": 2.7978,
+        "markets": 126,
+        "weeks": 27,
+        "start_or_target_day_outlier_capped_pct": 0.0,
+        "model_MAE": 116.827,
+        "no_change_MAE": 133.2208,
+        "v1_MAE": 116.827,
+        "market_cluster_skill": {
+          "skill_pct": 12.3057,
+          "ci_low_pct": 8.5503,
+          "ci_high_pct": 15.8005,
+          "clusters": 126
+        },
+        "week_cluster_skill": {
+          "skill_pct": 12.3057,
+          "ci_low_pct": 7.7007,
+          "ci_high_pct": 16.4733,
+          "clusters": 27
+        },
+        "by_band": {
+          "1-7": {
+            "n": 2500,
+            "mean_signed_log_error": 0.0007,
+            "model_MAE": 84.0447,
+            "no_change_MAE": 88.0071
+          },
+          "8-14": {
+            "n": 2265,
+            "mean_signed_log_error": 0.001,
+            "model_MAE": 103.7835,
+            "no_change_MAE": 106.3735
+          },
+          "15-30": {
+            "n": 5058,
+            "mean_signed_log_error": 0.0075,
+            "model_MAE": 118.4112,
+            "no_change_MAE": 126.6838
+          },
+          "31-60": {
+            "n": 9299,
+            "mean_signed_log_error": 0.0135,
+            "model_MAE": 127.9558,
+            "no_change_MAE": 155.4713
+          }
+        },
+        "by_variety": {
+          "All varieties": {
+            "n": 535,
+            "model_MAE": 69.7379,
+            "no_change_MAE": 78.8799
+          },
+          "Bansi": {
+            "n": 503,
+            "model_MAE": 145.4935,
+            "no_change_MAE": 177.3608
+          },
+          "Maharashtra 2189": {
+            "n": 2594,
+            "model_MAE": 120.2911,
+            "no_change_MAE": 149.3915
+          },
+          "Other": {
+            "n": 14193,
+            "model_MAE": 116.8819,
+            "no_change_MAE": 130.9837
+          },
+          "Sharbati": {
+            "n": 1122,
+            "model_MAE": 125.3672,
+            "no_change_MAE": 140.0365
+          }
+        }
+      }
+    }
+  },
+  "interval_cross_fold": {
+    "calibrate A -> evaluate C": {
+      "overall": {
+        "coverage_pct": 69.886,
+        "below_pct": 17.932,
+        "above_pct": 12.182,
+        "mean_width_pct_of_start": 73.1747,
+        "n": 100000
+      },
+      "by_band": {
+        "1-7": {
+          "coverage_pct": 80.1996,
+          "below_pct": 11.2502,
+          "above_pct": 8.5502,
+          "mean_width_pct_of_start": 42.3622,
+          "n": 12222
+        },
+        "8-14": {
+          "coverage_pct": 75.2335,
+          "below_pct": 14.4143,
+          "above_pct": 10.3522,
+          "mean_width_pct_of_start": 57.6251,
+          "n": 11669
+        },
+        "15-30": {
+          "coverage_pct": 72.5033,
+          "below_pct": 17.4242,
+          "above_pct": 10.0726,
+          "mean_width_pct_of_start": 69.4949,
+          "n": 26865
+        },
+        "31-60": {
+          "coverage_pct": 64.6312,
+          "below_pct": 20.701,
+          "above_pct": 14.6678,
+          "mean_width_pct_of_start": 86.5144,
+          "n": 49244
+        }
+      },
+      "by_crop": {
+        "Brinjal": {
+          "coverage_pct": 73.3977,
+          "below_pct": 16.7865,
+          "above_pct": 9.8158,
+          "mean_width_pct_of_start": 102.0179,
+          "n": 13356
+        },
+        "Cabbage": {
+          "coverage_pct": 66.5616,
+          "below_pct": 21.1643,
+          "above_pct": 12.2741,
+          "mean_width_pct_of_start": 81.7598,
+          "n": 13003
+        },
+        "Cauliflower": {
+          "coverage_pct": 70.9289,
+          "below_pct": 24.3325,
+          "above_pct": 4.7386,
+          "mean_width_pct_of_start": 125.7561,
+          "n": 13295
+        },
+        "Onion": {
+          "coverage_pct": 72.8053,
+          "below_pct": 6.1462,
+          "above_pct": 21.0484,
+          "mean_width_pct_of_start": 51.6569,
+          "n": 17588
+        },
+        "Potato": {
+          "coverage_pct": 79.3244,
+          "below_pct": 16.7262,
+          "above_pct": 3.9494,
+          "mean_width_pct_of_start": 37.3586,
+          "n": 9799
+        },
+        "Tomato": {
+          "coverage_pct": 48.9202,
+          "below_pct": 41.6842,
+          "above_pct": 9.3956,
+          "mean_width_pct_of_start": 119.0495,
+          "n": 14262
+        },
+        "Wheat": {
+          "coverage_pct": 77.2477,
+          "below_pct": 5.5517,
+          "above_pct": 17.2006,
+          "mean_width_pct_of_start": 13.2304,
+          "n": 18697
+        }
+      }
+    },
+    "calibrate C -> evaluate A": {
+      "overall": {
+        "coverage_pct": 80.96,
+        "below_pct": 8.458,
+        "above_pct": 10.582,
+        "mean_width_pct_of_start": 85.541,
+        "n": 100000
+      },
+      "by_band": {
+        "1-7": {
+          "coverage_pct": 79.8112,
+          "below_pct": 8.711,
+          "above_pct": 11.4778,
+          "mean_width_pct_of_start": 41.0771,
+          "n": 12180
+        },
+        "8-14": {
+          "coverage_pct": 81.8012,
+          "below_pct": 7.9099,
+          "above_pct": 10.2889,
+          "mean_width_pct_of_start": 62.6773,
+          "n": 11770
+        },
+        "15-30": {
+          "coverage_pct": 82.2386,
+          "below_pct": 7.4993,
+          "above_pct": 10.2621,
+          "mean_width_pct_of_start": 81.6752,
+          "n": 26749
+        },
+        "31-60": {
+          "coverage_pct": 80.3493,
+          "below_pct": 9.0465,
+          "above_pct": 10.6042,
+          "mean_width_pct_of_start": 104.0819,
+          "n": 49301
+        }
+      },
+      "by_crop": {
+        "Brinjal": {
+          "coverage_pct": 85.5181,
+          "below_pct": 4.3819,
+          "above_pct": 10.1,
+          "mean_width_pct_of_start": 123.4177,
+          "n": 13396
+        },
+        "Cabbage": {
+          "coverage_pct": 88.9168,
+          "below_pct": 3.512,
+          "above_pct": 7.5713,
+          "mean_width_pct_of_start": 122.0501,
+          "n": 13155
+        },
+        "Cauliflower": {
+          "coverage_pct": 78.25,
+          "below_pct": 2.3941,
+          "above_pct": 19.3558,
+          "mean_width_pct_of_start": 122.4148,
+          "n": 12823
+        },
+        "Onion": {
+          "coverage_pct": 75.5126,
+          "below_pct": 18.1813,
+          "above_pct": 6.3061,
+          "mean_width_pct_of_start": 59.5937,
+          "n": 16825
+        },
+        "Potato": {
+          "coverage_pct": 76.7241,
+          "below_pct": 5.1826,
+          "above_pct": 18.0933,
+          "mean_width_pct_of_start": 36.7407,
+          "n": 9860
+        },
+        "Tomato": {
+          "coverage_pct": 87.4013,
+          "below_pct": 1.4508,
+          "above_pct": 11.1479,
+          "mean_width_pct_of_start": 142.4361,
+          "n": 14819
+        },
+        "Wheat": {
+          "coverage_pct": 76.0956,
+          "below_pct": 17.3465,
+          "above_pct": 6.5579,
+          "mean_width_pct_of_start": 13.0644,
+          "n": 19122
+        }
+      }
+    }
+  },
+  "pooled_effect_of_crop_strategies": {
+    "C": {
+      "skill_shrink_everywhere_pct": 10.1628,
+      "skill_with_crop_strategies_pct": 8.3313,
+      "change_points": -1.8314
+    },
+    "A": {
+      "skill_shrink_everywhere_pct": 4.7631,
+      "skill_with_crop_strategies_pct": 8.2451,
+      "change_points": 3.482
+    }
+  },
+  "final_variant": "v1",
+  "decisions_hash": "10baf05567d5a3d29796f725fed93124f8d076aad837c10253446419f72c3336"
+}

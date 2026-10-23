@@ -1,0 +1,18 @@
+{
+  "created": "2026-10-23T08:08:02+00:00",
+  "smoke_run": false,
+  "status": "FROZEN projection display recommendation (not applied to production)",
+  "policy_rules": {
+    "anchor": "replace latest_known only if CI low > 0 vs latest_known in BOTH pairs",
+    "model_adjustment": "only if it beats its own anchor AND latest_known with CI low > 0 in P2",
+    "range": "only if coverage >= 75.0% when calibrated on one pair and checked on the other"
+  },
+  "recommendation": {
+    "headline_anchor": "latest_known",
+    "model_adjustment": "v1",
+    "show_range": false,
+    "recommended_display": "See the numbers: at least one pre-registered condition was met; the applicable part of the policy may be used.",
+    "applied_to_production": false
+  },
+  "content_sha256": "fde01ded5c38c31af83dbd55ac4a4d4750d65243d65ca9ccff2b986cf069bc62"
+}

@@ -1,0 +1,602 @@
+{
+  "created": "2026-10-23T08:03:00+00:00",
+  "smoke_run": false,
+  "status": "FROZEN after Stage A. Stage B must load this file, verify content_sha256 and change nothing.",
+  "criteria": {
+    "feature_or_group_supported_if": "pooled raw-MAE gain >= 0.5% in BOTH validation folds AND no crop (n >= 1500) worse than -2.0% in either fold",
+    "crop_strategy_adopted_if": "cross-fold skill vs no-change >= 0 in both folds AND mean >= 0.5%; otherwise the crop falls back to no-change",
+    "eligible_strategies": [
+      "shrink (final features)",
+      "no_change",
+      "v1_features + shrink",
+      "crop-specific model (Onion/Wheat only)"
+    ],
+    "informational_only": "validation gate (selected on both folds, so its numbers are optimistic)"
+  },
+  "validation_folds": {
+    "C": {
+      "train_targets_before": "2024-07-01",
+      "validation_origins": "2024-07-01 .. 2024-12-31"
+    },
+    "A": {
+      "train_targets_before": "2025-01-01",
+      "validation_origins": "2025-01-01 .. 2025-06-30"
+    }
+  },
+  "features": {
+    "final_variant": "v1",
+    "final_columns": [
+      "log_price",
+      "lag_1_change",
+      "lag_3_change",
+      "lag_7_change",
+      "lag_14_change",
+      "lag_30_change",
+      "roll_mean_7_gap",
+      "roll_mean_14_gap",
+      "roll_mean_30_gap",
+      "volatility_30",
+      "momentum_7_30",
+      "pct_change_7",
+      "spread_ratio",
+      "log_arrivals",
+      "arrivals_vs_30d",
+      "state_price_gap",
+      "state_change_7",
+      "month",
+      "week_of_year",
+      "day_of_week",
+      "season_code",
+      "doy_sin",
+      "doy_cos",
+      "commodity_code",
+      "market_code",
+      "variety_code",
+      "horizon_days",
+      "target_doy_sin",
+      "target_doy_cos"
+    ],
+    "supported_new_features": [],
+    "verdicts": {
+      "v2": {
+        "supported": false,
+        "kind": "combined",
+        "with": "v2",
+        "without": "v1",
+        "gain_pct_fold_C": 0.7477,
+        "gain_pct_fold_A": -2.0514,
+        "ci_fold_C": [
+          -0.1449,
+          1.6609
+        ],
+        "ci_fold_A": [
+          -3.276,
+          -0.9265
+        ],
+        "worst_crop_fold_C": [
+          "Wheat",
+          -3.331
+        ],
+        "worst_crop_fold_A": [
+          "Potato",
+          -23.9802
+        ]
+      },
+      "add_arr_vs_month_prior": {
+        "supported": false,
+        "kind": "add-on",
+        "with": "add_arr_vs_month_prior",
+        "without": "v1",
+        "gain_pct_fold_C": -0.1766,
+        "gain_pct_fold_A": -0.4388,
+        "ci_fold_C": [
+          -0.7119,
+          0.2851
+        ],
+        "ci_fold_A": [
+          -1.1706,
+          0.1874
+        ],
+        "worst_crop_fold_C": [
+          "Onion",
+          -0.9702
+        ],
+        "worst_crop_fold_A": [
+          "Potato",
+          -20.1647
+        ]
+      },
+      "add_season_change": {
+        "supported": false,
+        "kind": "add-on",
+        "with": "add_season_change",
+        "without": "v1",
+        "gain_pct_fold_C": -0.3597,
+        "gain_pct_fold_A": -1.2518,
+        "ci_fold_C": [
+          -1.2284,
+          0.3389
+        ],
+        "ci_fold_A": [
+          -2.1852,
+          -0.3813
+        ],
+        "worst_crop_fold_C": [
+          "Wheat",
+          -4.9953
+        ],
+        "worst_crop_fold_A": [
+          "Potato",
+          -21.6897
+        ]
+      },
+      "add_market_premium_30d": {
+        "supported": false,
+        "kind": "add-on",
+        "with": "add_market_premium_30d",
+        "without": "v1",
+        "gain_pct_fold_C": -1.5672,
+        "gain_pct_fold_A": 0.0562,
+        "ci_fold_C": [
+          -2.1805,
+          -0.8968
+        ],
+        "ci_fold_A": [
+          -0.3603,
+          0.4396
+        ],
+        "worst_crop_fold_C": [
+          "Onion",
+          -6.1684
+        ],
+        "worst_crop_fold_A": [
+          "Cabbage",
+          -0.6424
+        ]
+      },
+      "add_lag_90_change": {
+        "supported": false,
+        "kind": "add-on",
+        "with": "add_lag_90_change",
+        "without": "v1",
+        "gain_pct_fold_C": 1.7226,
+        "gain_pct_fold_A": -1.3685,
+        "ci_fold_C": [
+          0.9244,
+          2.5861
+        ],
+        "ci_fold_A": [
+          -1.995,
+          -0.7686
+        ],
+        "worst_crop_fold_C": [
+          "Potato",
+          -3.6235
+        ],
+        "worst_crop_fold_A": [
+          "Onion",
+          -7.1786
+        ]
+      },
+      "add_yoy_gap": {
+        "supported": false,
+        "kind": "add-on",
+        "with": "add_yoy_gap",
+        "without": "v1",
+        "gain_pct_fold_C": -0.2222,
+        "gain_pct_fold_A": -0.8945,
+        "ci_fold_C": [
+          -0.9556,
+          0.485
+        ],
+        "ci_fold_A": [
+          -1.7567,
+          0.0363
+        ],
+        "worst_crop_fold_C": [
+          "Onion",
+          -2.2471
+        ],
+        "worst_crop_fold_A": [
+          "Potato",
+          -17.0562
+        ]
+      },
+      "drop_supply": {
+        "supported": false,
+        "kind": "drop-out",
+        "with": "v2",
+        "without": "drop_supply",
+        "gain_pct_fold_C": -0.28,
+        "gain_pct_fold_A": -0.1603,
+        "ci_fold_C": [
+          -0.6712,
+          0.1293
+        ],
+        "ci_fold_A": [
+          -0.4184,
+          0.1388
+        ],
+        "worst_crop_fold_C": [
+          "Wheat",
+          -1.766
+        ],
+        "worst_crop_fold_A": [
+          "Potato",
+          -3.919
+        ]
+      },
+      "drop_seasonal": {
+        "supported": false,
+        "kind": "drop-out",
+        "with": "v2",
+        "without": "drop_seasonal",
+        "gain_pct_fold_C": 5.0411,
+        "gain_pct_fold_A": 3.4747,
+        "ci_fold_C": [
+          1.5886,
+          8.8591
+        ],
+        "ci_fold_A": [
+          -5.7278,
+          12.8638
+        ],
+        "worst_crop_fold_C": [
+          "Cabbage",
+          -11.3862
+        ],
+        "worst_crop_fold_A": [
+          "Onion",
+          -21.6572
+        ]
+      },
+      "drop_market_premium": {
+        "supported": false,
+        "kind": "drop-out",
+        "with": "v2",
+        "without": "drop_market_premium",
+        "gain_pct_fold_C": -1.691,
+        "gain_pct_fold_A": 1.0579,
+        "ci_fold_C": [
+          -2.6129,
+          -0.671
+        ],
+        "ci_fold_A": [
+          0.7702,
+          1.3577
+        ],
+        "worst_crop_fold_C": [
+          "Onion",
+          -10.3115
+        ],
+        "worst_crop_fold_A": [
+          "Tomato",
+          -0.3054
+        ]
+      },
+      "drop_recent_trend": {
+        "supported": false,
+        "kind": "drop-out",
+        "with": "v2",
+        "without": "drop_recent_trend",
+        "gain_pct_fold_C": 4.1392,
+        "gain_pct_fold_A": 3.4205,
+        "ci_fold_C": [
+          1.5357,
+          6.2932
+        ],
+        "ci_fold_A": [
+          1.2553,
+          5.0961
+        ],
+        "worst_crop_fold_C": [
+          "Cabbage",
+          -4.7392
+        ],
+        "worst_crop_fold_A": [
+          "Wheat",
+          -2.4724
+        ]
+      },
+      "drop_last_year": {
+        "supported": false,
+        "kind": "drop-out",
+        "with": "v2",
+        "without": "drop_last_year",
+        "gain_pct_fold_C": 0.1194,
+        "gain_pct_fold_A": -0.7072,
+        "ci_fold_C": [
+          -0.5399,
+          0.8239
+        ],
+        "ci_fold_A": [
+          -1.1267,
+          -0.2182
+        ],
+        "worst_crop_fold_C": [
+          "Onion",
+          -0.8715
+        ],
+        "worst_crop_fold_A": [
+          "Onion",
+          -2.5713
+        ]
+      }
+    }
+  },
+  "crop_strategy": {
+    "Brinjal": {
+      "strategy": "shrink (final features)",
+      "mean_cross_fold_skill_pct": 12.2051,
+      "reason": "model beats no-change in both folds"
+    },
+    "Cabbage": {
+      "strategy": "shrink (final features)",
+      "mean_cross_fold_skill_pct": 7.9235,
+      "reason": "model beats no-change in both folds"
+    },
+    "Cauliflower": {
+      "strategy": "shrink (final features)",
+      "mean_cross_fold_skill_pct": 7.4508,
+      "reason": "model beats no-change in both folds"
+    },
+    "Onion": {
+      "strategy": "crop-specific model + shrink",
+      "mean_cross_fold_skill_pct": 12.4381,
+      "reason": "model beats no-change in both folds"
+    },
+    "Potato": {
+      "strategy": "no_change",
+      "mean_cross_fold_skill_pct": 0.0,
+      "reason": "no eligible model strategy was >= 0% in both folds with a mean gain >= 0.5%: falls back to no-change"
+    },
+    "Tomato": {
+      "strategy": "no_change",
+      "mean_cross_fold_skill_pct": 0.0,
+      "reason": "no eligible model strategy was >= 0% in both folds with a mean gain >= 0.5%: falls back to no-change"
+    },
+    "Wheat": {
+      "strategy": "crop-specific model + shrink",
+      "mean_cross_fold_skill_pct": 14.3012,
+      "reason": "model beats no-change in both folds"
+    }
+  },
+  "shrink_weights": {
+    "Brinjal": {
+      "1-7": 0.5,
+      "8-14": 0.6,
+      "15-30": 0.7,
+      "31-60": 0.8
+    },
+    "Cabbage": {
+      "1-7": 0.8,
+      "8-14": 0.6,
+      "15-30": 0.6,
+      "31-60": 0.9
+    },
+    "Cauliflower": {
+      "1-7": 0.7,
+      "8-14": 0.7,
+      "15-30": 0.7,
+      "31-60": 0.7
+    },
+    "Onion": {
+      "1-7": 0.3,
+      "8-14": 0.3,
+      "15-30": 0.4,
+      "31-60": 0.5
+    },
+    "Potato": {
+      "1-7": 0.0,
+      "8-14": 0.0,
+      "15-30": 0.0,
+      "31-60": 0.0
+    },
+    "Tomato": {
+      "1-7": 0.0,
+      "8-14": 0.0,
+      "15-30": 0.0,
+      "31-60": 0.0
+    },
+    "Wheat": {
+      "1-7": 0.8,
+      "8-14": 0.7,
+      "15-30": 0.8,
+      "31-60": 0.9
+    }
+  },
+  "w_grid": [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "conformal_q_log": {
+    "Brinjal": {
+      "1-7": [
+        -0.3208,
+        0.3174
+      ],
+      "8-14": [
+        -0.4731,
+        0.4738
+      ],
+      "15-30": [
+        -0.4724,
+        0.5734
+      ],
+      "31-60": [
+        -0.5625,
+        0.6081
+      ]
+    },
+    "Cabbage": {
+      "1-7": [
+        -0.2776,
+        0.2289
+      ],
+      "8-14": [
+        -0.3739,
+        0.3048
+      ],
+      "15-30": [
+        -0.5216,
+        0.384
+      ],
+      "31-60": [
+        -0.8053,
+        0.4621
+      ]
+    },
+    "Cauliflower": {
+      "1-7": [
+        -0.3148,
+        0.3037
+      ],
+      "8-14": [
+        -0.4812,
+        0.4064
+      ],
+      "15-30": [
+        -0.6007,
+        0.5249
+      ],
+      "31-60": [
+        -0.7912,
+        0.6715
+      ]
+    },
+    "Onion": {
+      "1-7": [
+        -0.1686,
+        0.1401
+      ],
+      "8-14": [
+        -0.2644,
+        0.2109
+      ],
+      "15-30": [
+        -0.3401,
+        0.2277
+      ],
+      "31-60": [
+        -0.4353,
+        0.2521
+      ]
+    },
+    "Potato": {
+      "1-7": [
+        -0.1086,
+        0.0953
+      ],
+      "8-14": [
+        -0.1542,
+        0.1252
+      ],
+      "15-30": [
+        -0.2231,
+        0.1335
+      ],
+      "31-60": [
+        -0.3365,
+        0.1542
+      ]
+    },
+    "Tomato": {
+      "1-7": [
+        -0.3254,
+        0.3159
+      ],
+      "8-14": [
+        -0.5108,
+        0.4353
+      ],
+      "15-30": [
+        -0.6931,
+        0.562
+      ],
+      "31-60": [
+        -0.9163,
+        0.7821
+      ]
+    },
+    "Wheat": {
+      "1-7": [
+        -0.0497,
+        0.0489
+      ],
+      "8-14": [
+        -0.06,
+        0.0592
+      ],
+      "15-30": [
+        -0.0653,
+        0.0711
+      ],
+      "31-60": [
+        -0.0723,
+        0.0737
+      ]
+    }
+  },
+  "typical_error_log": {
+    "Brinjal": {
+      "1-7": 0.1411,
+      "8-14": 0.2236,
+      "15-30": 0.2625,
+      "31-60": 0.2998
+    },
+    "Cabbage": {
+      "1-7": 0.1098,
+      "8-14": 0.161,
+      "15-30": 0.228,
+      "31-60": 0.3213
+    },
+    "Cauliflower": {
+      "1-7": 0.1267,
+      "8-14": 0.2108,
+      "15-30": 0.2725,
+      "31-60": 0.3467
+    },
+    "Onion": {
+      "1-7": 0.0559,
+      "8-14": 0.1067,
+      "15-30": 0.1483,
+      "31-60": 0.1861
+    },
+    "Potato": {
+      "1-7": 0.0364,
+      "8-14": 0.0572,
+      "15-30": 0.0715,
+      "31-60": 0.1054
+    },
+    "Tomato": {
+      "1-7": 0.1335,
+      "8-14": 0.2231,
+      "15-30": 0.2877,
+      "31-60": 0.4311
+    },
+    "Wheat": {
+      "1-7": 0.0178,
+      "8-14": 0.0244,
+      "15-30": 0.0291,
+      "31-60": 0.0338
+    }
+  },
+  "conformal_alpha": 0.2,
+  "interval_calibration_data": "pooled validation folds C and A (final strategy residuals)",
+  "stage_B_plan": [
+    "load these decisions and verify the hash",
+    "fit the chosen models on targets < 2025-07-01 (fit B)",
+    "score the 2025-H2 confirmation cases ONCE with the frozen features, strategies, weights and conformal bands",
+    "rebuild reliability counts and regenerate six samples with explain_v3 (no setting changes)"
+  ],
+  "content_sha256": "10baf05567d5a3d29796f725fed93124f8d076aad837c10253446419f72c3336"
+}
