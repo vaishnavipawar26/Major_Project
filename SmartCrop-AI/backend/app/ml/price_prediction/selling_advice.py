@@ -146,6 +146,21 @@ def _unavailable(path: list[dict], t: dict | None, target_h: int, storage: dict,
     }
 
 
+def no_direction_advice(path: list[dict], target_h: int, commodity: str) -> dict:
+    """Used where the model is not trusted to claim a rise or fall (context-only crops): no model price, no dates compared."""
+    storage = STORAGE.get(commodity, DEFAULT_STORAGE)
+    t = next((p for p in path if p.get("horizon_days") == target_h), None)
+    out = _unavailable(
+        path, t, target_h, storage, commodity,
+        f"For {commodity}, the model is not used to predict a rise or fall this far ahead, so no selling dates are compared.",
+        "In testing, the model was not more accurate than simply assuming the price stays the same. "
+        "Check current mandi prices before deciding.")
+    for k in ("recommended_price", "recommended_low", "recommended_high", "target_price", "target_low", "target_high",
+              "extra_per_quintal", "extra_pct", "typical_error_pct", "peak"):
+        out[k] = None
+    return out
+
+
 def best_time_to_sell(path: list[dict], target_h: int, commodity: str, projected: bool) -> dict:
     """``path``: daily forecast points (with private ``_band``, the median absolute CV error
     in log units at that horizon); ``target_h``: days from the forecast date to the planned

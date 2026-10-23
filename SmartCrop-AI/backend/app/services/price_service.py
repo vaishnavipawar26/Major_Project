@@ -35,7 +35,7 @@ def _forecast_fields(f: dict) -> dict:
     return {k: f[k] for k in ("series", "input_date", "forecast_origin_date", "target_date",
                               "target_horizon_days", "current_price", "arrivals_used", "target",
                               "path", "last_validated_days", "validated_days",
-                              "max_horizon_days", "advice", "history", "history_is_reference",
+                              "max_horizon_days", "advice", "policy", "range_info", "latest_recorded", "history", "history_is_reference",
                               "actual_after_origin", "model", "projection", "source", "dates",
                               "disclaimer")}
 

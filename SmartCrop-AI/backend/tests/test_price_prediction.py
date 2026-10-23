@@ -55,15 +55,21 @@ def test_predict_starts_today_and_returns_a_daily_path(client, user):
     assert t["actual_price"] is not None  # inside the dataset -> comparable with reality
 
     a = b["advice"]
-    assert a["target_price"] == t["predicted_price"]
-    rec = next((p for p in path if p["date"] == a["recommended_date"]), None)
-    assert rec is not None and a["recommended_price"] == rec["predicted_price"]
-    assert a["wait_days"] == a["recommended_horizon_days"] - b["target_horizon_days"] >= 0
-    # the chart's "In short" summary shows advice.peak: the highest validated price on the chart's path
-    validated = [p for p in path if p["beats_baseline"]]
-    if validated:
-        top = max(validated, key=lambda p: p["predicted_price"])
-        assert (a["peak"]["date"], a["peak"]["price"]) == (top["date"], top["predicted_price"])
+    if b["policy"]["mode"] == "context_only":
+        # the model is not used to claim a direction for this crop and distance: no model price in the advice either
+        assert a["code"] == "UNAVAILABLE" and a["target_price"] is None and a["recommended_price"] is None and a["peak"] is None
+        assert b["latest_recorded"]["price"] > 0 and b["latest_recorded"]["date"] <= b["dates"]["latest_data_date"]
+        assert not any(p["beats_baseline"] for p in path if b["policy"]["band"] == "8-14" and p["horizon_days"] == b["target_horizon_days"])
+    else:
+        assert a["target_price"] == t["predicted_price"]
+        rec = next((p for p in path if p["date"] == a["recommended_date"]), None)
+        assert rec is not None and a["recommended_price"] == rec["predicted_price"]
+        assert a["wait_days"] == a["recommended_horizon_days"] - b["target_horizon_days"] >= 0
+        # the chart's "In short" summary shows advice.peak: the highest validated price on the chart's path
+        validated = [p for p in path if p["beats_baseline"]]
+        if validated:
+            top = max(validated, key=lambda p: p["predicted_price"])
+            assert (a["peak"]["date"], a["peak"]["price"]) == (top["date"], top["predicted_price"])
     assert "not a guarantee" in a["disclaimer"]
 
     hist = client.get("/api/history/price", headers=user["headers"]).json()
@@ -219,3 +225,15 @@ def test_reasons_for_every_crop_and_scope_are_evidence_backed(client, user):
                 assert r["shap_value"] == pytest.approx(s, abs=1e-4)
         if exp["what_it_means"]:
             assert exp["what_it_means"].startswith(("The forecast is", "The model expects little", "The strongest factors"))
+
+
+def test_model_crop_keeps_the_full_advice_and_reports_range_coverage(client, user):
+    """A crop/band where the model is used: advice has the model's price; the range carries its measured coverage."""
+    r = client.post("/api/price-prediction/trend", headers=user["headers"],
+                    json={**STATE_REQ, "commodity": "Cauliflower", "target_date": "2025-06-30"})
+    assert r.status_code == 200, r.text
+    b = r.json()
+    assert b["policy"]["mode"] == "model" and b["advice"]["target_price"] == b["target"]["predicted_price"]
+    ri = b["range_info"]
+    assert ri["scope"] == "real_origin" and ri["n"] > 100 and ri["shown"] == (ri["coverage_pct"] >= 40.0)
+    assert b["latest_recorded"]["date"] <= b["dates"]["latest_data_date"]

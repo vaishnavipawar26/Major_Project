@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.database.connection import get_db
 from app.models.crop_recommendation import CropRecommendation
 from app.models.price_prediction import PricePrediction
+from app.ml.price_prediction.features import STATE_MARKET, STATE_VARIETY
 from app.models.user import User
 from app.schemas.history import (HistorySummary, PriceHistoryItem, PriceHistoryPage,
                                  RecommendationHistoryItem, RecommendationHistoryPage)
@@ -13,21 +14,39 @@ from app.services import history_service
 router = APIRouter(prefix="/api/history", tags=["History"])
 
 
+def _with_policy(items: list, request: Request) -> list:
+    """Attach the display policy and the latest recorded price to saved price predictions (read-only, no DB change)."""
+    fc = getattr(request.app.state.registry, "price", None) if hasattr(request.app.state, "registry") else None
+    if fc is None:
+        return items
+    out = []
+    for it in items:
+        m = PriceHistoryItem.model_validate(it)
+        latest = (fc.latest_recorded(m.state, m.market, m.commodity, m.variety)
+                  or fc.latest_recorded(m.state, STATE_MARKET, m.commodity, STATE_VARIETY))
+        out.append(m.model_copy(update={"policy": fc.policy_for(m.commodity, m.horizon_days), "latest_recorded": latest}))
+    return out
+
+
 @router.get("/summary", response_model=HistorySummary)
-def summary(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
-    return history_service.summary(db, user.id)
+def summary(request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+    s = history_service.summary(db, user.id)
+    s["recent_predictions"] = _with_policy(s["recent_predictions"], request)
+    return s
 
 
 @router.get("/price", response_model=PriceHistoryPage)
-def price_history(limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0),
+def price_history(request: Request, limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0),
                   user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
-    return history_service.list_price(db, user.id, limit, offset)
+    page = history_service.list_price(db, user.id, limit, offset)
+    page["items"] = _with_policy(page["items"], request)
+    return page
 
 
 @router.get("/price/{item_id}", response_model=PriceHistoryItem)
-def price_item(item_id: int, user: User = Depends(get_current_user),
+def price_item(item_id: int, request: Request, user: User = Depends(get_current_user),
                db: Session = Depends(get_db)):
-    return history_service.get_price(db, user.id, item_id)
+    return _with_policy([history_service.get_price(db, user.id, item_id)], request)[0]
 
 
 @router.delete("/price/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

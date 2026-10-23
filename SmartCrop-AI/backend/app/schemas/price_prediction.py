@@ -177,6 +177,12 @@ class PriceForecastResponse(BaseModel):
     source: SourceInfo
     dates: DatesInfo
     disclaimer: str
+    # "model" or "context_only" for this crop and distance (see scripts/build_crop_policy.py)
+    policy: dict | None = None
+    # measured coverage of the displayed range for this crop and band; `shown` is false below 40 %
+    range_info: dict | None = None
+    # the last price this series actually reported, with its real date
+    latest_recorded: dict | None = None
 
 
 class PricePredictionResponse(PriceForecastResponse):

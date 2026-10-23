@@ -26,7 +26,7 @@ from app.ml.price_prediction.features import (FEATURE_COLUMNS, HORIZONS, MAX_HOR
                                               STATE_VARIETY, TARGET_FFILL_LIMIT,
                                               compute_features, usable_origin_mask,
                                               with_pair_features)
-from app.ml.price_prediction.selling_advice import best_time_to_sell
+from app.ml.price_prediction.selling_advice import best_time_to_sell, no_direction_advice
 from app.ml.price_prediction.weather_features import WEATHER_FEATURES, attach
 
 log = logging.getLogger(__name__)
@@ -43,6 +43,7 @@ MIN_LISTED_OBS = 30        # a market is listed for forecasting from this many r
 PROJECTION_END = date(2027, 12, 31)  # latest date a seasonal projection may start from
 DEFAULT_INFLATION = 0.05  # used only if the monthly model's inflation assumption is missing
 MIN_RESIDUAL_SAMPLES = 200  # crop-specific error band needs at least this many CV errors
+RANGE_MIN_SHOWN_COVERAGE = 40.0  # a range whose measured coverage (crop x band backtest) is below this is hidden
 DISCLAIMER = ("This is a model-based estimate and actual market prices may differ. "
               "It is not a guarantee.")
 
@@ -422,7 +423,7 @@ class PriceForecaster:
                 "direction": "Stable" if abs(pred) < band else
                              ("Increasing" if pred > 0 else "Decreasing"),
                 "actual_price": None if actual is None or pd.isna(actual) else round(float(actual), 2),
-                "beats_baseline": h in validated,
+                "beats_baseline": h in validated and self.policy_for(ref.commodity, h)["mode"] == "model",
                 "model_mae": round(model_mae, 1), "baseline_mae": round(base_mae, 1),
                 "_band": band,
             })
@@ -430,7 +431,15 @@ class PriceForecaster:
         # show dates up to the target and, beyond it, up to the last validated date
         last_validated = max(validated, default=0)
         shown = path[:max(target_h, last_validated)]
-        advice = best_time_to_sell(shown, target_h, ref.commodity, projected)
+        cell_t, scope_t = self.reliability_cell(ref.commodity, target_h, projected)
+        policy_t = self.policy_for(ref.commodity, target_h, cell_t)
+        advice = (no_direction_advice(shown, target_h, ref.commodity) if policy_t["mode"] == "context_only"
+                  else best_time_to_sell(shown, target_h, ref.commodity, projected))
+        cov = None if cell_t is None else cell_t["range_coverage_pct"]
+        range_info = {"coverage_pct": None if cov is None else round(cov, 1), "n": None if cell_t is None else cell_t["n"],
+                      "scope": scope_t, "min_coverage_to_show_pct": RANGE_MIN_SHOWN_COVERAGE,
+                      "shown": cov is None or cov >= RANGE_MIN_SHOWN_COVERAGE,
+                      "typical_miss_inr": None if cell_t is None else round(cell_t["mae"], 1)}
 
         explanations = []
         if explain:
@@ -466,6 +475,8 @@ class PriceForecaster:
             "validated_days": len(validated),
             "max_horizon_days": self.max_horizon,
             "advice": advice,
+            "policy": policy_t, "range_info": range_info,
+            "latest_recorded": self.latest_recorded(ref.state, ref.market, ref.commodity, ref.variety),
             "explanations": explanations,
             "history": history,
             "history_is_reference": projected,
@@ -586,6 +597,8 @@ class PriceForecaster:
             "last_validated_days": 0, "validated_days": 0,
             "max_horizon_days": self.max_horizon,
             "advice": advice, "explanations": [],
+            "policy": self.policy_for(ref.commodity, target_h), "range_info": None,
+            "latest_recorded": self.latest_recorded(ref.state, ref.market, ref.commodity, ref.variety),
             "history": history, "history_is_reference": projected,
             "actual_after_origin": actual_after,
             "model": {"version": self.version, "algorithm": "Historical price estimate (no model)",
