@@ -59,6 +59,8 @@ describe("result page for context-only cells", () => {
     expect(document.body.textContent).not.toMatch(/Expected change|Likely range|likely range/);
     expect(screen.queryByTestId("range-line")).toBeNull();
     expect(box).toContain("In testing, estimates like this missed by about ₹300 per quintal");
+    expect(document.body.textContent).toContain("Your selling date 4 Nov 2026");
+    expect(document.body.textContent).not.toContain("Expected market price on");     // no price is expected in a no-direction cell
   });
 
   it("replaces the forecast chart and the selling comparison by plain statements without prices", () => {

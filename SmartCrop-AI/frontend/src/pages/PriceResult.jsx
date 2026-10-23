@@ -292,7 +292,7 @@ export default function PriceResult() {
       <div className="result-top steps-top">
         <ResultStep n={1} id="step-price" title={tr("price.steps.price")} className="hero-card">
           <div className="hero-card-head">
-            <span className="stat-label">{tr("price.result.expectedOn", { date: fmtDate(t.date) })}</span>
+            <span className="stat-label">{ctxOnly ? tr("price.result.sellingDate", { date: fmtDate(t.date) }) : tr("price.result.expectedOn", { date: fmtDate(t.date) })}</span>
           </div>
           {ctxOnly ? (
             <div data-testid="no-direction">
