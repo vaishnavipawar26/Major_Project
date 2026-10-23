@@ -13,7 +13,7 @@ import CitySelect from "../components/crop/CitySelect";
 import RangeField from "../components/crop/RangeField";
 import WeatherCards from "../components/crop/WeatherCards";
 import fieldPhoto from "../assets/photos/field.webp";
-import { CROP_EXAMPLES, DEFAULT_EXAMPLE, exampleToForm } from "../data/cropExamples";
+import { CROP_EXAMPLES, DEFAULT_EXAMPLE, exampleLabel, exampleToForm } from "../data/cropExamples";
 import { useAsync } from "../hooks/useAsync";
 import { useWeather } from "../hooks/useWeather";
 import { useT } from "../i18n/LanguageContext";
@@ -239,9 +239,9 @@ export default function CropRecommendation() {
         <p className="inline-icon !mb-1 font-semibold"><Lightbulb size={17} className="text-brand" aria-hidden="true" />{t("crop.form.examplesTitle")}</p>
         <p className="muted small !mb-2">{t("crop.form.examplesNote")}</p>
         <div className="flex flex-wrap gap-2">
-          {CROP_EXAMPLES.map((ex, i) => (
-            <button key={ex.crop} type="button" className="btn btn-secondary example-btn" onClick={() => fill(ex)}>
-              {t(`crop.form.example.${i}`)}
+          {CROP_EXAMPLES.map((ex) => (
+            <button key={ex.city} type="button" className="btn btn-secondary example-btn" onClick={() => fill(ex)}>
+              {exampleLabel(ex, t)}
             </button>
           ))}
         </div>
