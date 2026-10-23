@@ -4,9 +4,10 @@ Run from backend/:   python -m scripts.build_crop_policy
 
 Rule (applied to every cell, no hand-picked exceptions): a cell is CONTEXT-ONLY if any of
   1. the crop's frozen Phase B strategy is "no_change" (validation folds 2024-H2 and 2025-H1: the model was not >= 0 on both),
-  2. the real-origin backtest (origins 2025-H2) shows the model does NOT beat "price stays unchanged" in that cell,
-  3. the projection backtest shows the model does NOT beat the starting price in that cell.
-Otherwise it is MODEL. The scenario-independent union is deliberate: the application falls back between the two
+  2. the real-origin backtest (origins 2025-H2) shows the model does NOT beat "price stays unchanged" in that cell by at least +2%,
+  3. the projection backtest shows the model does NOT beat the starting price in that cell by at least +2%.
+Otherwise it is MODEL (skill >= +2% in BOTH backtests). The reliability table carries no per-cell confidence interval, so the margin is
+applied to the point skill. The scenario-independent union is deliberate: the application falls back between the two
 kinds of forecast depending on how old the records are, and a direction claim must hold in both.
 
 Inputs : trained_models/price_reliability/reliability_v1.json (scripts.build_reliability_table),
@@ -21,6 +22,7 @@ from datetime import datetime, timezone
 from app.ml.common import paths
 
 BANDS = ["1-7", "8-14", "15-30", "31-60"]
+MIN_SKILL_PCT = 2.0   # a cell is model-mode only if skill vs baseline is at least this in both backtests
 CROPS = ["Brinjal", "Cabbage", "Cauliflower", "Onion", "Potato", "Tomato", "Wheat"]
 
 
@@ -47,6 +49,9 @@ def main() -> None:
                     reasons.append(f"No {name} result exists for this cell.")
                 elif not c["beats_baseline"]:
                     reasons.append(f"{name.capitalize()} (origins 2025-H2, n={c['n']:,}): model {c['skill_vs_baseline_pct']:+.1f}% vs {baseline}.")
+                elif c["skill_vs_baseline_pct"] < MIN_SKILL_PCT:
+                    reasons.append(f"{name.capitalize()} (origins 2025-H2, n={c['n']:,}): model {c['skill_vs_baseline_pct']:+.1f}% vs {baseline}, "
+                                   f"below the +{MIN_SKILL_PCT:.0f}% margin required.")
             if crop == "Onion":
                 d = val["diagnostics"]["Onion"]["A"]["market_cluster_skill"]
                 reasons.append(f"Validation fold A (2025-H1), pooled model vs no-change: {d['skill_pct']:+.1f}% "

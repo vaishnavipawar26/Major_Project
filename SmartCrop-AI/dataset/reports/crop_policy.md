@@ -1,6 +1,6 @@
 # Crop × horizon-band policy: model or context-only
 
-Generated 2026-10-23T08:22:14+00:00 from the backtest reliability table and the frozen Phase B decisions. **Model** = the forecast and its ₹ explanation are shown. **Context-only** = no rise or fall is claimed; the dated records are shown for information.
+Generated 2026-10-23T09:28:51+00:00 from the backtest reliability table and the frozen Phase B decisions. **Model** = the forecast and its ₹ explanation are shown. **Context-only** = no rise or fall is claimed; the dated records are shown for information.
 
 | Crop | Band (days) | Mode | Real-origin skill | Projection skill | Why |
 |---|---|---|---|---|---|
@@ -25,10 +25,10 @@ Generated 2026-10-23T08:22:14+00:00 from the backtest reliability table and the 
 | Potato | 15-30 | **context-only** | +4.1% | +4.1% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +9.1% / -3.3%). |
 | Potato | 31-60 | **context-only** | +7.0% | +2.3% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +9.1% / -3.3%). |
 | Tomato | 1-7 | **context-only** | +2.0% | +4.2% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%). |
-| Tomato | 8-14 | **context-only** | +0.3% | +6.5% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%). |
-| Tomato | 15-30 | **context-only** | +1.2% | +15.4% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%). |
+| Tomato | 8-14 | **context-only** | +0.3% | +6.5% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%). Real-origin backtest (origins 2025-H2, n=5,991): model +0.3% vs no-change, below the +2% margin required. |
+| Tomato | 15-30 | **context-only** | +1.2% | +15.4% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%). Real-origin backtest (origins 2025-H2, n=12,759): model +1.2% vs no-change, below the +2% margin required. |
 | Tomato | 31-60 | **context-only** | +9.3% | +27.1% | Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%). |
-| Wheat | 1-7 | **model** | +1.8% | +4.8% | The model beat its baseline in both backtests and was not rejected in validation. |
-| Wheat | 8-14 | **model** | +0.1% | +6.2% | The model beat its baseline in both backtests and was not rejected in validation. |
-| Wheat | 15-30 | **context-only** | -0.1% | +1.1% | Real-origin backtest (origins 2025-H2, n=14,923): model -0.1% vs no-change. |
+| Wheat | 1-7 | **context-only** | +1.8% | +4.8% | Real-origin backtest (origins 2025-H2, n=7,982): model +1.8% vs no-change, below the +2% margin required. |
+| Wheat | 8-14 | **context-only** | +0.1% | +6.2% | Real-origin backtest (origins 2025-H2, n=7,111): model +0.1% vs no-change, below the +2% margin required. |
+| Wheat | 15-30 | **context-only** | -0.1% | +1.1% | Real-origin backtest (origins 2025-H2, n=14,923): model -0.1% vs no-change. Projection backtest (origins 2025-H2, n=9,399): model +1.1% vs the starting price, below the +2% margin required. |
 | Wheat | 31-60 | **context-only** | -5.6% | -4.0% | Real-origin backtest (origins 2025-H2, n=23,437): model -5.6% vs no-change. Projection backtest (origins 2025-H2, n=15,152): model -4.0% vs the starting price. |

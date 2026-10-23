@@ -1,6 +1,6 @@
 {
-  "created": "2026-10-23T08:22:14+00:00",
-  "rule": "(applied to every cell, no hand-picked exceptions): a cell is CONTEXT-ONLY if any of\n  1. the crop's frozen Phase B strategy is \"no_change\" (validation folds 2024-H2 and 2025-H1: the model was not >= 0 on both),\n  2. the real-origin backtest (origins 2025-H2) shows the model does NOT beat \"price stays unchanged\" in that cell,\n  3. the projection backtest shows the model does NOT beat the starting price in that cell.\nOtherwise it is MODEL. The scenario-independent union is deliberate: the application falls back between the two\nkinds of forecast depending on how old the records are, and a direction claim must hold in both.",
+  "created": "2026-10-23T09:28:51+00:00",
+  "rule": "(applied to every cell, no hand-picked exceptions): a cell is CONTEXT-ONLY if any of\n  1. the crop's frozen Phase B strategy is \"no_change\" (validation folds 2024-H2 and 2025-H1: the model was not >= 0 on both),\n  2. the real-origin backtest (origins 2025-H2) shows the model does NOT beat \"price stays unchanged\" in that cell by at least +2%,\n  3. the projection backtest shows the model does NOT beat the starting price in that cell by at least +2%.\nOtherwise it is MODEL (skill >= +2% in BOTH backtests). The reliability table carries no per-cell confidence interval, so the margin is\napplied to the point skill. The scenario-independent union is deliberate: the application falls back between the two\nkinds of forecast depending on how old the records are, and a direction claim must hold in both.",
   "reliability_created": "2026-10-23T08:11:43+00:00",
   "decisions_sha256": "10baf05567d5a3d29796f725fed93124f8d076aad837c10253446419f72c3336",
   "no_change_crops": [
@@ -20,8 +20,10 @@
     "Tomato|15-30",
     "Tomato|31-60",
     "Tomato|8-14",
+    "Wheat|1-7",
     "Wheat|15-30",
-    "Wheat|31-60"
+    "Wheat|31-60",
+    "Wheat|8-14"
   ],
   "cells": {
     "Brinjal|1-7": {
@@ -200,7 +202,8 @@
     "Tomato|8-14": {
       "mode": "context_only",
       "reasons": [
-        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%)."
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%).",
+        "Real-origin backtest (origins 2025-H2, n=5,991): model +0.3% vs no-change, below the +2% margin required."
       ],
       "real_origin_skill_pct": 0.3342,
       "projection_skill_pct": 6.4723
@@ -208,7 +211,8 @@
     "Tomato|15-30": {
       "mode": "context_only",
       "reasons": [
-        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%)."
+        "Validation folds 2024-H2 and 2025-H1: the model did not beat keeping the latest price in both (skill +14.7% / -23.6%).",
+        "Real-origin backtest (origins 2025-H2, n=12,759): model +1.2% vs no-change, below the +2% margin required."
       ],
       "real_origin_skill_pct": 1.1892,
       "projection_skill_pct": 15.4469
@@ -222,17 +226,17 @@
       "projection_skill_pct": 27.1222
     },
     "Wheat|1-7": {
-      "mode": "model",
+      "mode": "context_only",
       "reasons": [
-        "The model beat its baseline in both backtests and was not rejected in validation."
+        "Real-origin backtest (origins 2025-H2, n=7,982): model +1.8% vs no-change, below the +2% margin required."
       ],
       "real_origin_skill_pct": 1.7766,
       "projection_skill_pct": 4.7876
     },
     "Wheat|8-14": {
-      "mode": "model",
+      "mode": "context_only",
       "reasons": [
-        "The model beat its baseline in both backtests and was not rejected in validation."
+        "Real-origin backtest (origins 2025-H2, n=7,111): model +0.1% vs no-change, below the +2% margin required."
       ],
       "real_origin_skill_pct": 0.1333,
       "projection_skill_pct": 6.1847
@@ -240,7 +244,8 @@
     "Wheat|15-30": {
       "mode": "context_only",
       "reasons": [
-        "Real-origin backtest (origins 2025-H2, n=14,923): model -0.1% vs no-change."
+        "Real-origin backtest (origins 2025-H2, n=14,923): model -0.1% vs no-change.",
+        "Projection backtest (origins 2025-H2, n=9,399): model +1.1% vs the starting price, below the +2% margin required."
       ],
       "real_origin_skill_pct": -0.1123,
       "projection_skill_pct": 1.0626

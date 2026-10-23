@@ -39,8 +39,10 @@ def test_onion_is_context_only_in_every_band(policy):
     assert "no-change" in text and "-11.7" in text.replace("−", "-") and "market-bootstrap" in text
 
 
-def test_wheat_is_context_only_beyond_15_days_and_uses_the_model_before(policy):
-    assert [mode(policy, "Wheat", b) for b in BANDS] == ["model", "model", "context_only", "context_only"]
+def test_wheat_is_context_only_in_every_band(policy):
+    """Wheat 1-7 (+1.8%) and 8-14 (+0.1%) beat no-change in the real-origin backtest, but by less than the +2% margin."""
+    assert [mode(policy, "Wheat", b) for b in BANDS] == ["context_only"] * 4
+    assert "below the +2% margin" in " ".join(policy["cells"]["Wheat|1-7"]["reasons"])
 
 
 def test_potato_and_tomato_are_context_only_everywhere_and_the_others_use_the_model(policy):
@@ -52,10 +54,11 @@ def test_potato_and_tomato_are_context_only_everywhere_and_the_others_use_the_mo
 
 
 def test_policy_follows_the_rule_against_the_reliability_table(policy, reliability):
-    """A model cell must beat its baseline in BOTH backtests; any losing cell must be context-only."""
+    """A model cell needs skill >= +2% in BOTH backtests; any cell below that must be context-only."""
     real, proj = reliability["scenarios"]["real_origin"]["cells"], reliability["scenarios"]["projection"]["cells"]
     for key, c in policy["cells"].items():
-        beats_both = real[key]["beats_baseline"] and proj[key]["beats_baseline"]
+        beats_both = min(real[key]["skill_vs_baseline_pct"], proj[key]["skill_vs_baseline_pct"]) >= 2.0
+        assert real[key]["beats_baseline"] or not beats_both
         if c["mode"] == "model":
             assert beats_both, key
         elif key.split("|")[0] not in policy["no_change_crops"]:
@@ -69,7 +72,7 @@ def fc(client):
 
 def test_forecaster_applies_the_policy(fc):
     assert fc.policy_for("Onion", 14)["mode"] == "context_only"
-    assert fc.policy_for("Wheat", 7)["mode"] == "model" and fc.policy_for("Wheat", 20)["mode"] == "context_only"
+    assert fc.policy_for("Wheat", 7)["mode"] == "context_only" and fc.policy_for("Cabbage", 20)["mode"] == "model"
     assert fc.policy_for("Tomato", 3)["band"] == "1-7"
 
 
@@ -83,7 +86,7 @@ def _explain(client, user, crop, days, market=STATE_MARKET, variety=None):
 
 def test_api_explanations_follow_the_policy(client, user, monkeypatch):
     monkeypatch.setattr(freshness, "gate_mode", lambda: "auto")
-    for crop, days, expect_ctx in (("Onion", 14, True), ("Wheat", 7, False), ("Wheat", 30, True), ("Cauliflower", 12, False)):
+    for crop, days, expect_ctx in (("Onion", 14, True), ("Wheat", 7, True), ("Wheat", 30, True), ("Cauliflower", 12, False), ("Cabbage", 10, False)):
         r = _explain(client, user, crop, days)
         assert r.status_code == 200, (crop, days, r.text)
         e = r.json()["explanations"][0]["v3"]
