@@ -436,7 +436,9 @@ class PriceForecaster:
         horizon = horizon_info((target_date - ctx.input_date).days, ref_origin_date, target_h)
         cell_t, scope_t = self.reliability_cell(ref.commodity, target_h, projected)
         policy_t = self.policy_for(ref.commodity, target_h, cell_t)
-        verdict = price_verdict(p0, path[target_h - 1]["predicted_price"], self.typical_miss(ref.commodity, target_h, projected))
+        # context-only cells make no claim about the model's price, so they carry no verdict
+        verdict = (None if policy_t["mode"] == "context_only"
+                   else price_verdict(p0, path[target_h - 1]["predicted_price"], self.typical_miss(ref.commodity, target_h, projected)))
         advice = (no_direction_advice(shown, target_h, ref.commodity) if policy_t["mode"] == "context_only"
                   else best_time_to_sell(shown, target_h, ref.commodity, projected))
         cov = None if cell_t is None else cell_t["range_coverage_pct"]
@@ -706,8 +708,10 @@ class PriceForecaster:
         projected = origin_date > self.data_end
         cell, _ = self.reliability_cell(commodity, target_h, projected)
         ref = SeriesRef(state, market, commodity, variety)
-        return {"policy": self.policy_for(commodity, target_h, cell),
-                "verdict": price_verdict(current_price, predicted_price, self.typical_miss(commodity, target_h, projected)),
+        policy = self.policy_for(commodity, target_h, cell)
+        return {"policy": policy,
+                "verdict": (None if policy["mode"] == "context_only"
+                            else price_verdict(current_price, predicted_price, self.typical_miss(commodity, target_h, projected))),
                 "latest_recorded": self.latest_for(ref, input_date)}
 
     def latest_recorded(self, state: str, market: str, commodity: str, variety: str) -> dict | None:
