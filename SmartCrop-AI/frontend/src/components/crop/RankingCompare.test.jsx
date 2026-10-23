@@ -95,10 +95,11 @@ describe("RankingCompare", () => {
 });
 
 describe("CropCompare order", () => {
-  it("no longer holds the ranking explanation (it lives on the explanation page)", () => {
+  it("holds only the short why-note, not the long ranking explanation (that lives on the explanation page)", () => {
     const { container } = render(<CropCompare response={differ} selected="Cauliflower" onSelect={() => {}} />);
     expect(container.querySelector(".why-box")).toBeNull();
-    expect(container.textContent).not.toContain("ranks first");
+    expect(container.textContent).not.toContain("Why Cauliflower ranks first");
+    expect(container.querySelector("[data-testid=chart-note]").textContent).toMatch(/^Why Cauliflower\?/);
     const chart = container.querySelector("[data-testid=chart]"), toggle = container.querySelector("button.btn-link");
     expect(container.querySelector("table")).toBeNull();
     expect(!!(chart.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);

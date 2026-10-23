@@ -71,8 +71,7 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
     return (
       <g>
         {src && !tiny && <image href={src} x={x - nameW} y={y - 10} width={20} height={20} preserveAspectRatio="xMidYMid slice" />}
-        <text x={x - 8} y={y} dy={d?.isBest ? -1 : 4} textAnchor="end" fontSize={narrow ? 11 : 12.5} fontWeight={sel ? 700 : 500} fill="var(--text)">{payload.value}</text>
-        {d?.isBest && <text x={x - 8} y={y} dy={13} textAnchor="end" fontSize={10.5} fontWeight={700} fill="var(--brand-strong, #1c5a36)" data-testid="recommended-badge">★ {t("cr.chart.recommended")}</text>}
+        <text x={x - 8} y={y} dy={4} textAnchor="end" fontSize={narrow ? 11 : 12.5} fontWeight={sel ? 700 : 500} fill="var(--text)">{payload.value}</text>
       </g>
     );
   };
@@ -87,9 +86,21 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
     if (!loss) { lx = right + LABEL_PAD; anchor = "start"; }
     else if (left - plotLeft >= textW + LABEL_PAD) { lx = left - LABEL_PAD; anchor = "end"; }
     else { lx = right + LABEL_PAD; anchor = "start"; }
+    const cy = y + height / 2;
+    // the recommended crop gets a small pill right after its value ("₹19K  ★ Recommended"); on a phone just the star, the legend names it
+    const pillX = lx + textW + 8, pillW = narrow ? 22 : 96;
     return (
-      <text x={lx} y={y + height / 2} dy={4.5} textAnchor={anchor} fontSize={13} fontWeight={600} stroke="none"
-        fill={loss ? NEG_INK : POS_INK} style={{ fontVariantNumeric: "tabular-nums" }}>{text}</text>
+      <g>
+        <text x={lx} y={cy} dy={4.5} textAnchor={anchor} fontSize={13} fontWeight={600} stroke="none"
+          fill={loss ? NEG_INK : POS_INK} style={{ fontVariantNumeric: "tabular-nums" }}>{text}</text>
+        {data[index]?.isBest && anchor === "start" && (
+          <g data-testid="recommended-badge" aria-label={t("cr.chart.recommended")}>
+            <rect x={pillX} y={cy - 10} width={pillW} height={20} rx={10} fill="var(--brand-soft, #e8f3e4)" stroke="var(--brand-line, #a9d1ab)" />
+            <text x={pillX + pillW / 2} y={cy} dy={4} textAnchor="middle" fontSize={11} fontWeight={700} stroke="none" fill="var(--brand-strong, #1c5a36)">
+              {narrow ? "★" : `★ ${t("cr.chart.recommended")}`}</text>
+          </g>
+        )}
+      </g>
     );
   };
 
@@ -103,12 +114,13 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
         <span><span className="swatch" style={{ background: "var(--profit-pos)" }} />{t("cr.chart.profit")}</span>
         <span><span className="swatch" style={{ background: "var(--profit-neg)" }} />{t("cr.chart.loss")}</span>
         <span className="text-ink-muted">{t("cr.chart.notPossible")}</span>
+        {data.some((d) => d.isBest) && <span data-testid="recommended-legend">{t("cr.chart.recommendedLegend")}</span>}
         {data.some((d) => d.rough) && <span data-testid="rough-legend">{t("cr.chart.rough")}</span>}
         {selected && <span>{t("cr.chart.selectedLegend")}</span>}
       </div>
       <div style={{ width: "100%", height: data.length * rowH + 44 }} role="img" aria-label={t("cr.chart.aria")}>
         <ResponsiveContainer>
-          <BarChart data={data} layout="vertical" margin={{ ...MARGIN, right: narrow ? 56 : MARGIN.right }}
+          <BarChart data={data} layout="vertical" margin={{ ...MARGIN, right: (narrow ? 56 : MARGIN.right) + (data.some((d) => d.isBest) ? (narrow ? 30 : 104) : 0) }}
             barCategoryGap={10} barGap={2} onClick={(e) => e?.activePayload && select(e.activePayload[0].payload)}>
             <CartesianGrid stroke="var(--grid)" horizontal={false} />
             <XAxis type="number" tickFormatter={axisRupees} stroke="var(--axis)" tick={{ fill: "var(--muted)", fontSize: narrow ? 11 : 12 }}

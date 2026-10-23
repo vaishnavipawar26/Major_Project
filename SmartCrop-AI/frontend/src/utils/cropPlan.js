@@ -1,7 +1,7 @@
 // Pure helpers for the crop result page: they turn the API response into the short, farmer-facing
 // facts the page shows. No React and no calculations of money here - prices, profit and scores are
 // always the API's own numbers; these helpers only classify and phrase them.
-import { compactRupees, cropName, monthLabel, monthLong, rupees } from "./format";
+import { cropName, monthLabel, monthLong, rupees } from "./format";
 
 const INPUT_OF = { N: "nitrogen", P: "phosphorus", K: "potassium", ph: "ph", temperature: "temperature", humidity: "humidity", rainfall: "rainfall" };
 export const SOIL = ["N", "P", "K", "ph"];
@@ -121,23 +121,46 @@ export function compareRows(results, response, t) {
 /** "a", "a and b", "a, b and c" */
 const joinWords = (xs, and) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} ${and} ${xs[xs.length - 1]}`);
 
+/** Soil and weather values outside the crop's usual range, largest deviation first (deviation = distance beyond the bound / width of the range). */
+export function outOfRange(r) {
+  return (r.important_factors || [])
+    .filter((f) => [...SOIL, ...WEATHER].includes(f.feature) && f.within_typical_range === false && f.typical_low != null && f.typical_high != null)
+    .map((f) => {
+      const v = parseFloat(f.value), low = v < f.typical_low;
+      const width = f.typical_high - f.typical_low || 1;
+      return { feature: f.feature, low, deviation: Math.abs(low ? f.typical_low - v : v - f.typical_high) / width };
+    })
+    .filter((x) => Number.isFinite(x.deviation))
+    .sort((a, b) => b.deviation - a.deviation);
+}
+
+/** Profit difference for the note: nearest 1,000 rupees (nearest 100 when that would round to zero). */
+const roundGap = (g) => (g >= 500 ? Math.round(g / 1000) * 1000 : Math.max(100, Math.round(g / 100) * 100));
+
 /**
- * One line under the profit chart for when the recommended crop is not the most profitable one. Built from the API's own
- * ranking_explanation (the reasons that really moved the overall score, with their points) and the real profit gap;
- * nothing is hardcoded about any crop. Null when the recommended crop is also the most profitable, or the data is missing.
+ * The short "Why <crop>?" paragraph under the profit chart, only when the recommended (#1) crop is not the most profitable one
+ * that can be sold in the chosen month. Everything comes from the API's scores and reference-range checks:
+ *  - "fully" when every soil and weather value of the recommended crop is in range, else "better";
+ *  - the reasons are the most profitable crop's two largest out-of-range soil/weather deviations, with direction;
+ *  - with none out of range, the real ranking factor that is lower for it: timing (planting window / growing period), else the
+ *    profit score (return on the money spent), else the overall score.
+ * Null when there is nothing to explain.
  */
 export function chartNote(response, t) {
-  const ex = response.ranking_explanation;
   const results = response.results || [];
-  if (!ex || ex.same_crop || !ex.best_overall || !ex.highest_profit) return null;
-  const best = results.find((r) => r.crop_name === ex.best_overall), top = results.find((r) => r.crop_name === ex.highest_profit);
-  const gap = (top?.economics?.net_profit ?? NaN) - (best?.economics?.net_profit ?? NaN);
+  const best = results.find((r) => r.crop_name === response.best_overall);
+  const sellable = results.filter((r) => r.feasible && Number.isFinite(r.economics?.net_profit));
+  const top = sellable.reduce((m, r) => (!m || r.economics.net_profit > m.economics.net_profit ? r : m), null);
+  if (!best || !top || top.crop_name === best.crop_name || !Number.isFinite(best.economics?.net_profit)) return null;
+  const gap = top.economics.net_profit - best.economics.net_profit;
   if (!(gap > 0)) return null;
-  const reasons = (ex.reasons || []).filter((x) => ["fit", "timing", "returns", "forecast"].includes(x.code));
-  const fit = reasons.find((x) => x.code === "fit");
-  const because = reasons.length ? joinWords(reasons.map((x) => t(`cr.chart.because.${x.code}`)), t("cr.chart.and")) : t("cr.chart.because.overall");
-  const p = { best: cropName(t, best.crop_name), top: cropName(t, top.crop_name), gap: compactRupees(gap) };
-  return t("cr.chart.note", { ...p, because, tail: fit ? t("cr.chart.tail.fit", fit.params) : t("cr.chart.tail.other") });
+  const fit = best.range_fit.soil.within + best.range_fit.weather.within === best.range_fit.soil.total + best.range_fit.weather.total ? "fully" : "better";
+  const p = { best: cropName(t, best.crop_name), top: cropName(t, top.crop_name), gap: rupees(roundGap(gap)), fit: t(`cr.chart.fit.${fit}`) };
+  const bad = outOfRange(top).slice(0, 2);
+  if (bad.length) return t("cr.chart.why", { ...p, reasons: joinWords(bad.map((x) => t(`cr.chart.f.${x.feature}.${x.low ? "low" : "high"}`)), t("cr.chart.and")) });
+  if (top.timing_score < best.timing_score) return t("cr.chart.whyTiming", p);
+  if (top.profit_score_used < best.profit_score_used) return t("cr.chart.whyReturns", p);
+  return t("cr.chart.whyOverall", p);
 }
 
 /**

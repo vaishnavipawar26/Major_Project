@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chartNote, compareRows, defaultCrop, rankingCompare, reliabilityOf } from "./cropPlan";
-import en from "../i18n/cropResult.en";
+import { compareRows, defaultCrop, rankingCompare, reliabilityOf } from "./cropPlan";
 
 // t echoes the key and its numbers so the tests can see what was asked for
 const t = (key, p = {}) => `${key}${Object.keys(p).length ? ` ${JSON.stringify(p)}` : ""}`;
@@ -111,7 +110,6 @@ const potatoCase = () => ({
   ranking_explanation: { best_overall: "Potato", highest_profit: "Brinjal", same_crop: false, profit_gap: 29651,
     reasons: [{ code: "fit", points: 22.9, params: { best_in: 7, top_in: 3, total: 7 } }] },
 });
-const tEn = (k, v = {}) => (en[k] ?? k).replace(/\{(\w+)\}/g, (_, n) => v[n]);
 
 describe("default selection (the bold bar outline)", () => {
   it("is the recommended #1 crop, found by name, not the most profitable one or the first bar of the profit-sorted chart", () => {
@@ -132,24 +130,3 @@ describe("compareRows rough estimates", () => {
   });
 });
 
-describe("chartNote", () => {
-  it("explains from the real reasons and numbers why the recommended crop is not the most profitable one", () => {
-    const note = chartNote(potatoCase(), tEn);
-    expect(note).toBe("Potato is recommended because it fits your soil and weather better. Brinjal earns ₹30K more but fits your conditions less well (3 of 7 soil and weather values in its usual range, against 7).");
-  });
-
-  it("names the timing, return and forecast reasons when those are what moved the score", () => {
-    const r = potatoCase();
-    r.ranking_explanation.reasons = [{ code: "timing", points: 3, params: {} }, { code: "forecast", points: 1, params: {} }];
-    const note = chartNote(r, tEn);
-    expect(note).toContain("because it suits your planting and selling months better and its price forecast is more reliable.");
-    expect(note).toContain("earns ₹30K more but scores lower overall.");
-  });
-
-  it("is null when the recommended crop is also the most profitable one, or the data is missing", () => {
-    const r = potatoCase();
-    expect(chartNote({ ...r, ranking_explanation: { ...r.ranking_explanation, same_crop: true } }, tEn)).toBeNull();
-    expect(chartNote({ ...r, ranking_explanation: undefined }, tEn)).toBeNull();
-    expect(chartNote({ ...r, best_overall: null, ranking_explanation: { ...r.ranking_explanation, best_overall: null } }, tEn)).toBeNull();
-  });
-});

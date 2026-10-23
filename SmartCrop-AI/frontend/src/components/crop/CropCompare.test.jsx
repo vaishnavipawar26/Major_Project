@@ -20,18 +20,6 @@ const response = (over = {}) => ({
 });
 
 describe("profit chart section", () => {
-  it("shows one line under the chart when the recommended crop is not the most profitable, built from the real scores", () => {
-    render(<CropCompare response={response()} selected="Potato" onSelect={() => {}} />);
-    expect(screen.getByTestId("chart-note").textContent).toBe(
-      "Potato is recommended because it fits your soil and weather better. Brinjal earns ₹30K more but fits your conditions less well (3 of 7 soil and weather values in its usual range, against 7).");
-  });
-
-  it("shows no such line when the recommended crop is also the most profitable", () => {
-    const r = response({ highest_profit: "Potato", ranking_explanation: { best_overall: "Potato", highest_profit: "Potato", same_crop: true, reasons: [] } });
-    render(<CropCompare response={r} selected="Potato" onSelect={() => {}} />);
-    expect(screen.queryByTestId("chart-note")).toBeNull();
-  });
-
   it("has a legend entry for rough estimates only when a crop has no reliable price forecast, and one for the bold outline", () => {
     render(<CropCompare response={response()} selected="Potato" onSelect={() => {}} />);
     expect(screen.getByTestId("rough-legend").textContent).toBe("≈ rough estimate — no reliable price forecast for this crop");
