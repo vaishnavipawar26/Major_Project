@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareRows, defaultCrop, rankingCompare, reliabilityOf } from "./cropPlan";
+import { compareRows, defaultCrop, indicatorRows, mainConcern, rankingCompare, reliabilityOf } from "./cropPlan";
 
 // t echoes the key and its numbers so the tests can see what was asked for
 const t = (key, p = {}) => `${key}${Object.keys(p).length ? ` ${JSON.stringify(p)}` : ""}`;
@@ -151,4 +151,36 @@ describe("sellableSummary", () => {
     expect(sellableSummary(resp([c("Wheat", false, 100)]), tt).text).toBe("None of the crops can be sold in Jan 2027.");
     expect(sellableSummary(resp([c("Wheat", true, -5), c("Onion", true, -9)]), tt).text).toBe("2 of the 2 crops can be sold in Jan 2027; none of them is expected to make a profit.");
   });
+});
+
+describe("indicatorRows: the edge of a usual range", () => {
+  const tt = (k) => k;
+  const result = (low, high) => ({ important_factors: [{ feature: "temperature", typical_low: low, typical_high: high, unit: "°C", value: "x" }, { feature: "rainfall", typical_low: 13.42, typical_high: 181.21, unit: "mm", value: "y" }] });
+  const row = (v, low = 21.15, high = 34.17) => indicatorRows(result(low, high), ["temperature"], { temperature: v }, tt)[0];
+
+  it("calls a value within 2% of the range width outside the range 'edge', else low or high", async () => {
+    expect(row(21.0)).toMatchObject({ state: "edge", edgeSide: "low", ok: false });
+    expect(row(34.4)).toMatchObject({ state: "edge", edgeSide: "high" });
+    expect(row(20.8).state).toBe("low");
+    expect(row(34.5).state).toBe("high");
+    expect(row(21.15).state).toBe("ok");
+    expect(row(30).state).toBe("ok");
+    expect(row("").state).toBe("unknown");
+  });
+
+  it("prints the value with the same decimals as the range", () => {
+    expect(row(21.0).shown).toBe("21.00");
+    expect(row(23.26).shown).toBe("23.26");
+    expect(row(30, 20, 35).shown).toBe("30");               // whole-number range: no decimals added
+    expect(row(30.5, 20, 35).shown).toBe("30.5");
+  });
+
+  it("an edge value is not a main concern", () => {
+    const fac = (feature, low, high) => ({ feature, typical_low: low, typical_high: high, unit: "", value: "1" });
+    const r = { important_factors: [fac("N", 80, 120), fac("P", 40, 80), fac("K", 80, 120), fac("ph", 6, 7.5), fac("temperature", 21.15, 34.17), fac("humidity", 50, 80), fac("rainfall", 13.42, 181.21)] };
+    const ok = { nitrogen: 100, phosphorus: 60, potassium: 100, ph: 6.5, temperature: 21.0, humidity: 60, rainfall: 100 };
+    expect(mainConcern(r, ok, tt)).toBeNull();                                           // 21.0 is at the edge of 21.15-34.17
+    expect(mainConcern(r, { ...ok, temperature: 20.5 }, tt)).toMatchObject({ feature: "temperature", low: true });
+  });
+});
 });

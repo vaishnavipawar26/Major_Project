@@ -37,7 +37,7 @@ describe("buildExplanation", () => {
       ["Nitrogen (N)", "80", "Usual range: 77–120", "Within usual range"],
       ["Phosphorus (P)", "45", "Usual range: 38–74", "Within usual range"],
       ["Potassium (K)", "85", "Usual range: 36–83", "Slightly above usual range"],
-      ["Soil pH", "6.8", "Usual range: 5.81–7.36", "Within usual range"],
+      ["Soil pH", "6.80", "Usual range: 5.81–7.36", "Within usual range"],
     ]);
     expect(out.soil.headline).toBe("Potassium needs attention");
     expect(out.soil.text).toBe("Most of your soil values are within the reference ranges used for Brinjal. Potassium is slightly above its usual range. Check your soil test before making any fertilizer changes.");
@@ -47,12 +47,12 @@ describe("buildExplanation", () => {
   });
   it("section 4: temperature", () => {
     expect(out.temperature.headline).toBe("Within the usual range");
-    expect(out.temperature.text).toBe("Your temperature is approximately 23.3°C, which falls within Brinjal's reference range of 21.15–34.17°C. This is a favourable sign according to that range, although temperature alone cannot guarantee healthy crop growth.");
+    expect(out.temperature.text).toBe("Your temperature is approximately 23.26°C, which falls within Brinjal's reference range of 21.15–34.17°C. This is a favourable sign according to that range, although temperature alone cannot guarantee healthy crop growth.");
   });
   it("section 5: rainfall is an average per month, not a live reading or a seasonal total", () => {
     expect(out.rainfall.headline).toBe("Water availability needs attention");
     expect(out.rainfall.tone).toBe("warn");
-    expect(out.rainfall.text).toBe("The estimated average rainfall is approximately 3 mm per month during the crop's growing period, below Brinjal's reference range of 13.42–181.21 mm. Make sure sufficient irrigation water is available, especially when the crop needs it.");
+    expect(out.rainfall.text).toBe("The estimated average rainfall is approximately 2.98 mm per month during the crop's growing period, below Brinjal's reference range of 13.42–181.21 mm. Make sure sufficient irrigation water is available, especially when the crop needs it.");
     expect(out.rainfall.note).toBe("Average per month during the crop's growing period.");
   });
   it("section 6: profit uses the API's figures in Indian format", () => {
@@ -116,5 +116,55 @@ describe("judge", () => {
     expect(judge(row("low", 3, 13.42, 181.21)).size).toBe("clear");
     expect(judge(row("high", 400, 36, 83)).size).toBe("far");
     expect(judge(row("high", 7.7, 6.4, 7.5, "ph")).size).toBe("slight");
+  });
+});
+
+
+describe("values at the edge of a usual range", () => {
+  const tOf = (k, v) => translate("en", k, v);
+  const crop = (over, factors) => brinjal({ important_factors: factors ?? brinjal().important_factors, ...over });
+  const run = (factors, inp) => buildExplanation(crop({}, factors), response([crop({}, factors), ...others]), { ...inputs, ...inp }, tOf);
+  const base = brinjal().important_factors;
+  const withF = (feature, low, high, unit = "") => base.map((x) => (x.feature === feature ? f(feature, 0, low, high, unit) : x));
+
+  it("a temperature just below the range (21.0 against 21.15-34.17) is an edge: neutral, same decimals as the range, not 'needs attention'", () => {
+    const out = run(base, { temperature: 21.0 });
+    expect(out.temperature.judged.state).toBe("edge");
+    expect(out.temperature.tone).toBe("neutral");
+    expect(out.temperature.status).toBe("At the edge of the usual range");
+    expect(out.temperature.headline).toBe("At the edge of the usual range");
+    expect(out.temperature.value).toBe("21.00 °C");                             // the range has two decimals, so the value does too
+    expect(out.temperature.text).toContain("21.00");
+    expect(out.temperature.text).toContain("not treated as a problem");
+    expect(out.final).not.toMatch(/temperature (needs|need) attention|temperature and/);
+    expect(out.final).toContain("Temperature is at the edge of the usual range, which is not a concern.");
+  });
+
+  it("just above the range counts too, and a value a bit further out is still a real 'below' or 'above'", () => {
+    expect(run(base, { temperature: 34.4 }).temperature.judged.state).toBe("edge");   // 0.23 above 34.17, inside 2% of 13.02 (0.26)
+    expect(run(base, { temperature: 34.5 }).temperature.judged.state).toBe("high");   // 0.33 above: more than 2%
+    expect(run(base, { temperature: 20.8 }).temperature.judged.state).toBe("low");
+    expect(run(base, { temperature: 20.8 }).final).toContain("temperature");           // needs attention, as before
+  });
+
+  it("rainfall at the edge is not a concern and adds no irrigation advice", () => {
+    const out = run(base, { rainfall: 13.2 });                                         // range 13.42-181.21, width 167.8, 2% = 3.4
+    expect(out.rainfall.judged.state).toBe("edge");
+    expect(out.rainfall.headline).toBe("At the edge of the usual range");
+    expect(out.final).not.toMatch(/irrigation water/);
+    expect(out.final).toContain("Rainfall is at the edge of the usual range, which is not a concern.");
+  });
+
+  it("a soil value at the edge is neutral in the table, leaves the heading as 'within', and is never listed as needing attention", () => {
+    const factors = withF("K", 36, 83);
+    const out = run(factors, { potassium: 83.5 });                                     // 0.5 above 83; 2% of 47 is 0.94
+    const k = out.soil.rows.find((x) => x.key === "K");
+    expect(k.status).toBe("At the edge of the usual range");
+    expect(k.tone).toBe("neutral");
+    expect(out.soil.off).toHaveLength(0);
+    expect(out.soil.headline).toBe("Within, or at the edge of, the usual range");
+    expect(out.soil.text).toContain("Potassium is at the edge of the usual range");
+    expect(out.final).not.toMatch(/potassium (needs|need) attention/i);
+    expect(out.final).toContain("is at the edge of the usual range, which is not a concern.");
   });
 });

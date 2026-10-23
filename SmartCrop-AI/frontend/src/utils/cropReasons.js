@@ -24,7 +24,7 @@ function fieldReason(kind, r, inputs, t) {
   const shapOf = Object.fromEntries(r.important_factors.map((f) => [f.feature, f.shap_value]));
   const rows = indicatorRows(r, features, inputs, t).filter((x) => x.state !== "unknown");
   if (!rows.length) return null;
-  const off = rows.filter((x) => x.state !== "ok").sort((a, b) => weight(b, shapOf) - weight(a, shapOf));
+  const off = rows.filter((x) => x.state === "low" || x.state === "high").sort((a, b) => weight(b, shapOf) - weight(a, shapOf));
   if (off.length) {
     const x = off[0];
     const others = off.length - 1;

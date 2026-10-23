@@ -29,11 +29,12 @@ export function harvestPhrase(tl, t) {
 }
 
 /**
- * Where a value sits against a usual range: { state: "ok"|"low"|"high"|"unknown", size: "slight"|"clear"|"far" | null }.
+ * Where a value sits against a usual range: { state: "ok"|"edge"|"low"|"high"|"unknown", size: "slight"|"clear"|"far" | null }.
+ * "edge" = just outside (within 2% of the range width): neutral, and never counted as needing attention.
  * "far" (red) is reserved for values at zero/negative or at least double the upper limit; pH uses absolute distance.
  */
 export function judge(row) {
-  if (row.state === "unknown" || row.state === "ok") return { state: row.state, size: null };
+  if (row.state === "unknown" || row.state === "ok" || row.state === "edge") return { state: row.state, size: null };
   const gap = row.state === "low" ? row.low - row.num : row.num - row.high;
   const bound = row.state === "low" ? row.low : row.high;
   if (row.feature === "ph") return { state: row.state, size: gap <= SLIGHT_PH ? "slight" : gap >= 1.5 ? "far" : "clear" };
@@ -41,11 +42,12 @@ export function judge(row) {
   return { state: row.state, size: far ? "far" : gap <= Math.abs(bound) * SLIGHT_PCT ? "slight" : "clear" };
 }
 
-const toneOf = (j) => (j.state === "ok" ? "good" : j.state === "unknown" ? "neutral" : j.size === "far" ? "bad" : "warn");
+const toneOf = (j) => (j.state === "ok" ? "good" : j.state === "unknown" || j.state === "edge" ? "neutral" : j.size === "far" ? "bad" : "warn");
 
 function statusText(j, t) {
   if (j.state === "unknown") return t("score.notAvailable");
   if (j.state === "ok") return t("cr.fx.within");
+  if (j.state === "edge") return t("cr.fx.edge");
   return t(`cr.fx.${j.state === "low" ? "below" : "above"}${j.size === "slight" ? "Slightly" : ""}`);
 }
 
@@ -63,8 +65,8 @@ function valueRow(row, label, t) {
   const j = judge(row);
   const unit = row.unit ? ` ${row.unit}` : "";
   return {
-    key: row.feature, label, value: row.num != null ? `${clean(row.num)}${unit}` : t("score.notAvailable"),
-    range: row.low != null && row.high != null ? t("cr.ind.range", { low: clean(row.low), high: clean(row.high), unit }) : null,
+    key: row.feature, label, value: row.num != null ? `${row.shown}${unit}` : t("score.notAvailable"),
+    range: row.low != null && row.high != null ? t("cr.ind.range", { low: clean(row.low), high: clean(row.high), unit }) : null, edge: j.state === "edge",
     tone: toneOf(j), status: statusText(j, t), judged: j, bar: barOf(row),
   };
 }
@@ -98,10 +100,14 @@ function planningOf(r, crop, t) {
 function soilOf(r, inputs, crop, t) {
   const rows = indicatorRows(r, SOIL, inputs, t).map((x) => ({ ...valueRow(x, t(`cr.fx.soil.${x.feature}`), t), short: t(`cr.fx.short.${x.feature}`) }));
   const known = rows.filter((x) => x.judged.state !== "unknown");
-  const within = known.filter((x) => x.judged.state === "ok"), off = known.filter((x) => x.judged.state !== "ok");
+  const edge = known.filter((x) => x.judged.state === "edge");
+  const within = known.filter((x) => x.judged.state === "ok" || x.judged.state === "edge"), off = known.filter((x) => x.judged.state === "low" || x.judged.state === "high");
   let headline, text;
   if (!known.length) { headline = t("score.notAvailable"); text = t("cr.fx.na"); }
-  else if (!off.length) { headline = t("cr.fx.withinUsual"); text = t("cr.fx.soil.allOk", { crop }); }
+  else if (!off.length) {
+    headline = t(edge.length ? "cr.fx.withinEdge" : "cr.fx.withinUsual");
+    text = [t("cr.fx.soil.allOk", { crop }), edge.length ? t("cr.fx.edgeSoil", { what: join(edge.map((x) => capital(x.short)), t), verb: t(edge.length > 1 ? "cr.fx.are" : "cr.fx.is") }) : null].filter(Boolean).join(" ");
+  }
   else {
     headline = off.length === 1 ? t("cr.fx.attention1", { what: capital(off[0].short) })
       : off.length === 2 ? t("cr.fx.attention2", { what: join(off.map((x) => capital(x.short)), t) }) : t("cr.fx.attentionN", { n: off.length });
@@ -109,7 +115,7 @@ function soilOf(r, inputs, crop, t) {
     const lines = off.map((x) => t("cr.fx.offLine", { label: capital(x.short), how: t(`cr.fx.how.${x.judged.state}${x.judged.size === "slight" ? "Slight" : ""}`) }));
     text = [lead, ...lines, t("cr.fx.soil.check")].join(" ");
   }
-  return { rows, headline, text, tone: known.length ? (known.some((x) => x.tone === "bad") ? "bad" : off.length ? "warn" : "good") : "neutral", within, off };
+  return { rows, headline, text, tone: known.length ? (known.some((x) => x.tone === "bad") ? "bad" : off.length ? "warn" : "good") : "neutral", within, off, edge };
 }
 
 function weatherOf(feature, r, inputs, crop, t) {
@@ -120,9 +126,14 @@ function weatherOf(feature, r, inputs, crop, t) {
   if (state === "unknown") { headline = t("score.notAvailable"); text = t("cr.fx.na"); }
   else {
     const range = `${clean(row.low)}–${clean(row.high)}${row.unit ? `${row.unit === "°C" ? "" : " "}${row.unit}` : ""}`;
-    headline = state === "ok" ? t("cr.fx.withinUsual")
-      : feature === "rainfall" ? t(`cr.fx.rain.head.${state}`) : t(`cr.fx.${state === "low" ? "belowUsual" : "aboveUsual"}`);
-    text = t(`cr.fx.${feature}.${state}`, { crop, value: approx(row.num), range });
+    if (state === "edge") {
+      headline = t("cr.fx.edgeHead");
+      text = t("cr.fx.edgeText", { label: t(`cr.fx.name.${feature}`), value: row.shown, range, crop });
+    } else {
+      headline = state === "ok" ? t("cr.fx.withinUsual")
+        : feature === "rainfall" ? t(`cr.fx.rain.head.${state}`) : t(`cr.fx.${state === "low" ? "belowUsual" : "aboveUsual"}`);
+      text = t(`cr.fx.${feature}.${state}`, { crop, value: row.shown, range });
+    }
   }
   return { ...v, headline, text, short: t(`cr.fx.name.${feature}`), note: feature === "rainfall" ? t("cr.fx.rainNote") : null };
 }
@@ -171,8 +182,11 @@ function finalOf({ r, response, planning, soil, temperature, rainfall, profit, c
   const ok = [], off = [];
   if (soil.rows.some((x) => x.judged.state !== "unknown") && !soil.off.length) ok.push({ name: t("cr.fx.name.soil"), plural: true });
   else soil.off.forEach((x) => off.push({ name: x.short }));
+  // values just outside the range are named on their own: they are not a problem and are never listed as needing attention
+  const edge = soil.edge.map((x) => ({ name: x.short }));
   for (const w of [temperature, rainfall]) {
     if (w.judged.state === "ok") ok.push({ name: w.short });
+    else if (w.judged.state === "edge") edge.push({ name: w.short });
     else if (w.judged.state !== "unknown") off.push({ name: w.short });
   }
   const many = (list) => list.length > 1 || list.some((x) => x.plural);
@@ -188,6 +202,7 @@ function finalOf({ r, response, planning, soil, temperature, rainfall, profit, c
   if (ok.length && off.length) parts.push(t("cr.fx.fin.both", sub));
   else if (ok.length) parts.push(t("cr.fx.fin.onlyOk", sub));
   else if (off.length) parts.push(t("cr.fx.fin.onlyOff", sub));
+  if (edge.length) parts.push(t("cr.fx.fin.edge", { list: capital(join(edge.map((x) => x.name), t)), verb: t(edge.length > 1 ? "cr.fx.are" : "cr.fx.is") }));
   if (limits.length) parts.push(t("cr.fx.fin.limits", { list: join(limits, t) }));
   const advice = [];
   if (soil.off.length) advice.push(t("cr.fx.adv.soil"));

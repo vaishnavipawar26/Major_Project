@@ -163,6 +163,11 @@ export function chartNote(response, t) {
   return t("cr.chart.whyOverall", p);
 }
 
+/** A value within this share of the range width outside the usual range counts as "at the edge of the usual range". */
+export const EDGE_PCT = 0.02;
+/** Decimals of a number as the page prints it (at most 2): 21.15 -> 2, 38 -> 0, 5.8 -> 1. */
+const decimalsOf = (v) => (String(Number(Number(v).toFixed(2))).split(".")[1] || "").length;
+
 /**
  * Soil or weather inputs as simple rows. "ok" only means the value lies in the crop's usual range in the
  * dataset; it never claims the value is optimal, and a value is not called harmful because another crop
@@ -176,9 +181,15 @@ export function indicatorRows(r, features, inputs, t) {
     const unit = fa.unit ? ` ${fa.unit}` : "";
     const n = v === "" || v == null ? NaN : Number(v);
     const known = !Number.isNaN(n) && fa.typical_low != null && fa.typical_high != null;
-    const state = !known ? "unknown" : n < fa.typical_low ? "low" : n > fa.typical_high ? "high" : "ok";
+    // a value within EDGE_PCT of the range width outside the range is "at the edge", not a problem
+    const tol = known ? (fa.typical_high - fa.typical_low) * EDGE_PCT : 0;
+    const outside = !known ? null : n < fa.typical_low ? "low" : n > fa.typical_high ? "high" : null;
+    const edge = outside && (outside === "low" ? fa.typical_low - n : n - fa.typical_high) <= tol + 1e-9;
+    const state = !known ? "unknown" : edge ? "edge" : outside || "ok";
     return {
-      feature: f, label: t(`feature.${f}`), value: fa.value, ok: state === "ok", state,
+      feature: f, label: t(`feature.${f}`), value: fa.value, ok: state === "ok", state, edgeSide: edge ? outside : null,
+      // the value with the same number of decimals as the range ("21.00" next to "21.15–34.17"), so the two read alike
+      shown: known ? n.toFixed(Math.max(decimalsOf(fa.typical_low), decimalsOf(fa.typical_high), decimalsOf(n))) : null,
       num: known ? n : null, low: fa.typical_low, high: fa.typical_high, unit: fa.unit || "",
       status: state === "unknown" ? t("score.notAvailable") : t(`cr.ind.${state}`),
       range: t("cr.ind.range", { low: fa.typical_low, high: fa.typical_high, unit }),
