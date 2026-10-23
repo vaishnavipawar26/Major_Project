@@ -541,6 +541,9 @@ const hi = {
   "crop.form.areaTableShow": "गुंठा–एकड़ तालिका दिखाएँ",
   "crop.form.areaTableHide": "तालिका छिपाएँ",
   "crop.form.areaRange": "{min} से {max} {unit} के बीच खेत का आकार लिखें.",
+  // NEEDS REVIEW: Hindi wording for the soil-range placeholder and message (crop.form.typicalPh, betweenLabel) was written without a native review.
+  "crop.form.typicalPh": "सामान्य {range}",
+  "crop.form.betweenLabel": "{label} {min} और {max}{unit} के बीच होना चाहिए",
   "crop.form.examplesTitle": "आपके आँकड़े तैयार नहीं हैं? उदाहरण आज़माएँ",
   "crop.form.examplesNote": "उदाहरण चुनने पर फ़ॉर्म में नमूना आँकड़े भर जाते हैं, ताकि आप देख सकें यह कैसे काम करता है. असली नतीजे के लिए उन्हें अपनी मिट्टी जाँच और मौसम के आँकड़ों से बदलें.",
   "crop.form.soilTitle": "1. मिट्टी जाँच के नतीजे",

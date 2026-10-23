@@ -21,10 +21,14 @@ function RangeBar({ range, value }) {
 /**
  * Number input for one soil or weather value: label with a unit pill, one help line, the unit inside the input,
  * the real usual range and a mini range bar. `error` (red) blocks submit; `warn` (amber) only informs.
+ * With `rangeAsPlaceholder` (the soil fields) the range is the placeholder ("Typical 1–140") instead of a line and a bar; it stays available to
+ * screen readers through visually hidden text linked by aria-describedby, because a placeholder disappears while typing.
  */
-export default function RangeField({ id, label, unit, help, range, value, step, placeholder, error, warn, onChange, onBlur }) {
+export default function RangeField({ id, label, unit, help, range, value, step, placeholder, error, warn, onChange, onBlur, rangeAsPlaceholder = false }) {
   const t = useT();
-  const describedBy = [help && `${id}-help`, hasRange(range) && `${id}-hint`, error && `${id}-error`, !error && warn && `${id}-warn`].filter(Boolean).join(" ");
+  const inPlaceholder = rangeAsPlaceholder && hasRange(range);
+  const showLine = hasRange(range) && !rangeAsPlaceholder;
+  const describedBy = [help && `${id}-help`, showLine && `${id}-hint`, inPlaceholder && `${id}-range`, error && `${id}-error`, !error && warn && `${id}-warn`].filter(Boolean).join(" ");
   return (
     <div className={`field range-field${error ? " has-error" : ""}`}>
       <label htmlFor={id}>
@@ -34,12 +38,13 @@ export default function RangeField({ id, label, unit, help, range, value, step, 
       {help && <span className="field-help" id={`${id}-help`}>{help}</span>}
       <div className="input-unit">
         <input id={id} name={id} type="number" inputMode="decimal" step={step} min={range.hardMin ?? undefined} max={range.hardMax ?? undefined} required
-          value={value} placeholder={placeholder} onChange={onChange} onBlur={onBlur}
+          value={value} placeholder={inPlaceholder ? t("crop.form.typicalPh", { range: fmtRange(range.min, range.max) }) : placeholder} onChange={onChange} onBlur={onBlur}
           onWheel={(e) => e.currentTarget.blur()} aria-invalid={error ? true : undefined} aria-describedby={describedBy} />
         {unit && <span className="input-unit-text" aria-hidden="true">{unit}</span>}
       </div>
-      <RangeBar range={range} value={value} />
-      {hasRange(range) && <span className="hint" id={`${id}-hint`}>{t("crop.form.typical", { range: fmtRange(range.min, range.max) })}</span>}
+      {!rangeAsPlaceholder && <RangeBar range={range} value={value} />}
+      {showLine && <span className="hint" id={`${id}-hint`}>{t("crop.form.typical", { range: fmtRange(range.min, range.max) })}</span>}
+      {inPlaceholder && <span className="sr-only" id={`${id}-range`}>{t("crop.form.typical", { range: fmtRange(range.min, range.max) })}</span>}
       {error && <span className="error" id={`${id}-error`}><CircleAlert size={14} aria-hidden="true" />{error}</span>}
       {!error && warn && <span className="warn-hint" id={`${id}-warn`}><Info size={14} aria-hidden="true" />{warn}</span>}
     </div>

@@ -706,6 +706,8 @@ const en = {
   "crop.form.areaTableShow": "Show guntha–acre table",
   "crop.form.areaTableHide": "Hide table",
   "crop.form.areaRange": "Enter a field size between {min} and {max} {unit}.",
+  "crop.form.typicalPh": "Typical {range}",
+  "crop.form.betweenLabel": "{label} should be between {min} and {max}{unit}",
   "crop.form.examplesTitle": "Don't have your numbers ready? Try an example",
   "crop.form.examplesNote": "An example fills the form with sample values so you can see how it works. For a real result, replace them with your own soil test and weather values.",
   "crop.form.soilTitle": "1. Soil test results",

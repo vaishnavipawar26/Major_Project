@@ -155,6 +155,9 @@ export default function CropRecommendation() {
   // Selling in the planting month itself leaves no growing time (the month count would wrap to 12), so ask for another month.
   const monthsError = plant === sell ? t("crop.form.sameMonth") : null;
 
+  // " kg/ha" after a range in a message ("" for pH, which has no unit)
+  const unitText = (f) => (f.unit ? ` ${cropName(t, f.unit, "unit")}` : "");
+
   // every error, whether shown yet or not
   const errors = useMemo(() => {
     const errs = {};
@@ -162,7 +165,7 @@ export default function CropRecommendation() {
       const r = ranges[f.key], label = t(`crop.form.validLabel.${f.key}`);
       const { state } = fieldStatus(form[f.key], r);
       if (state === "required") errs[f.key] = t("valid.required", { label });
-      else if (state === "invalid") errs[f.key] = Number.isNaN(Number(form[f.key])) ? t("valid.number", { label }) : t("crop.form.between", { min: r.hardMin, max: r.hardMax });
+      else if (state === "invalid") errs[f.key] = Number.isNaN(Number(form[f.key])) ? t("valid.number", { label }) : t("crop.form.betweenLabel", { label, min: r.hardMin, max: r.hardMax, unit: unitText(f) });
     });
     const areaErr = areaError(form.area_acres, areaUnit, t);
     if (areaErr) errs.area_acres = areaErr;
@@ -176,8 +179,10 @@ export default function CropRecommendation() {
   // Soft note (never blocks): the value is outside the dataset's min/max, so the model extrapolates. Automatic weather shows it at once.
   const warnOf = (f) => {
     const auto = !manual && WEATHER_KEYS.includes(f.key);
-    return (auto || submitted || touched[f.key]) && !errors[f.key] && fieldStatus(form[f.key], ranges[f.key]).state === "outside"
-      ? t(WEATHER_KEYS.includes(f.key) ? "crop.form.outsideWeather" : "crop.form.outsideData", { range: fmtRange(ranges[f.key].min, ranges[f.key].max) }) : undefined;
+    if (!((auto || submitted || touched[f.key]) && !errors[f.key] && fieldStatus(form[f.key], ranges[f.key]).state === "outside")) return undefined;
+    // soil fields name the typical range in the message itself, since it is no longer printed under the input
+    if (SOIL_KEYS.includes(f.key)) return t("crop.form.betweenLabel", { label: t(`crop.form.validLabel.${f.key}`), min: ranges[f.key].min, max: ranges[f.key].max, unit: unitText(f) });
+    return t(WEATHER_KEYS.includes(f.key) ? "crop.form.outsideWeather" : "crop.form.outsideData", { range: fmtRange(ranges[f.key].min, ranges[f.key].max) });
   };
 
   const soilDone = SOIL_KEYS.every((k) => !errors[k]);
@@ -228,7 +233,7 @@ export default function CropRecommendation() {
   const helpOf = (key) => { const k = `crop.form.help.${key}`, h = t(k); return h === k ? undefined : h; };
   const renderField = (f) => (
     <RangeField key={f.key} id={f.key} label={t(`crop.form.field.${f.key}`)} unit={f.unit && cropName(t, f.unit, "unit")}
-      help={helpOf(f.key)} range={ranges[f.key]} value={form[f.key]} step={f.step} placeholder={f.sample}
+      rangeAsPlaceholder={SOIL_KEYS.includes(f.key)} help={helpOf(f.key)} range={ranges[f.key]} value={form[f.key]} step={f.step} placeholder={f.sample}
       error={shown(f.key)} warn={warnOf(f)} onChange={set(f.key)} onBlur={touch(f.key)} />
   );
 

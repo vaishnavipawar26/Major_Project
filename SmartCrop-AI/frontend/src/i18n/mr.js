@@ -541,6 +541,9 @@ const mr = {
   "crop.form.areaTableShow": "गुंठा–एकर तक्ता दाखवा",
   "crop.form.areaTableHide": "तक्ता लपवा",
   "crop.form.areaRange": "{min} ते {max} {unit} दरम्यान शेताचा आकार लिहा.",
+  // NEEDS REVIEW: Marathi wording for the soil-range placeholder and message (crop.form.typicalPh, betweenLabel) was written without a native review.
+  "crop.form.typicalPh": "सामान्य {range}",
+  "crop.form.betweenLabel": "{label} {min} ते {max}{unit} दरम्यान असावे",
   "crop.form.examplesTitle": "तुमचे आकडे तयार नाहीत? उदाहरण वापरून पहा",
   "crop.form.examplesNote": "उदाहरण निवडल्यास फॉर्ममध्ये नमुना आकडे भरले जातात, म्हणजे हे कसे काम करते ते कळेल. खऱ्या निकालासाठी ते तुमच्या माती परीक्षण व हवामानाच्या आकड्यांनी बदला.",
   "crop.form.soilTitle": "1. माती परीक्षणाचे निकाल",
