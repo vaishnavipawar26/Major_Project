@@ -387,6 +387,7 @@ const en = {
   "price.form.startPoint": "Forecast starting point: {date}",
   "price.form.stepWhat": "1. What are you selling, and where?",
   "price.form.stepWhen": "2. When do you plan to sell?",
+  "price.form.stateCovers": "SmartCrop AI currently covers Maharashtra markets only.",
   "price.form.crop": "Crop",
   "price.form.cropHelp": "The crop you want to sell.",
   "price.form.market": "Market (mandi)",

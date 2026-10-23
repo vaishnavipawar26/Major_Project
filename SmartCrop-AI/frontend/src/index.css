@@ -2177,3 +2177,7 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .fs-table button { width: 100%; text-align: left; padding: 0.35rem 0.5rem; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; min-height: 36px; }
 .fs-table button:hover { background: var(--brand-soft); }
 .fs-table button:focus-visible { outline: 3px solid rgba(46, 139, 87, 0.45); outline-offset: -2px; }
+
+/* ---------- price form: State | Crop | Market in one row (State narrower), stacked State -> Crop -> Market on a phone ---------- */
+.price-form .form-grid.form-grid-3 { grid-template-columns: minmax(9.5rem, 0.7fr) minmax(0, 1fr) minmax(0, 1.3fr); align-items: start; }
+@media (max-width: 900px) { .price-form .form-grid.form-grid-3 { grid-template-columns: minmax(0, 1fr); } }

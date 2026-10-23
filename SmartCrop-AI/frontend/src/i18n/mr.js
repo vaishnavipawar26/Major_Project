@@ -225,6 +225,8 @@ const mr = {
   "price.form.errDateRange": "{min} ते {max} दरम्यानची तारीख निवडा.",
   "price.form.stepWhat": "1. काय विकायचे आहे आणि कुठे?",
   "price.form.stepWhen": "2. कधी विकायचे आहे?",
+  // NEEDS REVIEW: Marathi wording for the price form's State hint (price.form.stateHint) was written without a native review.
+  "price.form.stateCovers": "SmartCrop AI सध्या फक्त महाराष्ट्रातील बाजारांना कव्हर करते.",
   "price.form.crop": "पीक",
   "price.form.cropHelp": "जे पीक तुम्हाला विकायचे आहे.",
   "price.form.market": "बाजार (मंडी)",

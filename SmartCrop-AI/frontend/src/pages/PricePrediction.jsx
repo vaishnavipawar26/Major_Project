@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarDays, ShoppingBasket } from "lucide-react";
 import Alert from "../components/Alert";
 import FormField from "../components/FormField";
+import LockedState from "../components/LockedState";
 import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import SproutSpinner from "../components/SproutSpinner";
@@ -89,7 +90,8 @@ export default function PricePrediction() {
 
         <div className="form-section">
           <h2 className="section-title form-step"><ShoppingBasket size={19} aria-hidden="true" />{t("price.form.stepWhat")}</h2>
-          <div className="form-grid">
+          <div className="form-grid form-grid-3">
+            <LockedState label={t("price.form.state")} hint={t("price.form.stateCovers")} />
             <FormField id="commodity" label={t("price.form.crop")} error={errors.commodity}>
               <select id="commodity" value={form.commodity} onChange={onCommodity}>
                 <option value="" disabled>{t("price.form.chooseCrop")}</option>

@@ -8,6 +8,8 @@ vi.mock("../services/api", () => ({ errorMessage: (e) => e.message }));
 vi.mock("../components/PageHero", () => ({ default: ({ title }) => <h1>{title}</h1> }));
 
 import Footer from "../components/Footer";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { priceService } from "../services/priceService";
 import PricePrediction from "./PricePrediction";
 
@@ -31,7 +33,7 @@ describe("price prediction form", () => {
     expect(screen.getByRole("option", { name: "Choose a market" })).toBeTruthy();
     expect(document.querySelector(".date-ph").getAttribute("data-placeholder")).toBe("Choose a selling date");
     expect(screen.getByText("Forecast starting point: 20 Oct 2026")).toBeTruthy();
-    expect(screen.queryByLabelText("State")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "State" })).toBeNull();       // the state is shown, locked: not a form control
     const text = document.body.textContent;
     for (const gone of ["The crop you want to sell", "Choose one APMC market", "most reliable choice", "available for Maharashtra only",
       "available up to", "adjusted for about", "market price series are not listed", "are required", "Good to know"]) {
@@ -64,5 +66,45 @@ describe("price prediction form", () => {
     cleanup();
     at("/history");
     expect(screen.getByText("Good to know")).toBeTruthy();
+  });
+});
+
+describe("locked State on the price form", () => {
+  const group = () => screen.getByRole("group", { name: "State" });
+
+  it("shows 'Maharashtra' as a label and a value, with the hint under it", async () => {
+    await renderForm();
+    expect(group().textContent).toContain("State");
+    expect(group().querySelector(".state-chip").textContent).toBe("Maharashtra");
+    expect(group().querySelector(".hint").textContent).toBe("SmartCrop AI currently covers Maharashtra markets only.");
+  });
+
+  it("is the same grey pill with a lock icon as the crop form, not an editable or focusable control", async () => {
+    await renderForm();
+    const chip = group().querySelector(".state-chip");
+    expect(chip.querySelector("svg")).toBeTruthy();                                   // the lock
+    expect(group().querySelectorAll("input, select, textarea, button, [tabindex], [contenteditable]")).toHaveLength(0);
+    expect(screen.queryByRole("textbox", { name: "State" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "State" })).toBeNull();
+    expect(screen.queryByDisplayValue("Maharashtra")).toBeNull();                     // no form field holds the value
+    fireEvent.click(chip);
+    expect(chip.textContent).toBe("Maharashtra");
+    const src = readFileSync(resolve("src/pages/CropRecommendation.jsx"), "utf8");
+    expect(src).toContain("<LockedState");                                           // one shared component for both pages
+    expect(readFileSync(resolve("src/pages/PricePrediction.jsx"), "utf8")).toContain("<LockedState");
+  });
+
+  it("comes first, before Crop and Market, in the reading order", async () => {
+    await renderForm();
+    const pos = (el) => el.compareDocumentPosition.bind(el);
+    expect(pos(group())(screen.getByLabelText("Crop")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(pos(screen.getByLabelText("Crop"))(screen.getByLabelText("Market (mandi)")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(group().closest(".form-grid").classList.contains("form-grid-3")).toBe(true);
+  });
+
+  it("is one row of three at desktop width and stacks State, Crop, Market at phone width", () => {
+    const css = readFileSync(resolve("src/index.css"), "utf8");
+    expect(css).toMatch(/\.price-form \.form-grid\.form-grid-3 \{ grid-template-columns: minmax\(9\.5rem, 0\.7fr\) minmax\(0, 1fr\) minmax\(0, 1\.3fr\);/);      // State narrower
+    expect(css).toMatch(/@media \(max-width: 900px\) \{ \.price-form \.form-grid\.form-grid-3 \{ grid-template-columns: minmax\(0, 1fr\); \} \}/);    // one column
   });
 });

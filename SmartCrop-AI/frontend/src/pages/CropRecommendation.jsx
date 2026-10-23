@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Check, CircleAlert, CircleCheck, CircleX, CloudSun, Lightbulb, Lock, MapPin, Package, Pencil, Sprout, TrendingUp, Wand2,
+  Check, CircleAlert, CircleCheck, CircleX, CloudSun, Lightbulb, MapPin, Package, Pencil, Sprout, TrendingUp, Wand2,
 } from "lucide-react";
 import Alert from "../components/Alert";
 import CropArt from "../components/CropArt";
@@ -23,6 +23,7 @@ import { buildRanges, fieldStatus, fmtRange, likelyFits } from "../utils/feature
 import { cropName, monthLong } from "../utils/format";
 import { areaError } from "../utils/fieldSize";
 import BudgetStep from "../components/crop/BudgetStep";
+import LockedState from "../components/LockedState";
 import { DEFAULT_PRIORITY, DEFAULT_RISK, budgetError, cleanBudget, planPayload } from "../utils/budgetPlan";
 
 export const LAST_CROP_RESULT_KEY = "smartcrop_last_crop_result";
@@ -285,10 +286,7 @@ export default function CropRecommendation() {
           <section className="cf-card" aria-labelledby="place-title">
             <SectionHead id="place-title" icon={MapPin} title={t("crop.form.placeTitle")} note={t("crop.form.placeNote")} />
             <div className="grid gap-4">
-              <div className="field">
-                <span className="label-like" id="state-label">{t("crop.form.state")}</span>
-                <span className="state-chip" aria-labelledby="state-label"><Lock size={14} aria-hidden="true" />{cropName(t, STATE, "state")}</span>
-              </div>
+              <LockedState value={STATE} />
               <FormField id="city" label={t("crop.form.city")} required>
                 <CitySelect id="city" value={form.city} cities={opts.cities} onChange={(c) => { exampleWeather.current = false; setForm((f) => ({ ...f, city: c })); }} />
               </FormField>

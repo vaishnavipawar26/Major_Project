@@ -225,6 +225,8 @@ const hi = {
   "price.form.errDateRange": "{min} से {max} के बीच की तारीख चुनें.",
   "price.form.stepWhat": "1. क्या बेचना है और कहाँ?",
   "price.form.stepWhen": "2. कब बेचना है?",
+  // NEEDS REVIEW: Hindi wording for the price form's State hint (price.form.stateHint) was written without a native review.
+  "price.form.stateCovers": "SmartCrop AI अभी केवल महाराष्ट्र की मंडियों को कवर करता है.",
   "price.form.crop": "फसल",
   "price.form.cropHelp": "जो फसल आप बेचना चाहते हैं.",
   "price.form.market": "बाज़ार (मंडी)",
