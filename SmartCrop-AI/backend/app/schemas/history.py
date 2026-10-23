@@ -26,6 +26,7 @@ class PriceHistoryItem(BaseModel):
     # and the last price the series actually reported. The saved predicted_price is the model's own number.
     policy: dict | None = None
     latest_recorded: dict | None = None
+    verdict: dict | None = None     # rise / fall / about_the_same, from the same rule as the result page
 
 
 class RecommendationResultItem(BaseModel):

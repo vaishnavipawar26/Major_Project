@@ -35,7 +35,7 @@ const forecast = (over = {}) => ({
   dates: { forecast_start: "2026-10-23", target_date: "2026-11-04", reference_date: "2025-10-23", origin_observation_date: "2025-10-23", latest_data_date: "2025-12-31", years_shifted: 1 },
   disclaimer: "d", policy: { mode: "model", band: "8-14", reasons: ["ok"] },
   range_info: { coverage_pct: 82.4, n: 4200, scope: "projection", min_coverage_to_show_pct: 40, shown: true, typical_miss_inr: 300 },
-  latest_recorded: { price: 1950, date: "2025-12-31" }, ...over,
+  latest_recorded: { price: 1950, date: "2025-12-31", age_days: 296, stale: true, age_n: 10, age_unit: "months" }, ...over,
 });
 const req = { state: "Maharashtra", market: "APMC Mumbai", commodity: "Tomato", target_date: "2026-11-04", as_of: "2026-10-23" };
 const renderPage = (f) => render(
@@ -51,10 +51,10 @@ describe("result page for context-only cells", () => {
     code: "UNAVAILABLE", label: "Reliable comparison unavailable", target_price: null, recommended_price: null, recommended_low: null, recommended_high: null,
     target_low: null, target_high: null, peak: null, explanation: "For Tomato, the model is not used to predict a rise or fall this far ahead.", reason: "Check current mandi prices before deciding." }) });
 
-  it("says 'No clear direction — expected to stay near ₹X (latest recorded price, date)' and shows no model price or change", () => {
+  it("says 'Latest recorded price: ₹X (date, N months ago). No forecast for this crop.' and shows no model price or change", () => {
     renderPage(ctx());
     const box = screen.getByTestId("no-direction").textContent;
-    expect(box).toContain("No clear direction — expected to stay near ₹1,950 (latest recorded price, 31 Dec 2025)");
+    expect(box).toContain("Latest recorded price: ₹1,950 (31 Dec 2025, 10 months ago). No forecast for this crop.");
     expect(document.body.textContent).not.toContain("₹2,520");            // the model's price
     expect(document.body.textContent).not.toMatch(/Expected change|Likely range|likely range/);
     expect(screen.queryByTestId("range-line")).toBeNull();
@@ -128,5 +128,37 @@ describe("starting price label", () => {
   it("shows the freshness-gate note when a stale market was replaced", () => {
     renderPage(forecast({ source: { ...forecast().source, note: "The latest price for APMC Mumbai is 46 days old, so the latest Maharashtra median price is used instead." } }));
     expect(screen.getByText(/46 days old/)).toBeTruthy();
+  });
+});
+
+describe("result page headline when the change is below the typical miss", () => {
+  const same = () => forecast({ verdict: { code: "about_the_same", start_price: 2100, model_estimate: 2150, change_inr: 50, change_pct: 2.38, typical_miss_inr: 300 } });
+
+  it("says 'About the same as the starting price (₹X)' with the model estimate as secondary text", () => {
+    renderPage(same());
+    const box = screen.getByTestId("about-same").textContent;
+    expect(box).toContain("About the same as the starting price (₹2,100)");
+    expect(box).toContain("Model estimate ₹2,150");
+    expect(document.body.textContent).not.toContain("Expected market price on");
+    expect(screen.queryByTestId("range-line")).toBeNull();
+  });
+
+  it("keeps the model price as the headline for a rise or fall", () => {
+    renderPage(forecast({ verdict: { code: "rise", start_price: 2100, model_estimate: 2520, change_inr: 420, change_pct: 20, typical_miss_inr: 300 } }));
+    expect(screen.queryByTestId("about-same")).toBeNull();
+    expect(document.body.textContent).toContain("₹2,520");
+  });
+});
+
+describe("days ahead", () => {
+  it("says what the horizon counts from when it differs from the days asked for", () => {
+    renderPage(forecast({ horizon: { days_from_today: 12, counted_from: "2025-10-17", covers_days: 18, differs: true } }));
+    expect(screen.getByTestId("horizon").textContent).toBe(
+      "12 days from today · counts from this market's last report (17 Oct 2025), so the estimate covers 18 days");
+  });
+
+  it("is just the days from today when nothing differs", () => {
+    renderPage(forecast({ horizon: { days_from_today: 12, counted_from: "2026-10-23", covers_days: 12, differs: false } }));
+    expect(screen.getByTestId("horizon").textContent).toBe("12 days from today");
   });
 });

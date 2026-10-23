@@ -5,7 +5,6 @@ from app.auth.dependencies import get_current_user
 from app.database.connection import get_db
 from app.models.crop_recommendation import CropRecommendation
 from app.models.price_prediction import PricePrediction
-from app.ml.price_prediction.features import STATE_MARKET, STATE_VARIETY
 from app.models.user import User
 from app.schemas.history import (HistorySummary, PriceHistoryItem, PriceHistoryPage,
                                  RecommendationHistoryItem, RecommendationHistoryPage)
@@ -22,9 +21,8 @@ def _with_policy(items: list, request: Request) -> list:
     out = []
     for it in items:
         m = PriceHistoryItem.model_validate(it)
-        latest = (fc.latest_recorded(m.state, m.market, m.commodity, m.variety)
-                  or fc.latest_recorded(m.state, STATE_MARKET, m.commodity, STATE_VARIETY))
-        out.append(m.model_copy(update={"policy": fc.policy_for(m.commodity, m.horizon_days), "latest_recorded": latest}))
+        out.append(m.model_copy(update=fc.saved_view(m.state, m.market, m.commodity, m.variety, m.input_date, m.horizon_days,
+                                                     m.forecast_origin_date, m.current_price, m.predicted_price)))
     return out
 
 

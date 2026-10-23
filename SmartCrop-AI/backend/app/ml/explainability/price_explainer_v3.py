@@ -30,6 +30,8 @@ from __future__ import annotations
 import math
 from datetime import date
 
+from app.ml.price_prediction.verdict import latest_text, price_verdict
+
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September",
           "October", "November", "December"]
 SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -264,12 +266,13 @@ def _trust_block(cell, crop, band, baseline_label, reliability_scope, projected)
 CONTEXT_ORDER = ["supply", "market", "trend", "last_year", "seasonal"]
 
 
-def _context_only(*, facts, values, crop, market, requested_market, series_is_state, horizon, start_price, lower, upper, target_date,
+def _context_only(*, facts, values, crop, market, requested_market, series_is_state, horizon, horizon_info, start_price, lower, upper, target_date,
                   projected, forecast_date, ref_origin_date, inflation_pct, cell, band, baseline_label, reason, source_note,
-                  recon, reliability_scope, mae_inr) -> dict:
+                  recon, reliability_scope, mae_inr, latest_recorded=None) -> dict:
     """Records as dated context, with NO model effects (the model is not used to claim a direction for this crop/cell)."""
     why = reason or (f"In backtests the model did not beat “{baseline_label}” for {crop}, {band} days ahead, so the model is not used to predict a rise or fall.")
-    headline = f"No clear direction for {crop} by {d_(target_date)}. {why} The records below are context only."
+    # the same sentence the result page shows; the reason is carried separately (context_reason)
+    headline = latest_text(latest_recorded) if latest_recorded else f"No clear direction for {crop} by {d_(target_date)}. {why} The records below are context only."
     ev_fn = {"supply": lambda: _supply(facts.get("supply"), crop, market, series_is_state),
              "market": lambda: _market(facts.get("market"), crop, market, series_is_state),
              "trend": lambda: _trend(facts.get("trend")), "last_year": lambda: _last_year(facts.get("last_year")),
@@ -307,7 +310,7 @@ def _context_only(*, facts, values, crop, market, requested_market, series_is_st
         "headline": {"code": "no_clear_direction", "text": headline, "predicted_price": None, "start_price": round(start_price, 2),
                      "change_inr": None, "change_pct": None, "typical_miss_inr": None if mae_inr is None else round(mae_inr, 2),
                      "range": None, "range_hidden": False, "range_coverage_pct": None, "target_date": target_date.isoformat(),
-                     "horizon_days": horizon, "band": band},
+                     "horizon_days": horizon, "band": band, "latest_recorded": latest_recorded, "horizon": horizon_info},
         "banner": banner, "cards": cards, "other_factors": None, "evidence_not_used_by_model": [],
         "market_breakdown": mkt, "trust": _trust_block(cell, crop, band, baseline_label, reliability_scope, projected),
         "checks": {"inr_sum": None, "predicted_change_inr": None, "reconstruction_error": None if recon is None else round(recon, 8)},
@@ -321,7 +324,8 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
              reliability_scope: str | None, fallback_mae: float | None, fallback_beats: bool | None,
              breakdown: dict | None, weather_status: str = "not_used", model_output_log: float | None = None,
              source_note: str | None = None, baseline_label: str = "price stays unchanged",
-             context_only: bool = False, context_reason: str | None = None) -> dict:
+             context_only: bool = False, context_reason: str | None = None, latest_recorded: dict | None = None,
+             horizon_info: dict | None = None, verdict: dict | None = None) -> dict:
     alloc = allocate_inr(contrib, base_value, start_price)
     dP = alloc["change_inr"]
     pct_change = (math.expm1(alloc["L"])) * 100
@@ -350,21 +354,24 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
     beats = cell["beats_baseline"] if cell else fallback_beats
     band = band_name(horizon)
     baseline_label = cell.get("baseline", baseline_label) if cell else baseline_label
-    if beats is False:
+    # the same call the result page makes, on the same rounded numbers
+    v = verdict or price_verdict(start_price, predicted_price, mae_inr)
+    if v["code"] == "no_clear_direction" and beats is not False:
+        code = "no_clear_direction"
+        headline = f"No clear direction for {crop} by {d_(target_date)}: no backtest results exist for this crop and distance."
+    elif beats is False:
         code = "no_clear_direction"
         headline = (f"No clear direction for {crop} by {d_(target_date)}: in backtests the model did not beat "
                     f"“{baseline_label}” for {crop}, {band} days ahead, so a rise or fall is not claimed.")
-    elif mae_inr is not None and abs(dP) < mae_inr:
-        code = "about_the_same"
-        headline = (f"About the same: the model's expected change for {crop} (₹{abs(dP):,.0f}) is smaller than its typical "
-                    f"miss in backtests (about ₹{mae_inr:,.0f} per quintal at this distance), so no rise or fall is claimed.")
-    elif mae_inr is None:
-        code = "no_clear_direction"
-        headline = f"No clear direction for {crop} by {d_(target_date)}: no backtest results exist for this crop and distance."
     else:
-        code = "rise" if dP > 0 else "fall"
-        headline = (f"The model expects {crop} to {'rise' if dP > 0 else 'fall'} by about ₹{abs(dP):,.0f} per quintal "
-                    f"({pct_change:+.1f}%) by {d_(target_date)}.")
+        code = v["code"]
+        if code == "about_the_same":
+            headline = (f"About the same as the starting price (₹{v['start_price']:,.0f}). The model's estimate is ₹{v['model_estimate']:,.0f} "
+                        f"per quintal, a difference of ₹{abs(v['change_inr']):,.0f}, which is smaller than its typical miss in backtests "
+                        f"(about ₹{mae_inr:,.0f} per quintal at this distance), so no rise or fall is claimed.")
+        else:
+            headline = (f"The model expects {crop} to {'rise' if code == 'rise' else 'fall'} by about ₹{abs(v['change_inr']):,.0f} per quintal "
+                        f"({v['change_pct']:+.1f}%) by {d_(target_date)}.")
 
     if context_only:
         return _context_only(facts=facts, values=values, crop=crop, market=market, requested_market=requested_market,
@@ -372,6 +379,7 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
                              target_date=target_date, projected=projected, forecast_date=forecast_date,
                              ref_origin_date=ref_origin_date, inflation_pct=inflation_pct, cell=cell, band=band,
                              baseline_label=baseline_label, reason=context_reason, source_note=source_note,
+                             latest_recorded=latest_recorded, horizon_info=horizon_info,
                              recon=None if model_output_log is None else abs(alloc["L"] - float(model_output_log)),
                              reliability_scope=reliability_scope, mae_inr=mae_inr)
 
@@ -494,11 +502,14 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
     range_hidden = bool(cell and cell["range_coverage_pct"] < MIN_RANGE_COVERAGE_TO_SHOW)
     return {
         "schema_version": 3, "method": METHOD,
-        "headline": {"code": code, "text": headline, "predicted_price": round(predicted_price, 2), "start_price": round(start_price, 2),
-                     "change_inr": round(dP, 2), "change_pct": round(pct_change, 2), "typical_miss_inr": None if mae_inr is None else round(mae_inr, 2),
+        "headline": {"code": code, "text": headline, "predicted_price": v["model_estimate"] if code != "no_clear_direction" else round(predicted_price, 2),
+                     "start_price": round(start_price, 2),
+                     "change_inr": v["change_inr"] if code != "no_clear_direction" else round(dP, 2),
+                     "change_pct": v["change_pct"] if code != "no_clear_direction" else round(pct_change, 2), "typical_miss_inr": None if mae_inr is None else round(mae_inr, 2),
                      "range": None if (lower is None or range_hidden) else [round(lower, 2), round(upper, 2)],
                      "range_hidden": range_hidden, "range_coverage_pct": None if not cell else cell["range_coverage_pct"],
-                     "target_date": target_date.isoformat(), "horizon_days": horizon, "band": band},
+                     "target_date": target_date.isoformat(), "horizon_days": horizon, "band": band,
+                     "latest_recorded": latest_recorded, "horizon": horizon_info},
         "banner": banner, "cards": shown, "other_factors": other, "evidence_not_used_by_model": unused,
         "market_breakdown": mkt, "trust": trust,
         "checks": {"inr_sum": round(sum(c["inr_effect"] for c in shown) + other_total, 6), "predicted_change_inr": round(dP, 6),

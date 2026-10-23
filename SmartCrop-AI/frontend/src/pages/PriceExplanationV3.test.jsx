@@ -174,3 +174,28 @@ describe("explanation page range line", () => {
     expect(screen.queryByTestId("v3-range")).toBeNull();
   });
 });
+
+describe("verdict wording matches the result page", () => {
+  const sameHeadline = { code: "about_the_same", text: "About the same as the starting price (₹2,100). The model's estimate is ₹2,150 per quintal, a difference of ₹50, which is smaller than its typical miss in backtests (about ₹300 per quintal at this distance), so no rise or fall is claimed.",
+    predicted_price: 2150, start_price: 2100, change_inr: 50, change_pct: 2.38, typical_miss_inr: 300, range: null, target_date: "2026-11-04", horizon_days: 18, band: "15-30",
+    horizon: { days_from_today: 12, counted_from: "2025-10-17", covers_days: 18, differs: true } };
+
+  it("shows the same bold line and secondary line as the result page for 'about the same'", () => {
+    renderPage(response(exp({ v3: v3({ headline: sameHeadline }) })));
+    expect(screen.getByTestId("v3-headline").textContent).toBe("About the same as the starting price (₹2,100)");
+    expect(screen.getByTestId("v3-headline-sub").textContent).toContain("Model estimate ₹2,150");
+    expect(screen.getByTestId("v3-horizon").textContent).toBe(
+      "12 days from today · counts from this market's last report (17 Oct 2025), so the estimate covers 18 days");
+  });
+
+  it("shows the one latest recorded price sentence for context-only cells, not the estimated starting price", () => {
+    const lr = { price: 4250, date: "2025-12-31", age_days: 296, stale: true, age_n: 10, age_unit: "months" };
+    renderPage(response(exp({ v3: v3({ context_only: true, context_reason: "Reason.", cards: [], other_factors: null,
+      headline: { code: "no_clear_direction", text: "x", predicted_price: null, start_price: 1890, change_inr: null, change_pct: null, typical_miss_inr: 935, range: null,
+        target_date: "2026-11-04", horizon_days: 18, band: "15-30", latest_recorded: lr } }) })));
+    const box = screen.getByTestId("v3-verdict").textContent;
+    expect(screen.getByTestId("v3-headline").textContent).toBe("Latest recorded price: ₹4,250 (31 Dec 2025, 10 months ago). No forecast for this crop.");
+    expect(box).not.toContain("₹1,890");
+    expect(box).not.toContain("Estimated starting price");
+  });
+});

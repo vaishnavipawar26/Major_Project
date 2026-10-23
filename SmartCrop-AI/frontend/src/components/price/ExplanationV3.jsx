@@ -4,6 +4,7 @@ import ServerText from "../ServerText";
 import { useT } from "../../i18n/LanguageContext";
 import { cropName, fmtDate, rupees } from "../../utils/format";
 import { STATE_MARKET } from "../../utils/constants";
+import { aboutSameText, horizonText, latestText, modelEstimateText } from "../../utils/priceView";
 
 /** Translated group title when the dictionary has it, else the backend's English title. */
 const groupTitle = (t, c, isState) => {
@@ -56,6 +57,10 @@ export default function ExplanationV3({ exp, explain }) {
   const market = isState ? t("price.form.allMarkets") : explain.series.market;
   const proj = explain.projection;
   const ctxOnly = v.context_only === true || h.predicted_price == null;
+  const aboutSame = !ctxOnly && h.code === "about_the_same";
+  // the same wording the result page uses, built from the same numbers
+  const verdict = { start_price: h.start_price, model_estimate: h.predicted_price };
+  const headlineText = ctxOnly ? latestText(t, h.latest_recorded) : aboutSame ? aboutSameText(t, verdict) : null;
   const sign = (h.change_inr ?? 0) >= 0 ? "+" : "−";
   const verdictClass = h.code === "rise" || h.code === "fall" ? "" : "xai-caution";
   const mkt = v.market_breakdown;
@@ -73,12 +78,15 @@ export default function ExplanationV3({ exp, explain }) {
         <h2 id="v3-verdict" className="xai-h">{t("price.expl.predictedTitle")}</h2>
         <dl className="kv">
           <dt>{t("hist.col.crop")} · {t("hist.col.market")}</dt><dd><strong>{crop}</strong> · {market}</dd>
-          <dt>{proj ? t("price.v3.startEstimated") : t("price.v3.startLatest")}</dt>
-          <dd>{rupees(h.start_price)} <span className="muted small">{t("price.expl.perQuintal")} · {proj
-            ? t("price.v3.startBasedOn", { date: fmtDate(proj.reference_origin_date) })
-            : t("price.v3.startReported", { date: fmtDate(explain.forecast_origin_date) })}</span></dd>
           {!ctxOnly && (<>
-            <dt>{t("price.expl.expectedPrice")}</dt>
+            <dt>{proj ? t("price.v3.startEstimated") : t("price.v3.startLatest")}</dt>
+            <dd>{rupees(h.start_price)} <span className="muted small">{t("price.expl.perQuintal")} · {proj
+              ? t("price.v3.startBasedOn", { date: fmtDate(proj.reference_origin_date) })
+              : t("price.v3.startReported", { date: fmtDate(explain.forecast_origin_date) })}</span></dd>
+          </>)}
+          {h.horizon && (<><dt>{t("price.result.daysAhead")}</dt><dd data-testid="v3-horizon">{horizonText(t, h.horizon)}</dd></>)}
+          {!ctxOnly && (<>
+            <dt>{aboutSame ? t("price.v3.modelEstimate") : t("price.expl.expectedPrice")}</dt>
             <dd><strong>{rupees(h.predicted_price)}</strong> <span className="muted small">{t("price.expl.perQuintal")} · {fmtDate(h.target_date)}</span></dd>
             <dt>{t("price.expl.expectedChange")}</dt><dd>{sign}{rupees(Math.abs(h.change_inr))} ({sign}{Math.abs(h.change_pct).toFixed(1)}%)</dd>
           </>)}
@@ -90,8 +98,10 @@ export default function ExplanationV3({ exp, explain }) {
           {h.range_hidden && (<><dt>{t("price.v3.rangeLabel")}</dt><dd data-testid="v3-range-hidden">{t("price.result.rangeHidden")}</dd></>)}
         </dl>
         <p className={`xai-line ${verdictClass}`} data-testid="v3-headline" style={{ fontSize: "1.05rem" }}>
-          {verdictClass && <TriangleAlert size={16} aria-hidden="true" />}<ServerText>{h.text}</ServerText>
+          {verdictClass && <TriangleAlert size={16} aria-hidden="true" />}{headlineText ? <strong>{headlineText}</strong> : <ServerText>{h.text}</ServerText>}
         </p>
+        {aboutSame && <p className="small muted" data-testid="v3-headline-sub">{modelEstimateText(t, verdict)}{h.typical_miss_inr != null && <> {t("price.result.typicalMiss", { amount: rupees(h.typical_miss_inr) })}</>}</p>}
+        {ctxOnly && v.context_reason && <p className="small muted" data-testid="v3-context-reason"><ServerText>{v.context_reason}</ServerText></p>}
       </section>
 
       <section aria-labelledby="v3-why">

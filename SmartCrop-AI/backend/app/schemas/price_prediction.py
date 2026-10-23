@@ -183,6 +183,9 @@ class PriceForecastResponse(BaseModel):
     range_info: dict | None = None
     # the last price this series actually reported, with its real date
     latest_recorded: dict | None = None
+    # rise / fall / about_the_same for the target date and the days the model counts from the market's last report (verdict.py)
+    verdict: dict | None = None
+    horizon: dict | None = None
 
 
 class PricePredictionResponse(PriceForecastResponse):
@@ -345,6 +348,8 @@ class PriceExplainResponse(BaseModel):
     explanations: list[PriceExplanation]
     message: str | None = None
     source: SourceInfo | None = None
+    horizon: dict | None = None
+    latest_recorded: dict | None = None
 
 
 class MarketOption(BaseModel):

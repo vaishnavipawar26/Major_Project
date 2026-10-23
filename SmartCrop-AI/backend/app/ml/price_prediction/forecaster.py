@@ -27,6 +27,7 @@ from app.ml.price_prediction.features import (FEATURE_COLUMNS, HORIZONS, MAX_HOR
                                               compute_features, usable_origin_mask,
                                               with_pair_features)
 from app.ml.price_prediction.selling_advice import best_time_to_sell, no_direction_advice
+from app.ml.price_prediction.verdict import horizon_info, latest_recorded as aged_latest, price_verdict
 from app.ml.price_prediction.weather_features import WEATHER_FEATURES, attach
 
 log = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ class _Ctx:
     ref_date: date
     years_ahead: int
     level: float
+    latest: dict | None = None     # the one "latest recorded price" of the requested market (see verdict.py)
 
 
 @dataclass
@@ -287,7 +289,7 @@ class PriceForecaster:
         else:
             ref_date, years = self._reference_date(as_of)
         ctx = _Ctx(input_date=as_of, ref_date=ref_date, years_ahead=years,
-                   level=(1 + self.inflation) ** years)
+                   level=(1 + self.inflation) ** years, latest=self.latest_for(ref, as_of))
         cands = self._candidates(ref)
         if not cands:
             raise ForecastError("No price history exists for this state / market / crop "
@@ -431,8 +433,10 @@ class PriceForecaster:
         # show dates up to the target and, beyond it, up to the last validated date
         last_validated = max(validated, default=0)
         shown = path[:max(target_h, last_validated)]
+        horizon = horizon_info((target_date - ctx.input_date).days, ref_origin_date, target_h)
         cell_t, scope_t = self.reliability_cell(ref.commodity, target_h, projected)
         policy_t = self.policy_for(ref.commodity, target_h, cell_t)
+        verdict = price_verdict(p0, path[target_h - 1]["predicted_price"], self.typical_miss(ref.commodity, target_h, projected))
         advice = (no_direction_advice(shown, target_h, ref.commodity) if policy_t["mode"] == "context_only"
                   else best_time_to_sell(shown, target_h, ref.commodity, projected))
         cov = None if cell_t is None else cell_t["range_coverage_pct"]
@@ -451,7 +455,7 @@ class PriceForecaster:
                 explanations = self._explain(X, hs, origin, p0, ref.commodity, origin_date,
                                              projected, evidence, path, series=series, ref=ref,
                                              ref_origin_date=ref_origin_date, ctx=ctx,
-                                             state_prices=state_prices)
+                                             state_prices=state_prices, horizon=horizon)
             except Exception:  # never fabricate reasons; the API reports "no explanation"
                 log.exception("SHAP explanation failed")
 
@@ -475,8 +479,8 @@ class PriceForecaster:
             "validated_days": len(validated),
             "max_horizon_days": self.max_horizon,
             "advice": advice,
-            "policy": policy_t, "range_info": range_info,
-            "latest_recorded": self.latest_recorded(ref.state, ref.market, ref.commodity, ref.variety),
+            "policy": policy_t, "range_info": range_info, "verdict": verdict, "horizon": horizon,
+            "latest_recorded": ctx.latest,
             "explanations": explanations,
             "history": history,
             "history_is_reference": projected,
@@ -597,8 +601,9 @@ class PriceForecaster:
             "last_validated_days": 0, "validated_days": 0,
             "max_horizon_days": self.max_horizon,
             "advice": advice, "explanations": [],
-            "policy": self.policy_for(ref.commodity, target_h), "range_info": None,
-            "latest_recorded": self.latest_recorded(ref.state, ref.market, ref.commodity, ref.variety),
+            "policy": self.policy_for(ref.commodity, target_h), "range_info": None, "verdict": None,
+            "horizon": horizon_info((target_date - ctx.input_date).days, ref_origin, target_h),
+            "latest_recorded": ctx.latest,
             "history": history, "history_is_reference": projected,
             "actual_after_origin": actual_after,
             "model": {"version": self.version, "algorithm": "Historical price estimate (no model)",
@@ -680,6 +685,30 @@ class PriceForecaster:
         listed = crop in set(self.crop_policy.get("no_change_crops", []))
         return {"mode": "context_only" if (listed or beats is False) else "model", "band": band,
                 "reasons": ["No policy file; decided from the available backtest figures."]}
+
+    def typical_miss(self, crop: str, h: int, projected: bool) -> float | None:
+        """Mean absolute backtest error (rupees per quintal) for this crop and distance band; what "about the same" is measured against."""
+        cell, _ = self.reliability_cell(crop, h, projected)
+        return cell["mae"] if cell else self.reliability(h, crop)[0]
+
+    def latest_for(self, ref: SeriesRef, as_of: date) -> dict | None:
+        """THE latest recorded price for a request: the requested market's last report, else the Maharashtra median's.
+        The result page, the explanation and the history all read this, so they show the same price and date."""
+        r = (self.latest_recorded(ref.state, ref.market, ref.commodity, ref.variety)
+             or self.latest_recorded(ref.state, STATE_MARKET, ref.commodity, STATE_VARIETY))
+        return None if r is None else aged_latest(r["price"], date.fromisoformat(r["date"]), as_of)
+
+    def saved_view(self, state: str, market: str, commodity: str, variety: str, input_date: date, horizon_days: int,
+                   origin_date: date, current_price: float, predicted_price: float) -> dict:
+        """Display facts for a saved prediction, by the same rules as a fresh one: the distance band counts from the market's last
+        report (``origin_date``), exactly as the forecast did, not from the day it was made."""
+        target_h = (input_date + timedelta(days=horizon_days) - origin_date).days
+        projected = origin_date > self.data_end
+        cell, _ = self.reliability_cell(commodity, target_h, projected)
+        ref = SeriesRef(state, market, commodity, variety)
+        return {"policy": self.policy_for(commodity, target_h, cell),
+                "verdict": price_verdict(current_price, predicted_price, self.typical_miss(commodity, target_h, projected)),
+                "latest_recorded": self.latest_for(ref, input_date)}
 
     def latest_recorded(self, state: str, market: str, commodity: str, variety: str) -> dict | None:
         """The last price actually reported by this series (its real date), whatever today's date is."""
@@ -772,7 +801,7 @@ class PriceForecaster:
         return facts
 
     def _build_v3(self, series, ref, ref_origin_date, ctx, h, sv, base, values, origin, p0, commodity, projected,
-                  point, target, weather_status, model_out, state_prices) -> dict:
+                  point, target, weather_status, model_out, state_prices, horizon=None) -> dict:
         contrib = dict(zip(self.feature_columns, map(float, sv)))
         cell, scope = self.reliability_cell(commodity, h, projected)
         model_mae, _ = self.reliability(h, commodity)
@@ -791,7 +820,8 @@ class PriceForecaster:
             inflation_pct=self.inflation * 100 if projected else None, reliability_cell=cell, reliability_scope=scope,
             fallback_mae=model_mae, fallback_beats=h in set(self.validated_horizons(commodity)),
             breakdown=None if st_price is None else {"state_price": st_price}, weather_status=weather_status,
-            model_output_log=model_out)
+            model_output_log=model_out, latest_recorded=ctx.latest, horizon_info=horizon,
+            verdict=price_verdict(p0, point["predicted_price"], self.typical_miss(commodity, h, projected)))
         out["policy"] = pol
         return out
 
@@ -834,7 +864,7 @@ class PriceForecaster:
                  commodity: str, origin_date: date, projected: bool, evidence: dict,
                  path: list[dict], *, series: pd.DataFrame | None = None, ref: SeriesRef | None = None,
                  ref_origin_date: date | None = None, ctx: "_Ctx | None" = None,
-                 state_prices: dict | None = None) -> list[dict]:
+                 state_prices: dict | None = None, horizon: dict | None = None) -> list[dict]:
         """SHAP explanation of the forecast for the given horizons (legacy fields + the evidence-first ``v3`` block)."""
         ctx_run = ctx            # the loop below reuses the name ``ctx`` for the legacy evidence context
         out = []
@@ -871,7 +901,7 @@ class PriceForecaster:
             if series is not None and ref is not None and ctx_run is not None:
                 entry["v3"] = self._build_v3(series, ref, ref_origin_date, ctx_run, h, sv, base, values, origin,
                                              p0, commodity, projected, path[h - 1], target, weather_status,
-                                             model_out, state_prices)
+                                             model_out, state_prices, horizon)
             out.append(entry)
         return out
 

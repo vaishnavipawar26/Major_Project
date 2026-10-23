@@ -16,7 +16,7 @@ const item = (over) => ({
   id: 1, state: "Maharashtra", market: "APMC Mumbai", commodity: "Onion", variety: "Other", input_date: "2026-10-23", forecast_origin_date: "2026-10-23",
   arrivals: 5, horizon_days: 14, current_price: 2000, predicted_price: 2600, predicted_low: 2000, predicted_high: 3000, predicted_direction: "Increasing",
   future_trend: [], sell_hold_suggestion: "Wait", created_at: "2026-10-23T10:00:00", policy: { mode: "model", band: "8-14", reasons: [] },
-  latest_recorded: { price: 1800, date: "2025-12-31" }, ...over,
+  latest_recorded: { price: 1800, date: "2025-12-31", age_days: 296, stale: true, age_n: 10, age_unit: "months" }, ...over,
 });
 
 beforeEach(() => {
@@ -31,9 +31,18 @@ describe("dashboard recent predictions", () => {
   it("does not show the model's price or direction for context-only predictions", async () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
     const onion = (await waitFor(() => screen.getByText("Onion"))).closest("a");
-    expect(onion.textContent).toContain("No clear direction · near ₹1,800 (latest recorded, 31 Dec 2025)");
+    expect(onion.textContent).toContain("Latest recorded price: ₹1,800 (31 Dec 2025, 10 months ago). No forecast for this crop.");
     expect(onion.textContent).not.toContain("₹2,600");
     expect(onion.textContent).not.toMatch(/Increasing|Rising/);
+  });
+
+  it("says 'about the same' with the model estimate as secondary when the change is below the typical miss", async () => {
+    historyService.summary.mockResolvedValue({ total_price_predictions: 1, total_crop_recommendations: 0, recent_recommendations: [], recent_predictions: [
+      item({ id: 3, commodity: "Cabbage", current_price: 2000, predicted_price: 2050, verdict: { code: "about_the_same", start_price: 2000, model_estimate: 2050, typical_miss_inr: 300 } }) ] });
+    render(<MemoryRouter><Dashboard /></MemoryRouter>);
+    const c = (await waitFor(() => screen.getByText("Cabbage"))).closest("a");
+    expect(c.textContent).toContain("About the same as the starting price (₹2,000) · model estimate ₹2,050");
+    expect(c.textContent).not.toMatch(/Expected ₹2,050|Increasing/);
   });
 
   it("keeps the expected price for predictions where the model is used", async () => {

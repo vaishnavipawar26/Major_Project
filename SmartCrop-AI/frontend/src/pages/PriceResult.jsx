@@ -17,7 +17,7 @@ import { historyService } from "../services/historyService";
 import { priceService } from "../services/priceService";
 import { ADVICE_STYLE, STATE_MARKET } from "../utils/constants";
 import { addDays, cropName, dayRanges, fmtDate, pct, rupees, signedRupees, priceSourceKey } from "../utils/format";
-import { isContextOnly, rangeText, rangeView } from "../utils/priceView";
+import { aboutSameText, horizonText, isAboutSame, isContextOnly, latestText, modelEstimateText, rangeText, rangeView } from "../utils/priceView";
 import { LAST_PRICE_REQUEST_KEY } from "./PricePrediction";
 
 const ALGORITHMS = { random_forest: "Random Forest", xgboost: "XGBoost" };
@@ -271,6 +271,7 @@ export default function PriceResult() {
   const estimated = forecast.source?.method === "historical_baseline";
   const marketName = series.market === STATE_MARKET ? tr("price.form.allMarkets") : series.market;
   const ctxOnly = isContextOnly(forecast);
+  const aboutSame = isAboutSame(forecast);   // |model estimate - starting price| < typical miss: same call as the explanation page
   const range = rangeView(forecast);
   const rt = rangeText(range);
   const latest = forecast.latest_recorded;
@@ -292,15 +293,21 @@ export default function PriceResult() {
       <div className="result-top steps-top">
         <ResultStep n={1} id="step-price" title={tr("price.steps.price")} className="hero-card">
           <div className="hero-card-head">
-            <span className="stat-label">{ctxOnly ? tr("price.result.sellingDate", { date: fmtDate(t.date) }) : tr("price.result.expectedOn", { date: fmtDate(t.date) })}</span>
+            <span className="stat-label">{ctxOnly || aboutSame ? tr("price.result.sellingDate", { date: fmtDate(t.date) }) : tr("price.result.expectedOn", { date: fmtDate(t.date) })}</span>
           </div>
           {ctxOnly ? (
             <div data-testid="no-direction">
               <p className="hero-nodir">
-                {latest ? tr("price.result.noDirection", { price: rupees(latest.price), date: fmtDate(latest.date) }) : tr("price.result.noDirectionNoPrice")}
+                {latestText(tr, latest) ?? tr("price.result.noDirectionNoPrice")}
               </p>
               <div className="stat-sub">{tr("price.result.noDirectionNote")}
                 {forecast.range_info?.typical_miss_inr != null && <> {tr("price.result.typicalMiss", { amount: rupees(forecast.range_info.typical_miss_inr) })}</>}</div>
+            </div>
+          ) : aboutSame ? (
+            <div data-testid="about-same">
+              <p className="hero-nodir">{aboutSameText(tr, forecast.verdict)}</p>
+              <div className="stat-sub">{modelEstimateText(tr, forecast.verdict)}
+                {forecast.verdict.typical_miss_inr != null && <> {tr("price.result.typicalMiss", { amount: rupees(forecast.verdict.typical_miss_inr) })}</>}</div>
             </div>
           ) : (
             <>
@@ -315,7 +322,7 @@ export default function PriceResult() {
                   ? tr("price.result.basedOnRecords", { date: fmtDate(forecast.projection.reference_origin_date) })
                   : tr(estimated ? "price.result.estimatedOn" : "price.result.latestOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
             )}
-            <div><span className="stat-label">{tr("price.result.daysAhead")}</span><strong>{t.horizon_days}</strong></div>
+            <div><span className="stat-label">{tr("price.result.daysAhead")}</span><strong data-testid="horizon">{horizonText(tr, forecast.horizon) ?? t.horizon_days}</strong></div>
           </div>
           {sourceKey && <p className="price-source">{tr(sourceKey)}</p>}
           {forecast.source?.note && <p className="price-source"><ServerText>{forecast.source.note}</ServerText></p>}

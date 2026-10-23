@@ -13,7 +13,7 @@ import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { historyService } from "../services/historyService";
 import { addDays, compactRupees, cropName, fmtDate, fmtDateTime, monthShort, rupees, titleCase, topCrops } from "../utils/format";
-import { isContextOnly } from "../utils/priceView";
+import { isAboutSame, isContextOnly, latestText } from "../utils/priceView";
 
 const PAGE = 10;
 
@@ -90,11 +90,15 @@ function PriceHistory({ onChanged }) {
                 <td data-label={t("hist.col.start")} className="num">{rupees(p.current_price)}</td>
                 <td data-label={t("hist.col.expected")} className="num">{isContextOnly(p) ? (
                   <div data-testid={`hist-nodir-${p.id}`}><strong>{t("hist.noDirection")}</strong>
-                    <div className="muted small">{p.latest_recorded ? t("hist.nearLatest", { price: rupees(p.latest_recorded.price), date: fmtDate(p.latest_recorded.date) }) : ""}</div>
+                    <div className="muted small">{latestText(t, p.latest_recorded) ?? ""}</div>
+                    <div className="muted small">{t("hist.forDate", { date: fmtDate(addDays(p.input_date, p.horizon_days)) })}</div></div>
+                ) : isAboutSame(p) ? (
+                  <div data-testid={`hist-same-${p.id}`}><strong>{t("hist.aboutSame", { price: rupees(p.verdict.start_price) })}</strong>
+                    <div className="muted small">{t("hist.modelEstimate", { price: rupees(p.verdict.model_estimate) })}</div>
                     <div className="muted small">{t("hist.forDate", { date: fmtDate(addDays(p.input_date, p.horizon_days)) })}</div></div>
                 ) : (<div><strong>{rupees(p.predicted_price)}</strong>
                   <div className="muted small">{t("hist.forDate", { date: fmtDate(addDays(p.input_date, p.horizon_days)) })}</div></div>)}</td>
-                <td data-label={t("hist.col.trend")}>{isContextOnly(p) ? <span className="muted small">—</span> : <DirectionBadge direction={p.predicted_direction} />}</td>
+                <td data-label={t("hist.col.trend")}>{isContextOnly(p) || isAboutSame(p) ? <span className="muted small">—</span> : <DirectionBadge direction={p.predicted_direction} />}</td>
                 <td data-label={t("hist.col.advice")} className="small wrap"><ServerText>{p.sell_hold_suggestion}</ServerText></td>
                 <td className="resp-actions">
                   <Link className="btn btn-secondary" to={`/price-prediction/result?id=${p.id}`}><ExternalLink size={15} aria-hidden="true" />{t("hist.open")}</Link>
