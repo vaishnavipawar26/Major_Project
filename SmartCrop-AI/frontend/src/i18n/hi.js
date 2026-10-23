@@ -546,6 +546,11 @@ const hi = {
   // NEEDS REVIEW: Hindi wording for the soil-range placeholder and message (crop.form.typicalPh, betweenLabel) was written without a native review.
   "crop.form.typicalPh": "सामान्य {range}",
   "crop.form.betweenLabel": "{label} {min} और {max}{unit} के बीच होना चाहिए",
+  // NEEDS REVIEW: Hindi wording for the missing-fields line (crop.form.missing*) was written without a native review.
+  "crop.form.missingFill": "आगे बढ़ने के लिए {list} भरें.",
+  "crop.form.missingFix": "आगे बढ़ने के लिए {list} ठीक करें.",
+  "crop.form.missingWeather": "मौसम अभी लोड हो रहा है; आगे बढ़ने के लिए इंतज़ार करें या खुद लिखें.",
+  "crop.form.budgetShort": "बजट",
   "crop.form.examplesTitle": "आपके आँकड़े तैयार नहीं हैं? उदाहरण आज़माएँ",
   "crop.form.examplesNote": "उदाहरण चुनने पर फ़ॉर्म में नमूना आँकड़े भर जाते हैं, ताकि आप देख सकें यह कैसे काम करता है. असली नतीजे के लिए उन्हें अपनी मिट्टी जाँच और मौसम के आँकड़ों से बदलें.",
   "crop.form.soilTitle": "1. मिट्टी जाँच के नतीजे",

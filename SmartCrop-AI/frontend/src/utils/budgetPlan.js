@@ -54,3 +54,19 @@ export function planPayload({ budget_inr, priority, risk_level }) {
   if (!entered && priority === DEFAULT_PRIORITY && risk_level === DEFAULT_RISK) return {};
   return { ...(entered ? { budget_inr: Number(budget_inr) } : {}), priority, risk_level };
 }
+
+/**
+ * What the farmer still has to do before the form can be sent, as short sentences: the empty required fields ("Fill Nitrogen, Phosphorus,
+ * Potassium and Soil pH to continue."), the values that are not accepted ("Fix ... to continue."), the weather that is still loading, and
+ * a selling month equal to the planting month. Names come from the form's own labels (an abbreviation in brackets is dropped).
+ * `parts` = { empty: [names], bad: [names], weatherPending: bool, sameMonth: bool }.
+ */
+export function missingText(parts, t) {
+  const list = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} ${t("cr.chart.and")} ${xs[xs.length - 1]}`);
+  const out = [];
+  if (parts.empty.length) out.push(t("crop.form.missingFill", { list: list(parts.empty) }));
+  if (parts.bad.length) out.push(t("crop.form.missingFix", { list: list(parts.bad) }));
+  if (parts.weatherPending) out.push(t("crop.form.missingWeather"));
+  if (parts.sameMonth) out.push(t("crop.form.sameMonth"));
+  return out.join(" ");
+}

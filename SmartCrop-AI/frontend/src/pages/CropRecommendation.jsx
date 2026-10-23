@@ -24,7 +24,7 @@ import { cropName, monthLong } from "../utils/format";
 import { areaError } from "../utils/fieldSize";
 import BudgetStep from "../components/crop/BudgetStep";
 import LockedState from "../components/LockedState";
-import { DEFAULT_PRIORITY, DEFAULT_RISK, budgetError, cleanBudget, planPayload } from "../utils/budgetPlan";
+import { DEFAULT_PRIORITY, DEFAULT_RISK, budgetError, cleanBudget, missingText, planPayload } from "../utils/budgetPlan";
 
 export const LAST_CROP_RESULT_KEY = "smartcrop_last_crop_result";
 
@@ -194,6 +194,16 @@ export default function CropRecommendation() {
   const budgetDone = !errors.area_acres && !errors.budget_inr;
   const current = dones.findIndex((d) => !d);
   const invalid = Object.keys(errors).length > 0;
+  // a live list of what is still missing, in the order of the form
+  const missing = (() => {
+    const short = (s) => s.replace(/\s*\([^)]*\)\s*$/, "");                       // "Nitrogen (N)" -> "Nitrogen"
+    const label = (k) => short(k === "area_acres" ? t("crop.form.area") : k === "budget_inr" ? t("crop.form.budgetShort") : t(`crop.form.field.${k}`));
+    const weatherAuto = !manual;                                                        // automatic weather fills these in once the city and months are set
+    const emptyKeys = FIELDS.map((f) => f.key).filter((k) => form[k] === "" && !(weatherAuto && WEATHER_KEYS.includes(k)));
+    const bad = [...FIELDS.map((f) => f.key), "area_acres", "budget_inr"].filter((k) => errors[k] && !emptyKeys.includes(k) && !(weatherAuto && WEATHER_KEYS.includes(k) && form[k] === ""));
+    return { empty: emptyKeys.map(label), bad: [...new Set(bad)].map(label),
+      weatherPending: weatherAuto && WEATHER_KEYS.some((k) => form[k] === ""), sameMonth: Boolean(monthsError) };
+  })();
   const fits = likelyFits(form, ranges);
 
   // Fills every field of the form (weather too, in manual mode) so the numbers always match the crop on the button.
@@ -373,7 +383,7 @@ export default function CropRecommendation() {
               {submitting ? <SproutSpinner inButton /> : <TrendingUp size={18} aria-hidden="true" />}
               {submitting ? t("crop.form.submitting") : t("crop.form.submit")}
             </button>
-            <p className="cf-submit-note" aria-live="polite">{invalid ? t("crop.form.submitIncomplete") : t("crop.form.submitNote")}</p>
+            <p className="cf-submit-note" aria-live="polite">{invalid || missing.weatherPending ? missingText(missing, t) : t("crop.form.submitNote")}</p>
           </div>
         </div>
       </form>
