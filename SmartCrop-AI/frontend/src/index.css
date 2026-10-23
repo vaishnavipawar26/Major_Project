@@ -2026,3 +2026,66 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .date-ph.is-empty input:focus { color: inherit; }
 .date-ph.is-empty::before { content: attr(data-placeholder); position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .date-ph.is-empty:focus-within::before { display: none; }
+
+/* crop explanation page: hero, six explanation cards, summary */
+.xp-hero .best-head { flex-wrap: wrap; }
+.xp-hero .best-head > .min-w-0 { flex: 1 1 14rem; }
+.xp-score { display: flex; flex-direction: column; align-items: center; padding: 0.6rem 1.1rem; border: 1px solid var(--brand-line); border-radius: var(--radius); background: var(--brand-soft); text-align: center; }
+.xp-score-num { font-size: 2rem; font-weight: 700; line-height: 1.1; color: var(--forest); }
+.xp-score-num small { font-size: 0.9rem; font-weight: 600; color: var(--text-2); }
+.xp-score-label { font-size: 0.8rem; font-weight: 600; color: var(--text-2); }
+.xp-score-rank { font-size: 0.78rem; color: var(--muted); }
+.xp-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; margin: 1rem 0 0; }
+.xp-fact { padding: 0.55rem 0.75rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); min-width: 0; }
+.xp-fact dt { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--muted); }
+.xp-fact dd { margin: 0.1rem 0 0; font-weight: 650; overflow-wrap: anywhere; }
+@media (max-width: 860px) { .xp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .xp-facts { grid-template-columns: minmax(0, 1fr); } }
+.xp-intro { color: var(--text-2); margin: -0.4rem 0 1rem; }
+.xp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8rem; counter-reset: none; }
+.xp-step { display: grid; grid-template-columns: 2.1rem minmax(0, 1fr); gap: 0.2rem 0.8rem; padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.xp-step.is-warn { border-color: var(--harvest-line); }
+.xp-step.is-bad { border-color: #e7b9b2; }
+.xp-num { display: inline-flex; align-items: center; justify-content: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: var(--forest); color: #fff; font-weight: 700; font-size: 0.95rem; }
+.xp-step-body { display: flex; flex-direction: column; gap: 0.55rem; min-width: 0; }
+.xp-step-title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.5rem; margin: 0; font-size: 1.05rem; line-height: 1.35; }
+.xp-step-title svg { color: var(--leaf); }
+.xp-step-title .xp-dash { color: var(--muted); font-weight: 400; }
+.xp-headline { font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+.xp-headline.is-warn { color: var(--warn-text); }
+.xp-headline.is-bad { color: #9b2c20; }
+.xp-headline.is-good { color: var(--good-text); }
+.xp-text { margin: 0; font-size: 0.95rem; color: var(--text-2); max-width: 70ch; }
+.xp-sub { margin: 0; font-size: 0.8rem; color: var(--muted); }
+@media (max-width: 480px) { .xp-step { grid-template-columns: minmax(0, 1fr); } }
+.xp-measures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; }
+@media (max-width: 960px) { .xp-measures { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .xp-measures { grid-template-columns: minmax(0, 1fr); } }
+.xp-measures.is-single { grid-template-columns: minmax(0, 22rem); }
+@media (max-width: 480px) { .xp-measures.is-single { grid-template-columns: minmax(0, 1fr); } }
+.xp-measure { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); min-width: 0; }
+.xp-measure-top { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+.xp-measure-name { font-size: 0.85rem; font-weight: 600; color: var(--text-2); }
+.xp-measure-value { margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--text); }
+.xp-range { margin: 0; font-size: 0.78rem; color: var(--muted); }
+.xp-bar { position: relative; display: block; height: 6px; margin-top: 0.35rem; border-radius: 3px; background: var(--border); }
+.xp-bar-band { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--brand-line); }
+.xp-bar-dot { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid var(--surface); background: var(--leaf); box-shadow: 0 0 0 1px var(--border); }
+.xp-bar-dot.is-warn { background: var(--warning); }
+.xp-bar-dot.is-bad { background: var(--critical); }
+.xp-status { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.76rem; font-weight: 600; padding: 0.05rem 0.5rem; border-radius: 999px; }
+.xp-status.is-good { background: #e3f3e6; color: #1d6b34; }
+.xp-status.is-warn { background: var(--harvest-soft); color: var(--warn-text); }
+.xp-status.is-bad { background: #fbe6e3; color: #9b2c20; }
+.xp-profit-amount { margin: 0; font-size: 2.1rem; font-weight: 800; line-height: 1.1; color: var(--profit-pos); }
+.xp-profit-amount.is-loss { color: var(--profit-neg); }
+.xp-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0; }
+.xp-metrics > div { padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); min-width: 0; }
+.xp-metrics dt { font-size: 0.78rem; color: var(--muted); }
+.xp-metrics dd { margin: 0; font-size: 1.1rem; font-weight: 700; overflow-wrap: anywhere; }
+.xp-metrics dd.xp-sub { font-size: 0.78rem; font-weight: 400; }
+@media (max-width: 600px) { .xp-metrics { grid-template-columns: minmax(0, 1fr); } .xp-profit-amount { font-size: 1.8rem; } }
+.xp-summary { margin-top: 1rem; padding: 0.9rem 1.1rem; border: 1px solid var(--brand-line); border-radius: var(--radius); background: var(--brand-soft); }
+.xp-summary h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
+.xp-summary p { margin: 0 0 0.5rem; color: var(--text); }
+.xp-summary .xp-disclaimer { margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--text-2); }

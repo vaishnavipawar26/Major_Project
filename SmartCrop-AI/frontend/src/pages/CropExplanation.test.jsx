@@ -27,7 +27,7 @@ const crop = (name, rank, score, pts, extra = {}) => ({
   limitations: [], status: { key: "best", tone: "good" }, ...extra,
 });
 const response = () => ({
-  selling_date: "2027-02", area_acres: 1, best_overall: "Wheat", highest_profit: "Wheat",
+  selling_date: "2027-02", city: "Pune", state: "Maharashtra", area_acres: 1, best_overall: "Wheat", highest_profit: "Wheat",
   weights: { agronomic: 0.4, timing: 0.2, profit: 0.4 },
   ranking_explanation: { best_overall: "Wheat", highest_profit: "Wheat", same_crop: true, profit_gap: null, reasons: [] },
   results: [crop("Wheat", 1, 82, { agronomic: 32, timing: 18, profit: 28 }), crop("Onion", 2, 70, { agronomic: 30, timing: 18, profit: 22 }, { profit_rank: 2 })],
@@ -47,31 +47,27 @@ beforeEach(() => { cropService.analyze.mockReset(); historyService.recommendatio
 afterEach(cleanup);
 
 describe("CropExplanation page", () => {
-  it("is a short page: summary and score breakdown, without the long field, timing, profit, comparison and limits sections", () => {
+  it("shows the summary, the explanation panels and the score, without the score breakdown and the long technical sections", () => {
     renderAt(withState());
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Why is this crop recommended?");
-    for (const h of ["Recommendation summary", "Why this crop is recommended", "How the suitability score is built"]) {
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Recommendation explanation");
+    for (const h of ["Why is Wheat recommended for your farm?", "AI's final explanation"]) {
       expect(screen.getAllByRole("heading", { name: h }).length, h).toBeGreaterThan(0);
     }
-    for (const h of ["Your field conditions", "Planting and harvest timing", "Expected profit", "How this crop compares with the others", "Limits of this recommendation"]) {
+    for (const k of ["location", "planting", "soil", "temperature", "rainfall", "profit"]) {
+      expect(document.getElementById(`xp-${k}`), k).toBeTruthy();
+    }
+    for (const h of ["How the suitability score is built", "Your field conditions", "Planting and harvest timing", "How this crop compares with the others", "Limits of this recommendation"]) {
       expect(screen.queryByRole("heading", { name: h }), h).toBeNull();
     }
-    expect(screen.getByText("82/100")).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Suitability score" }).textContent).toContain("82/100");
   });
 
   it("explains the crop chosen by ?crop=, not always the best one", () => {
     const st = withState();
     st.state.response.results[1].important_factors[3] = { ...st.state.response.results[1].important_factors[3], shap_value: 0.9, share_pct: 40 };
     renderAt({ pathname: "/crop-recommendation/explanation", search: "?crop=Onion", state: st.state });
-    expect(screen.getByRole("heading", { name: "How Onion fits your field" })).toBeTruthy();
-    expect(screen.getByText("70/100")).toBeTruthy();
-  });
-
-  it("uses the API's score points and weights", () => {
-    renderAt(withState());
-    const score = screen.getAllByRole("heading", { name: "How the suitability score is built" }).map((h) => h.closest("section")).find(Boolean);
-    expect(score.textContent).toContain("32.0");
-    expect(score.textContent).toContain("40%");
+    expect(screen.getByRole("heading", { name: "How does Onion fit your farm?" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Suitability score" }).textContent).toContain("70/100");
   });
 
   it("with no state and no id shows a fallback and does not crash", () => {
@@ -92,12 +88,13 @@ describe("CropExplanation page", () => {
       nitrogen: 90, phosphorus: 40, potassium: 250, ph: 6.5, temperature: 24, humidity: 70, rainfall: 90, planting_date: "2026-10-01" });
     cropService.analyze.mockResolvedValue(response());
     renderAt("/crop-recommendation/explanation?id=3");
-    await waitFor(() => expect(screen.getByText("82/100")).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("group", { name: "Suitability score" }).textContent).toContain("82/100"));
+    expect(screen.getByRole("link", { name: "Back to History" }).getAttribute("href")).toBe("/history");
   });
 
   it("back button returns to the result page", () => {
     renderAt(withState());
-    fireEvent.click(screen.getByRole("button", { name: /Back to recommendation results/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Back to Results/ }));
     expect(screen.getByText("result page")).toBeTruthy();
   });
 });
