@@ -11,6 +11,7 @@ import { historyService } from "../services/historyService";
 import { priceService } from "../services/priceService";
 import { addDays, cropName, fmtDate, pct, rupees } from "../utils/format";
 import { STATE_MARKET } from "../utils/constants";
+import ExplanationV3 from "../components/price/ExplanationV3";
 import { isExplainedReliably, matchesRequest, reasonsOf, reliabilityView } from "../utils/explanationView";
 
 /**
@@ -214,6 +215,9 @@ export default function PriceExplanation() {
   const exp = exps[Math.min(which, exps.length - 1)];
   if (!exp) return <>{header}<Alert type="info">{explain.message ? <ServerText>{explain.message}</ServerText> : t("price.expl.noExplanation")}</Alert></>;
   const reasons = reasonsOf(exp);
+  // evidence-first layout when the backend sent it (older saved responses keep the previous layout below)
+  const v3 = exp.v3 || null;
+  const v3Ok = v3 && !(v3.checks?.reconstruction_error > 1e-3) && exp.technical?.reconstruction_ok !== false;
 
   return (
     <>
@@ -229,7 +233,11 @@ export default function PriceExplanation() {
             ))}
           </div>
         )}
-        <Summary exp={exp} explain={explain} />
+        {v3 ? (
+          v3Ok ? <ExplanationV3 exp={exp} explain={explain} />
+            : <Alert type="info">{t("price.expl.unreliable")}</Alert>
+        ) : <Summary exp={exp} explain={explain} />}
+        {!v3 && (<>
         <section aria-labelledby="expl-main">
           <h2 id="expl-main" className="xai-h">{t("price.expl.driveTitle")}</h2>
           {reasons.length > 0 && isExplainedReliably(exp) ? (
@@ -249,6 +257,7 @@ export default function PriceExplanation() {
         {(exp.data_basis || exp.scope) && (
           <p className="muted small">{exp.data_basis && <ServerText>{exp.data_basis.text}</ServerText>} {exp.scope && <ServerText>{exp.scope.text}</ServerText>}</p>
         )}
+        </>)}
         <p className="muted small">{t("price.expl.note")}</p>
         {/* developer-only: base value, raw contributions, encoded features, model and explainer details */}
         {import.meta.env.DEV &&         <Advanced exp={exp} model={{ ...explain.model, algorithm: exp.algorithm || explain.model?.algorithm }} />}

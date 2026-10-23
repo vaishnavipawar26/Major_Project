@@ -275,11 +275,14 @@ export default function PriceResult() {
           <div className="hero-price">{rupees(t.predicted_price)}<span className="unit"> {tr("unit.perQuintal")}</span></div>
           <div className="stat-sub">{tr("price.result.likelyRange", { low: rupees(t.lower), high: rupees(t.upper) })}</div>
           <div className="hero-meta">
-            <div><span className="stat-label">{tr("price.result.startingPrice")}</span><strong>{rupees(forecast.current_price)}</strong>
-              <span className="muted small">{tr(estimated ? "price.result.estimatedOn" : forecast.projection ? "price.result.projectedOn" : "price.result.reportedOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
+            <div><span className="stat-label">{tr(forecast.projection || estimated ? "price.result.startingPriceEstimated" : "price.result.startingPriceLatest")}</span><strong>{rupees(forecast.current_price)}</strong>
+              <span className="muted small">{forecast.projection
+                ? tr("price.result.basedOnRecords", { date: fmtDate(forecast.projection.reference_origin_date) })
+                : tr(estimated ? "price.result.estimatedOn" : "price.result.latestOn", { date: fmtDate(forecast.forecast_origin_date) })}</span></div>
             <div><span className="stat-label">{tr("price.result.daysAhead")}</span><strong>{t.horizon_days}</strong></div>
           </div>
           {sourceKey && <p className="price-source">{tr(sourceKey)}</p>}
+          {forecast.source?.note && <p className="price-source"><ServerText>{forecast.source.note}</ServerText></p>}
           {/* only the caution is shown; a forecast that passed testing needs no label */}
           {!validated && (
             <span className="reliability weak"><TriangleAlert size={15} aria-hidden="true" />{tr("price.result.roughGuide")}</span>

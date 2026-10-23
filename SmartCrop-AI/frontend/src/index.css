@@ -2089,3 +2089,12 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .xp-summary h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
 .xp-summary p { margin: 0 0 0.5rem; color: var(--text); }
 .xp-summary .xp-disclaimer { margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--text-2); }
+
+/* evidence-first price explanation (ExplanationV3) */
+.v3-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0.5rem; }
+.factor-card.push-small { border-top-color: var(--axis); }
+.v3-other { margin-top: 0.75rem; }
+.v3-flag { display: flex; gap: 0.3rem; align-items: baseline; flex-wrap: wrap; }
+.v3-flag-agree { color: var(--good-text); }
+.v3-flag-disagree { color: var(--warn-text); }
+@media (max-width: 700px) { .v3-cards { grid-template-columns: minmax(0, 1fr); } }
