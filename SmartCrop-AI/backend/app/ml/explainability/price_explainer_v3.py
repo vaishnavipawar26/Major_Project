@@ -230,6 +230,91 @@ def _agreement(group: str, reading: str | None, pushed: str, evidence_text: str 
     return {"flag": "disagree", "text": f"{point}, but the model pushed the forecast {way}. The reason is not visible from the records shown."}
 
 
+
+# ----------------------------------------------------------------------------- display fields (presentation only)
+STEP_GROUPS = ["seasonal", "trend", "last_year", "market", "supply"]
+TRUST_HIGH_SKILL, TRUST_MEDIUM_SKILL = 10.0, 2.0         # % better than the simple guess in past tests
+TRUST_HIGH_COVERAGE, TRUST_MEDIUM_COVERAGE = 70.0, 40.0   # % of past tests in which the real price fell inside the range
+
+
+def trust_level(cell: dict | None, projected: bool) -> str:
+    """High / Medium / Low from the past tests of this crop and distance.
+    High: beat the simple guess by >= 10% AND the range held the real price in >= 70% of tests.
+    Medium: beat it by >= 2% AND range coverage >= 40% (the level below which the range is not shown at all).
+    Low: anything else, or no past test. A forecast that replays last year's season is capped at Medium, because
+    its past tests (starting from last year's prices) are less accurate than tests from current prices."""
+    if not cell:
+        return "low"
+    skill = cell.get("skill_vs_baseline_pct")
+    if skill is None and cell.get("baseline_mae"):
+        skill = (cell["baseline_mae"] - cell["mae"]) / cell["baseline_mae"] * 100
+    cov = cell.get("range_coverage_pct")
+    if skill is None or cov is None:
+        return "low"
+    level = "high" if skill >= TRUST_HIGH_SKILL and cov >= TRUST_HIGH_COVERAGE else "medium" if skill >= TRUST_MEDIUM_SKILL and cov >= TRUST_MEDIUM_COVERAGE else "low"
+    return "medium" if (projected and level == "high") else level
+
+
+def _pct_word(p: float, more: str, less: str, same: str, close_below: float) -> str:
+    """Same threshold as the evidence sentence ("close to" below ``close_below`` %), so the value and its detail never disagree."""
+    return same if abs(p) < close_below else f"{abs(p):.0f}% {more if p > 0 else less}"
+
+
+def _plain(group: str, facts: dict, is_state: bool) -> tuple[str | None, str | None]:
+    """(short plain value for the step headline, jargon-free detail sentence without the starting price)."""
+    f = facts.get(group)
+    if group == "supply" and f and f.get("pct") is not None:
+        return _pct_word(f["pct"], "more arrivals than usual", "fewer arrivals than usual", "arrivals close to usual", 5), None
+    if group == "supply" and f:
+        return "arrivals reported, nothing to compare with", None
+    if group == "market" and f and not is_state:
+        return _pct_word(f["avg_gap_pct"], "above the Maharashtra median", "below the Maharashtra median", "close to the Maharashtra median", 1), None
+    if group == "seasonal" and f and f.get("years"):
+        m, ys = f["mean_pct"], sorted(f["years"], key=lambda x: -x["year"])
+        signs = {1 if y["pct"] > 0 else -1 for y in ys if abs(y["pct"]) >= 0.5}
+        if abs(m) < SEASON_READING_PCT:
+            plain = "no usual rise or fall at this time of year"
+        elif len(signs) > 1:
+            plain = "earlier years went in different directions"
+        else:
+            plain = f"prices usually {'rose' if m > 0 else 'fell'} about {abs(m):.0f}% in earlier years"
+        span = (ys[0]["to"] - ys[0]["from"]).days
+        sgn = lambda p: ("+" if p >= 0 else "−") + f"{abs(p):.0f}%"   # noqa: E731
+        moves = [f"{sgn(y['pct'])} in {y['year']}" for y in ys]
+        detail = (f"Over the same {span} days ({d_(ys[0]['from'])[:-5]} to {d_(ys[0]['to'])[:-5]}) the price changed "
+                  + (moves[0] if len(moves) == 1 else ", ".join(moves[:-1]) + " and " + moves[-1]) + ".")
+        return plain, detail
+    if group == "trend" and f and f.get("d30"):
+        p = f["d30"]["pct"]
+        d = f"Over the 30 days to {d_(f['date'])} the price moved {signed_pct(p)}"
+        if f.get("d90"):
+            d += f", and {signed_pct(f['d90']['pct'])} over 90 days"
+        return ("price steady over 30 days" if abs(p) < TREND_READING_PCT else f"price {'up' if p > 0 else 'down'} {abs(p):.0f}% in 30 days"), d + "."
+    if group == "last_year" and f:
+        rel = "about the same as" if abs(f["pct"]) < 1 else f"{abs(f['pct']):.0f}% {'higher' if f['pct'] > 0 else 'lower'} than"
+        return f"{rel} a year ago", f"On {d_(f['date'])} the price was {rel} on {d_(f['prev_date'])}, a year earlier."
+    return None, None
+
+
+def display_groups(facts, crop, market, is_state, ev_fn, g_inr, used_groups, with_effects) -> dict:
+    """Per group, for the explanation page: the records' own reading (up / down / none), a plain value and detail, and,
+    for model-mode forecasts, the model's push in rupees and whether it agrees with the records. Nothing here changes a number."""
+    out = {}
+    for g in STEP_GROUPS:
+        text, _mech, reading, missing = ev_fn[g]()
+        plain, detail = _plain(g, facts, is_state)
+        entry = {"group": g, "available": text is not None and not (g == "market" and is_state), "reading": reading,
+                 "plain": plain, "detail": detail or text, "missing": missing, "used": g in used_groups,
+                 "inr_effect": None, "inr_effect_rounded": None, "agreement": None}
+        if with_effects and g in used_groups:
+            inr = g_inr[g]
+            entry.update({"inr_effect": round(inr, 2), "inr_effect_rounded": round_inr(inr)})
+            if reading is not None and abs(inr) >= 5 and text is not None:
+                entry["agreement"] = _agreement(g, reading, "up" if inr > 0 else "down", text)["flag"]
+        out[g] = entry
+    return out
+
+
 # ----------------------------------------------------------------------------- main
 def _trust_block(cell, crop, band, baseline_label, reliability_scope, projected):
     lines, warnings = [], []
@@ -259,7 +344,8 @@ def _trust_block(cell, crop, band, baseline_label, reliability_scope, projected)
         lines.append("No backtest results are available for this crop and distance, so no reliability figure is given.")
     if reliability_scope == "projection" or projected:
         warnings.append("These figures come from tests of the same kind of forecast (starting from last year's prices), which is less accurate than forecasting from current prices.")
-    trust.update({"lines": lines, "warnings": warnings})
+    trust.update({"lines": lines, "warnings": warnings, "level": trust_level(cell, projected or reliability_scope == "projection"),
+                  "skill_pct": None if not cell else round(cell.get("skill_vs_baseline_pct", 0.0) or 0.0, 1)})
     return trust
 
 
@@ -313,6 +399,7 @@ def _context_only(*, facts, values, crop, market, requested_market, series_is_st
                      "horizon_days": horizon, "band": band, "latest_recorded": latest_recorded, "horizon": horizon_info},
         "banner": banner, "cards": cards, "other_factors": None, "evidence_not_used_by_model": [],
         "market_breakdown": mkt, "trust": _trust_block(cell, crop, band, baseline_label, reliability_scope, projected),
+        "display": {"groups": display_groups(facts, crop, market, series_is_state, ev_fn, None, set(), False)},
         "checks": {"inr_sum": None, "predicted_change_inr": None, "reconstruction_error": None if recon is None else round(recon, 8)},
     }
 
@@ -487,7 +574,8 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
         lines.append("No backtest results are available for this crop and distance, so no reliability figure is given.")
     if reliability_scope == "projection" or projected:
         warnings.append("These figures come from tests of the same kind of forecast (starting from last year's prices), which is less accurate than forecasting from current prices.")
-    trust.update({"lines": lines, "warnings": warnings})
+    trust.update({"lines": lines, "warnings": warnings, "level": trust_level(cell, projected or reliability_scope == "projection"),
+                  "skill_pct": None if not cell else round(cell.get("skill_vs_baseline_pct", 0.0) or 0.0, 1)})
 
     # ---- banner / dates
     banner = None
@@ -512,6 +600,7 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
                      "latest_recorded": latest_recorded, "horizon": horizon_info},
         "banner": banner, "cards": shown, "other_factors": other, "evidence_not_used_by_model": unused,
         "market_breakdown": mkt, "trust": trust,
+        "display": {"groups": display_groups(facts, crop, market, series_is_state, ev_fn, g_inr, used_groups, True)},
         "checks": {"inr_sum": round(sum(c["inr_effect"] for c in shown) + other_total, 6), "predicted_change_inr": round(dP, 6),
                    "reconstruction_error": None if recon is None else round(recon, 8)},
     }

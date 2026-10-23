@@ -39,7 +39,7 @@ function Measure({ m, children }) {
 }
 
 /** One numbered step: number, icon, "Title — headline" (headline coloured by tone), then its content. */
-function Step({ n, id, icon: Icon, title, headline, tone = "neutral", children }) {
+export function Step({ n, id, icon: Icon, title, headline, tone = "neutral", children }) {
   return (
     <li className={`xp-step is-${tone}`} aria-labelledby={id}>
       <span className="xp-num" aria-hidden="true">{n}</span>

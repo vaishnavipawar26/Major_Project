@@ -2100,3 +2100,16 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 @media (max-width: 700px) { .v3-cards { grid-template-columns: minmax(0, 1fr); } }
 
 .hero-nodir { margin: 0.3rem 0 0.2rem; font-size: 1.2rem; font-weight: 700; line-height: 1.35; color: var(--text); }
+
+/* ---------- price explanation: reuses the crop explanation (.xp-*) pieces; these only size the price-specific parts ---------- */
+.pe-headline { margin: 0.15rem 0 0; font-size: 1.3rem; font-weight: 700; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; }
+.pe-headline.is-good { color: var(--good-text); }
+.pe-headline.is-bad { color: #9b2c20; }
+.pe-sub { margin-top: 0.35rem; font-size: 0.88rem; }
+.pe-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 480px) { .pe-facts { grid-template-columns: minmax(0, 1fr); } .pe-headline { font-size: 1.15rem; } }
+.pe-badge { font-size: 1.25rem; }
+.pe-badge.is-high { color: var(--good-text); }
+.pe-badge.is-medium { color: var(--warn-text); }
+.pe-badge.is-low { color: #9b2c20; }
+.pe-notice { margin: -0.3rem 0 0; padding: 0 0.2rem; }

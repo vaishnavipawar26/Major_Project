@@ -1,10 +1,20 @@
-import { CircleCheck, Info, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
-import Alert from "../Alert";
+import { Boxes, CalendarDays, LineChart, MapPin, Minus, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
+import CropArt from "../CropArt";
 import ServerText from "../ServerText";
+import { Step } from "../crop/FarmExplanation";
 import { useT } from "../../i18n/LanguageContext";
-import { cropName, fmtDate, rupees } from "../../utils/format";
+import { cropName, rupees } from "../../utils/format";
 import { STATE_MARKET } from "../../utils/constants";
-import { aboutSameText, horizonText, latestText, modelEstimateText } from "../../utils/priceView";
+import { buildStory } from "../../utils/priceStory";
+
+const STEP_ICON = { season: CalendarDays, prices: LineChart, market: MapPin, supply: Boxes, trust: ShieldCheck };
+const CHIP = { higher: { icon: TrendingUp, tone: "good" }, lower: { icon: TrendingDown, tone: "bad" }, little: { icon: Minus, tone: null } };
+
+/** Status chip taken from the RECORDS (not from the model): points higher / lower / little effect. Icon plus words. */
+function Chip({ kind, t }) {
+  const { icon: Icon, tone } = CHIP[kind];
+  return <span className={`xp-status${tone ? ` is-${tone}` : ""}`} data-testid="step-chip"><Icon size={14} aria-hidden="true" />{t(`pe.chip.${kind}`)}</span>;
+}
 
 /** Translated group title when the dictionary has it, else the backend's English title. */
 const groupTitle = (t, c, isState) => {
@@ -13,138 +23,107 @@ const groupTitle = (t, c, isState) => {
   return v === key ? c.title : v;
 };
 
-const FLAG_ICON = { agree: CircleCheck, disagree: TriangleAlert };
-
-/** One reason: group, ₹ effect, the dated records, what usually follows (only if supported), and whether records and model agree. */
-function ReasonCard({ c, isState }) {
+/** Collapsed reference material: every rupee effect, the market against Maharashtra, how the tests were made. */
+function Technical({ v, story, isState }) {
   const t = useT();
-  const context = c.inr_effect == null;          // crops where the model is not used to claim a direction
-  const up = c.direction === "up";
-  const none = !context && Math.abs(c.inr_effect) < 5;
-  const Icon = up ? TrendingUp : TrendingDown;
-  const flag = c.agreement?.flag;
-  const FlagIcon = FLAG_ICON[flag] || Info;
+  const tr = v.trust;
+  const other = v.other_factors;
+  const mkt = v.market_breakdown;
   return (
-    <li className={`factor-card xai-card ${context || none ? "push-small" : up ? "push-up" : "push-down"}`} data-testid={`reason-${c.group}`}>
-      <strong className="factor-name">{groupTitle(t, c, isState)}</strong>
-      <span className="factor-push">
-        {!none && !context && <Icon size={15} aria-hidden="true" />}
-        {context ? t("price.v3.contextBadge") : none ? t("price.v3.noEffect") : t(up ? "price.v3.pushedUp" : "price.v3.pushedDown", { amount: rupees(Math.abs(c.inr_effect_rounded)) })}
-      </span>
-      <dl className="xai-parts">
-        <dt>{t("price.v3.recordsLabel")}</dt>
-        <dd><ServerText>{c.evidence}</ServerText></dd>
-        {c.mechanism && (<><dt>{t("price.v3.mechanismLabel")}</dt><dd><ServerText>{c.mechanism}</ServerText></dd></>)}
-        {!context && (<>
-          <dt>{t("price.v3.agreementLabel")}</dt>
-          <dd className={`v3-flag v3-flag-${flag}`}>
-            <FlagIcon size={14} aria-hidden="true" /> <strong>{t(`price.v3.flag.${flag === "no_reading" ? "noReading" : flag === "no_evidence" ? "noEvidence" : flag}`)}</strong>{" "}
-            <ServerText>{c.agreement.text}</ServerText>
-          </dd>
-        </>)}
-      </dl>
-    </li>
+    <details className="kid-about xai-tech" data-testid="v3-technical">
+      <summary>{t("pe.tech.title")}</summary>
+      {!story.ctxOnly && v.cards.length > 0 && (<>
+        <h3 className="xai-h">{t("pe.tech.effects")}</h3>
+        <div className="xai-table-wrap"><table className="xai-table">
+          <thead><tr><th scope="col">{t("price.expl.colGroup")}</th><th scope="col">{t("pe.tech.effect")}</th></tr></thead>
+          <tbody>
+            {v.cards.map((c) => <tr key={c.group}><td>{groupTitle(t, c, isState)}</td><td>{c.inr_effect >= 0 ? "+" : "−"}{rupees(Math.abs(c.inr_effect))}</td></tr>)}
+            {other && other.parts.map((p) => <tr key={p.label}><td><ServerText>{p.label}</ServerText></td><td>{p.inr >= 0 ? "+" : "−"}{rupees(Math.abs(p.inr))}</td></tr>)}
+          </tbody>
+        </table></div>
+        <p className="small muted">{t("pe.tech.effectsNote")}</p>
+      </>)}
+      <h3 className="xai-h">{t("price.v3.marketTitle")}</h3>
+      <p className="small" style={{ margin: 0 }} data-testid="v3-market"><ServerText>{mkt.text}</ServerText></p>
+      {mkt.evidence && <p className="small muted" style={{ margin: "0.2rem 0 0" }}><ServerText>{mkt.evidence}</ServerText></p>}
+      {mkt.note && <p className="small xai-caution"><ServerText>{mkt.note}</ServerText></p>}
+      <h3 className="xai-h">{t("pe.tech.tests")}</h3>
+      <ul className="xai-limits">
+        {tr.available && <li>{t("pe.tech.cases", { n: tr.n.toLocaleString(), band: v.headline.band })}</li>}
+        {tr.available && <li>{t("pe.tech.baseline", { name: tr.baseline })}</li>}
+        {tr.available && tr.direction_acc_pct != null && <li>{t("pe.tech.direction", { pct: Math.round(tr.direction_acc_pct), n: tr.n_meaningful_moves.toLocaleString() })}</li>}
+        {tr.available && <li>{t("pe.tech.wape", { pct: Math.round(tr.wape_pct) })}</li>}
+        {story.horizon && <li data-testid="v3-horizon">{story.horizon}</li>}
+        <li>{t("pe.tech.rule")}</li>
+        {tr.warnings.map((w) => <li key={w}><ServerText>{w}</ServerText></li>)}
+      </ul>
+    </details>
   );
 }
 
-/** The evidence-first explanation (backend `v3` block): verdict, reasons in rupees, market vs Maharashtra, trust. */
+/**
+ * The price explanation in the same shape as the crop explanation: a summary card, numbered "Topic — value" steps with status
+ * chips, the AI's final explanation, and collapsed technical details. Content comes from utils/priceStory.js.
+ */
 export default function ExplanationV3({ exp, explain }) {
   const t = useT();
   const v = exp.v3;
-  const h = v.headline;
-  const crop = cropName(t, explain.series.commodity);
   const isState = explain.series.market === STATE_MARKET;
+  const crop = cropName(t, explain.series.commodity);
   const market = isState ? t("price.form.allMarkets") : explain.series.market;
-  const proj = explain.projection;
-  const ctxOnly = v.context_only === true || h.predicted_price == null;
-  const aboutSame = !ctxOnly && h.code === "about_the_same";
-  // the same wording the result page uses, built from the same numbers
-  const verdict = { start_price: h.start_price, model_estimate: h.predicted_price };
-  const headlineText = ctxOnly ? latestText(t, h.latest_recorded) : aboutSame ? aboutSameText(t, verdict) : null;
-  const sign = (h.change_inr ?? 0) >= 0 ? "+" : "−";
-  const verdictClass = h.code === "rise" || h.code === "fall" ? "" : "xai-caution";
-  const mkt = v.market_breakdown;
-  const other = v.other_factors;
+  const story = buildStory(exp, explain, t, crop, market);
   return (
-    <>
-      {v.banner && (
-        <Alert type="warn">
-          <strong><ServerText>{v.banner.text}</ServerText></strong>
-          <div className="small"><ServerText>{v.banner.detail}</ServerText></div>
-        </Alert>
-      )}
+    <div className="crop-result">
+      <div className="stack">
+        <section className="card xp-hero pe-hero" aria-labelledby="pe-summary" data-testid="v3-verdict">
+          <h2 id="pe-summary" className="sr-only">{t("price.expl.predictedTitle")}</h2>
+          <div className="best-head">
+            <CropArt crop={explain.series.commodity} size={72} className="best-photo" />
+            <div className="min-w-0">
+              <p className="best-name">{crop} · {market}</p>
+              <p className={`pe-headline is-${story.tone}`} data-testid="v3-headline">{story.headline}</p>
+              {story.sub && <p className="xp-sub pe-sub" data-testid="v3-sub">{story.sub}</p>}
+            </div>
+            {story.badge && (
+              <div className="xp-score" role="group" aria-label={t("pe.badge.label")} data-testid="trust-badge">
+                <span className={`xp-score-num pe-badge is-${story.badge}`}>{t(`pe.trust.${story.badge}`)}</span>
+                <span className="xp-score-label">{t("pe.badge.label")}</span>
+              </div>
+            )}
+          </div>
+          <dl className="xp-facts pe-facts">
+            {story.tiles.map((x) => (
+              <div key={x.key} className="xp-fact" data-testid={`tile-${x.key}`}><dt>{x.label}</dt><dd>{x.value}{x.sub && <span className="muted small"> {x.sub}</span>}</dd></div>
+            ))}
+          </dl>
+        </section>
+        {story.notice && <p className="xp-sub pe-notice" data-testid="v3-notice">{story.notice}</p>}
 
-      <section className="xai-overall" aria-labelledby="v3-verdict" data-testid="v3-verdict">
-        <h2 id="v3-verdict" className="xai-h">{t("price.expl.predictedTitle")}</h2>
-        <dl className="kv">
-          <dt>{t("hist.col.crop")} · {t("hist.col.market")}</dt><dd><strong>{crop}</strong> · {market}</dd>
-          {!ctxOnly && (<>
-            <dt>{proj ? t("price.v3.startEstimated") : t("price.v3.startLatest")}</dt>
-            <dd>{rupees(h.start_price)} <span className="muted small">{t("price.expl.perQuintal")} · {proj
-              ? t("price.v3.startBasedOn", { date: fmtDate(proj.reference_origin_date) })
-              : t("price.v3.startReported", { date: fmtDate(explain.forecast_origin_date) })}</span></dd>
-          </>)}
-          {h.horizon && (<><dt>{t("price.result.daysAhead")}</dt><dd data-testid="v3-horizon">{horizonText(t, h.horizon)}</dd></>)}
-          {!ctxOnly && (<>
-            <dt>{aboutSame ? t("price.v3.modelEstimate") : t("price.expl.expectedPrice")}</dt>
-            <dd><strong>{rupees(h.predicted_price)}</strong> <span className="muted small">{t("price.expl.perQuintal")} · {fmtDate(h.target_date)}</span></dd>
-            <dt>{t("price.expl.expectedChange")}</dt><dd>{sign}{rupees(Math.abs(h.change_inr))} ({sign}{Math.abs(h.change_pct).toFixed(1)}%)</dd>
-          </>)}
-          {h.range && (<><dt>{t("price.v3.rangeLabel")}</dt>
-            <dd data-testid="v3-range">{rupees(h.range[0])} – {rupees(h.range[1])} <span className="muted small">{t("price.expl.perQuintal")}</span>
-              <div className="muted small">{h.range_coverage_pct != null
-                ? t("price.v3.rangeMeasured", { pct: Math.round(h.range_coverage_pct) })
-                : t("price.v3.rangeUnmeasured")}</div></dd></>)}
-          {h.range_hidden && (<><dt>{t("price.v3.rangeLabel")}</dt><dd data-testid="v3-range-hidden">{t("price.result.rangeHidden")}</dd></>)}
-        </dl>
-        <p className={`xai-line ${verdictClass}`} data-testid="v3-headline" style={{ fontSize: "1.05rem" }}>
-          {verdictClass && <TriangleAlert size={16} aria-hidden="true" />}{headlineText ? <strong>{headlineText}</strong> : <ServerText>{h.text}</ServerText>}
-        </p>
-        {aboutSame && <p className="small muted" data-testid="v3-headline-sub">{modelEstimateText(t, verdict)}{h.typical_miss_inr != null && <> {t("price.result.typicalMiss", { amount: rupees(h.typical_miss_inr) })}</>}</p>}
-        {ctxOnly && v.context_reason && <p className="small muted" data-testid="v3-context-reason"><ServerText>{v.context_reason}</ServerText></p>}
-      </section>
-
-      <section aria-labelledby="v3-why">
-        <h2 id="v3-why" className="xai-h">{ctxOnly ? t("price.v3.contextTitle") : t("price.v3.whyTitle")}</h2>
-        <p className="muted small">{ctxOnly ? t("price.v3.contextHint") : t("price.v3.whyHint")}</p>
-        <ul className="factor-cards v3-cards">
-          {v.cards.map((c) => <ReasonCard key={c.group} c={c} isState={isState} />)}
-        </ul>
-        {other && <div className="xai-overall v3-other" data-testid="v3-other">
-          <strong>{t("price.v3.otherTitle", { amount: `${other.inr_total >= 0 ? "+" : "−"}${rupees(Math.abs(other.inr_total_rounded))}` })}</strong>
-          <p className="small muted" style={{ margin: "0.2rem 0 0" }}>{t("price.v3.otherHint")}</p>
-          <details className="small">
-            <summary>{t("price.v3.otherDetails")}</summary>
-            <ul className="xai-limits">
-              {other.parts.map((p) => <li key={p.label}><ServerText>{p.label}</ServerText>: {p.inr >= 0 ? "+" : "−"}{rupees(Math.abs(p.inr))}</li>)}
-              {other.swing_evidence && <li><ServerText>{other.swing_evidence}</ServerText></li>}
-            </ul>
-          </details>
-        </div>}
-        {v.evidence_not_used_by_model.length > 0 && (
-          <details className="small" data-testid="v3-unused">
-            <summary>{t("price.v3.notUsedTitle")}</summary>
-            <ul className="xai-limits">
-              {v.evidence_not_used_by_model.map((u) => <li key={u.group}><strong>{u.title}:</strong> <ServerText>{u.evidence}</ServerText></li>)}
-            </ul>
-          </details>
-        )}
-      </section>
-
-      <section aria-labelledby="v3-market" data-testid="v3-market">
-        <h2 id="v3-market" className="xai-h">{t("price.v3.marketTitle")}</h2>
-        <p style={{ margin: 0 }}><ServerText>{mkt.text}</ServerText></p>
-        {mkt.evidence && <p className="small muted" style={{ margin: "0.2rem 0 0" }}><ServerText>{mkt.evidence}</ServerText></p>}
-        {mkt.note && <p className="small xai-caution"><ServerText>{mkt.note}</ServerText></p>}
-      </section>
-
-      <section aria-labelledby="v3-trust" data-testid="v3-trust">
-        <h2 id="v3-trust" className="xai-h">{t("price.v3.trustTitle")}</h2>
-        <ul className="xai-limits">
-          {v.trust.lines.map((l) => <li key={l}><ServerText>{l}</ServerText></li>)}
-          {v.trust.warnings.map((w) => <li key={w} className="xai-caution"><ServerText>{w}</ServerText></li>)}
-        </ul>
-      </section>
-    </>
+        <section className="card xp-section" aria-labelledby="pe-why">
+          <h2 id="pe-why" className="cr-h2">{story.ctxOnly ? t("pe.why.ctxTitle") : t("pe.why.title")}</h2>
+          <p className="xp-intro">{story.ctxOnly ? t("pe.why.ctxIntro") : t("pe.why.intro")}</p>
+          <ol className="xp-steps" data-testid="steps">
+            {story.steps.map((s, i) => (
+              <Step key={s.key} n={i + 1} id={`pe-${s.key}`} icon={STEP_ICON[s.key]} title={s.title} headline={s.headline} tone={s.tone}>
+                {s.chip && <div><Chip kind={s.chip} t={t} /></div>}
+                <p className="xp-text">{s.text}</p>
+                {s.push && (
+                  <p className="xp-sub" data-testid="step-push">
+                    {s.push.kind === "none" ? t("pe.push.none") : t(s.push.kind === "up" ? "pe.push.up" : "pe.push.down", { amount: s.push.amount })}
+                    {s.against && <> <strong>{t("pe.against")}</strong></>}
+                  </p>
+                )}
+              </Step>
+            ))}
+          </ol>
+          <aside className="xp-summary" aria-labelledby="pe-final" data-testid="final-explanation">
+            <h3 id="pe-final">{t("pe.final.title")}</h3>
+            <p>{story.final}</p>
+            <p className="xp-disclaimer">{t("price.expl.note")}</p>
+          </aside>
+        </section>
+        <Technical v={v} story={story} isState={isState} />
+      </div>
+    </div>
   );
 }
