@@ -49,11 +49,10 @@ export default function Financials({ result, response }) {
     <section className="card" aria-labelledby="fin-title">
       <h2 id="fin-title" className="cr-h2">{t("cr.fin.title", { crop })}</h2>
       {!result.feasible && <Alert type="warn">{t(`cr.fin.${e?.status === "spoiled" ? "spoiled" : "notReady"}`, { crop })}</Alert>}
-      {best && <BestTimeHero result={result} response={response} reliable={rel === "tested"} />}
+      {best && <BestTimeHero result={result} response={response} />}
       {ok && <ProfitFlow e={e} />}
-      {m && rel !== "tested" && (
-        <p className="fin-warn" role="status"><TriangleAlert size={16} aria-hidden="true" />
-          {t(m.beyond_model_horizon ? "cr.fin.beyondWarning" : "cr.fin.limitedWarning")}</p>
+      {m && rel !== "tested" && m.beyond_model_horizon && (
+        <p className="fin-warn" role="status"><TriangleAlert size={16} aria-hidden="true" />{t("cr.fin.beyondWarning")}</p>
       )}
 
       <div className="fin-grid">

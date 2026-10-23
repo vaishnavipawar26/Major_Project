@@ -45,10 +45,16 @@ describe("best crop card", () => {
     expect(container.querySelector(".best-warning")).toBeNull();
   });
 
-  it("still shows the limited-accuracy fact and warning when the forecast is less reliable", () => {
+  it("shows no limited-accuracy fact or warning, even when the forecast is less reliable", () => {
     const { container } = render(<BestCropCard response={response("limited")} onSelect={() => {}} />);
-    expect(container.textContent).toContain("Limited accuracy");
-    expect(container.querySelector(".best-warning").textContent).toMatch(/limited reliability/);
+    expect(container.textContent).not.toMatch(/Limited accuracy|limited reliability|rough guide/i);
+    expect(container.querySelector(".best-warning")).toBeNull();
+    expect(container.querySelectorAll(".best-stat")).toHaveLength(4);
+  });
+
+  it("still says so when no price forecast could be made", () => {
+    const { container } = render(<BestCropCard response={response("unavailable")} onSelect={() => {}} />);
+    expect(container.textContent).toContain("No price forecast could be made.");
     expect(container.querySelectorAll(".best-stat")).toHaveLength(5);
   });
 });
@@ -56,16 +62,17 @@ describe("best crop card", () => {
 describe("best time to sell", () => {
   it("has no green 'Reliable' badge for a tested forecast, but keeps the useful 'already the best time' line", () => {
     const r = response("tested");
-    const { container } = render(<BestTimeHero result={r.results[0]} response={r} reliable />);
+    const { container } = render(<BestTimeHero result={r.results[0]} response={r} />);
     expect(container.querySelector(".best-hero-badge")).toBeNull();
     expect([...container.querySelectorAll("span")].some((s) => TESTING_WORDS.test(s.textContent.trim()))).toBe(false);
     expect(container.textContent).toContain("Your chosen month is already the best time to sell");
   });
 
-  it("keeps the 'Limited accuracy' caution badge", () => {
+  it("has no 'Limited accuracy' badge for a less reliable forecast", () => {
     const r = response("limited");
-    const { container } = render(<BestTimeHero result={r.results[0]} response={r} reliable={false} />);
-    expect(container.querySelector(".best-hero-badge.is-warn").textContent).toBe("Limited accuracy");
+    const { container } = render(<BestTimeHero result={r.results[0]} response={r} />);
+    expect(container.querySelector(".best-hero-badge")).toBeNull();
+    expect(container.textContent).not.toContain("Limited accuracy");
   });
 });
 
@@ -83,14 +90,15 @@ describe("dictionaries", () => {
   it.each(Object.keys(all))("%s has no testing-success texts left", (lang) => {
     const values = Object.values(all[lang]).join("\n");
     expect(values).not.toMatch(/passed testing|Passed testing|Tested and checked|चाचणीत पास|जाँच में पास/);
-    for (const k of ["price.result.validated", "price.kid.tested", "table.validated", "cr.rel.tested", "cr.rel.testedSub", "cr.hero.reliable"]) {
+    for (const k of ["price.result.validated", "price.kid.tested", "table.validated", "cr.rel.tested", "cr.rel.testedSub", "cr.hero.reliable",
+      "cr.rel.limited", "cr.rel.limitedSub", "cr.fin.limitedWarning", "cr.hero.limited"]) {
       expect(all[lang][k]).toBeUndefined();
     }
   });
 
   it.each(Object.keys(all))("%s still has the cautions, errors and farming warnings", (lang) => {
     for (const k of ["price.result.roughGuide", "price.kid.notTested", "price.form.roughBody", "price.form.roughValidated",
-      "cr.rel.limited", "cr.fin.limitedWarning", "cr.hero.limited", "table.lessReliable", "auth.errEmail", "auth.errPassword",
+      "table.lessReliable", "auth.errEmail", "auth.errPassword",
       "timeline.concl.spoiled", "timeline.concl.not_ready"]) {
       expect(typeof (all[lang][k] ?? en[k]), `${lang} ${k}`).toBe("string");
     }

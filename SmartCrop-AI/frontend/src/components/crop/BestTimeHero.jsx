@@ -1,10 +1,10 @@
-import { Calendar, CircleCheck, TriangleAlert } from "lucide-react";
+import { Calendar, CircleCheck } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { bestSellTime, monthYear } from "../../utils/cropPlan";
 import { monthLabel, rupees } from "../../utils/format";
 
 /** "Best time to sell": the one thing a farmer needs first, with a one-line comparison to their own month. */
-export default function BestTimeHero({ result, response, reliable }) {
+export default function BestTimeHero({ result, response }) {
   const t = useT();
   const b = bestSellTime(result, response);
   if (!b) return null;
@@ -26,9 +26,6 @@ export default function BestTimeHero({ result, response, reliable }) {
             <strong className="num">{rupees(b.price)}</strong>
             <span className="best-hero-label">{t("unit.perQuintal")}</span>
           </div>
-          {!reliable && (
-            <span className="best-hero-badge is-warn"><TriangleAlert size={14} aria-hidden="true" />{t("cr.hero.limited")}</span>
-          )}
         </div>
         {b.kind === "best" ? (
           <p className="best-hero-line is-good"><CircleCheck size={16} aria-hidden="true" />{t("cr.hero.alreadyBest")}</p>

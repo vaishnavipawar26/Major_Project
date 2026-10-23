@@ -22,9 +22,7 @@ export default {
   "cr.best.viewDetails": "See details",
   "cr.best.none": "No crop is a good match for your field, can be sold in your chosen month and is expected to make a profit. Try a different selling month or check your inputs.",
   "cr.best.noneTop": "{crop} has the highest estimated profit ({profit}) but does not pass the other checks for your field.",
-  "cr.rel.limited": "Limited accuracy",
   "cr.rel.unavailable": "Not available",
-  "cr.rel.limitedSub": "Treat the price as a rough guide.",
   "cr.rel.unavailableSub": "No price forecast could be made.",
 
   // ---- 3. compare
@@ -219,12 +217,10 @@ export default {
   "cr.table.rank": "Overall rank",
   "cr.table.profitRank": "Profit rank",
   "cr.table.sortNote": "Table sorted by overall rank (soil and weather fit, timing and profit). The chart above is sorted by estimated profit, so the order can differ.",
-  "cr.fin.limitedWarning": "Forecast has limited reliability. Use as a rough guide and check current mandi prices.",
   "cr.fin.beyondWarning": "Your selling month is further ahead than the price model was built to forecast. Use this estimate as a rough guide and check current mandi prices.",
   "cr.fin.dataNote": "Recorded mandi prices end in {dataEnd}. Later months on the graph are model estimates, not recorded prices.",
   "cr.hero.label": "Best time to sell",
   "cr.hero.expected": "Expected price",
-  "cr.hero.limited": "Limited accuracy",
   "cr.hero.monthlyNote": "Prices are monthly estimates, not exact daily prices.",
   "cr.hero.alreadyBest": "Your chosen month is already the best time to sell",
   "cr.hero.similar": "Prices stay similar, so you can sell in your chosen month.",
