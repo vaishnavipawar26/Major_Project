@@ -68,6 +68,10 @@ class RecommendationHistoryItem(BaseModel):
     planting_date: str | None = None
     selling_date: str | None = None
     area_acres: float | None = None
+    budget_inr: float | None = None
+    priority: str | None = None
+    risk_level: str | None = None
+    personal_pick: str | None = None      # added when the history is read (the plan is re-derived, not stored)
     created_at: datetime
     results: list[RecommendationResultItem]
 

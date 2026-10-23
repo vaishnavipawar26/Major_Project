@@ -33,6 +33,10 @@ class CropRecommendation(Base):
     planting_date: Mapped[str | None] = mapped_column(String(7), nullable=True)  # YYYY-MM
     selling_date: Mapped[str | None] = mapped_column(String(7), nullable=True)
     area_acres: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # optional budget- and risk-aware plan inputs (NULL = the farmer left them empty; see docs/budget_plan.md)
+    budget_inr: Mapped[float | None] = mapped_column(Float, nullable=True)
+    priority: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    risk_level: Mapped[str | None] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(),
                                                  nullable=False)
 

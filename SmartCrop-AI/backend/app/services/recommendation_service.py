@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.ml.common.reference import STATE
 from app.ml.common.seasons import season_for_month
+from app.ml.crop_recommendation.budget_plan import build_plan
 from app.ml.crop_recommendation.recommender import CropRecommender
 from app.models.crop_recommendation import CropRecommendation, RecommendationResult
 from app.models.user import User
@@ -73,7 +74,10 @@ def analyze(rec: CropRecommender, body: CropRequest) -> dict:
         warnings.append("No crop is a good match for your field, sellable in the chosen month "
                         "and expected to make a profit. Try a different selling month or "
                         "check your inputs.")
-    return {**out, "season_used": season_for_month(body.planting_month), "warnings": warnings}
+    result = {**out, "season_used": season_for_month(body.planting_month), "warnings": warnings}
+    if body.budget_inr is not None or body.priority or body.risk_level:       # otherwise the output is exactly the standard one
+        result["personal_plan"] = build_plan(out, body.budget_inr, body.priority, body.risk_level)
+    return result
 
 
 def recommend(db: Session, user: User, rec: CropRecommender, body: CropRequest) -> dict:
@@ -89,6 +93,7 @@ def recommend(db: Session, user: User, rec: CropRecommender, body: CropRequest) 
         season=out["season_used"], state=STATE, city=out["city"],
         selling_month=body.selling_month, planting_date=out["planting_date"],
         selling_date=out["selling_date"], area_acres=body.area_acres,
+        budget_inr=body.budget_inr, priority=body.priority, risk_level=body.risk_level,
     )
     for r in out["results"]:
         e, m = r["economics"], r["market"]

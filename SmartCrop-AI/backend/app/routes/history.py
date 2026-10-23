@@ -8,7 +8,8 @@ from app.models.price_prediction import PricePrediction
 from app.models.user import User
 from app.schemas.history import (HistorySummary, PriceHistoryItem, PriceHistoryPage,
                                  RecommendationHistoryItem, RecommendationHistoryPage)
-from app.services import history_service
+from app.schemas.crop_recommendation import CropRequest
+from app.services import history_service, recommendation_service
 
 router = APIRouter(prefix="/api/history", tags=["History"])
 
@@ -26,9 +27,31 @@ def _with_policy(items: list, request: Request) -> list:
     return out
 
 
+def _with_pick(items: list, request: Request) -> list:
+    """Attach the personalised pick (re-derived from the saved inputs; only for records that have a budget, priority or risk level)."""
+    reg = getattr(request.app.state, "registry", None) if hasattr(request.app.state, "registry") else None
+    rec = getattr(reg, "crop", None)
+    out = []
+    for it in items:
+        m = RecommendationHistoryItem.model_validate(it)
+        if rec is not None and m.city and m.selling_month and (m.budget_inr is not None or m.priority or m.risk_level):
+            try:
+                body = CropRequest(nitrogen=m.nitrogen, phosphorus=m.phosphorus, potassium=m.potassium, temperature=m.temperature,
+                                   humidity=m.humidity, ph=m.ph, rainfall=m.rainfall, soil_type=m.soil_type or "unknown", city=m.city,
+                                   planting_month=m.month, selling_month=m.selling_month, area_acres=m.area_acres or 1.0,
+                                   budget_inr=m.budget_inr, priority=m.priority, risk_level=m.risk_level)
+                plan = recommendation_service.analyze(rec, body).get("personal_plan")
+                m = m.model_copy(update={"personal_pick": plan["best_for_you"] if plan else None})
+            except Exception:    # the history must still load
+                pass
+        out.append(m)
+    return out
+
+
 @router.get("/summary", response_model=HistorySummary)
 def summary(request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
     s = history_service.summary(db, user.id)
+    s["recent_recommendations"] = _with_pick(s["recent_recommendations"], request)
     s["recent_predictions"] = _with_policy(s["recent_predictions"], request)
     return s
 
@@ -55,16 +78,18 @@ def delete_price(item_id: int, user: User = Depends(get_current_user),
 
 
 @router.get("/recommendations", response_model=RecommendationHistoryPage)
-def recommendation_history(limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0),
+def recommendation_history(request: Request, limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0),
                            user: User = Depends(get_current_user),
                            db: Session = Depends(get_db)) -> dict:
-    return history_service.list_recommendations(db, user.id, limit, offset)
+    page = history_service.list_recommendations(db, user.id, limit, offset)
+    page["items"] = _with_pick(page["items"], request)
+    return page
 
 
 @router.get("/recommendations/{item_id}", response_model=RecommendationHistoryItem)
-def recommendation_item(item_id: int, user: User = Depends(get_current_user),
+def recommendation_item(item_id: int, request: Request, user: User = Depends(get_current_user),
                         db: Session = Depends(get_db)):
-    return history_service.get_recommendation(db, user.id, item_id)
+    return _with_pick([history_service.get_recommendation(db, user.id, item_id)], request)[0]
 
 
 @router.delete("/recommendations/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

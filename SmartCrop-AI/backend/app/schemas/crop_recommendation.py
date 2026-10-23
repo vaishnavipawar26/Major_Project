@@ -47,6 +47,10 @@ class TimingInputs(SoilWeatherInputs):
 class CropRequest(TimingInputs):
     state: Literal["Maharashtra"] = "Maharashtra"
     area_acres: float = Field(default=1.0, gt=0, le=1000)
+    # optional budget- and risk-aware plan; all empty = the standard recommendation, unchanged
+    budget_inr: float | None = Field(default=None, gt=0, le=1_000_000_000, description="Money available for this crop, rupees")
+    priority: Literal["spend_less", "balanced", "highest_profit"] | None = None
+    risk_level: Literal["low", "medium", "high"] | None = None
     planting_year: int | None = Field(default=None, ge=2024, le=2035,
                                       description="Defaults to the next occurrence of the "
                                                   "planting month")
@@ -224,6 +228,7 @@ class CropAnalysis(BaseModel):
     growing_months: int
     area_acres: float
     generated_at: str
+    personal_plan: dict | None = None     # only when the farmer gave a budget, priority or risk level
     best_overall: str | None
     highest_profit: str | None
     ranking_explanation: RankingExplanation
