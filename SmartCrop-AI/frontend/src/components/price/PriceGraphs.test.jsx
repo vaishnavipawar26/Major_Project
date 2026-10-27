@@ -1,0 +1,380 @@
+// @vitest-environment jsdom
+import { cleanup, render, screen } from "@testing-library/react";
+import { cloneElement } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("recharts", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, ResponsiveContainer: ({ children }) => <div>{cloneElement(children, { width: 900, height: 400 })}</div> };
+});
+
+import FactorBars, { axisTicks, orderRows } from "./FactorBars";
+import SimplePriceChart, { chartRows, makeScale } from "./SimplePriceChart";
+import ConditionMeanings, { phBand, tempBand } from "./ConditionMeanings";
+import FieldConditions from "./FieldConditionsOverview";
+import UnderstandPrediction from "./UnderstandPrediction";
+import { aboutPct, barRows, calculation, explanationOk, splitSteps } from "./factorModel";
+
+afterEach(cleanup);
+
+// ---- synthetic fixtures (clearly not real market data or real model output)
+const DAY = 86400000;
+const observed = [{ date: "2025-12-20", price: 1000 }, { date: "2025-12-22", price: 1020 }, { date: "2025-12-31", price: 1100 }];
+const path = [1, 2, 3].map((i) => ({ date: `2026-11-0${i}`, predicted_price: 1200 + i, beats_baseline: true }));
+const base = { observed, chart_path: path, chart_end_date: "2026-11-03", target_date: "2026-11-02", input_date: "2026-10-30" };
+const selected = { price: 1201, source: "forecast" };
+
+describe("time axis", () => {
+  it("collapses a long stretch without records into one narrow band, and leaves short gaps alone", () => {
+    const last = Date.parse("2025-12-31T00:00:00Z"), next = Date.parse("2026-11-01T00:00:00Z");
+    const { scale, gap } = makeScale(last, next);
+    expect(gap).not.toBeNull();
+    expect(scale(last)).toBe(last);
+    expect(scale(next) - scale(last)).toBeLessThan(15 * DAY);        // ten months drawn as about 12 days
+    expect(scale(next + 2 * DAY) - scale(next)).toBe(2 * DAY);       // real spacing resumes after the gap
+    expect(makeScale(last, last + 10 * DAY).gap).toBeNull();
+    expect(makeScale(null, next).gap).toBeNull();
+  });
+});
+
+describe("chartRows", () => {
+  it("breaks the line across a long gap instead of joining real reports", () => {
+    const rows = chartRows({ observed: [{ date: "2025-10-01", price: 1 }, { date: "2025-12-01", price: 2 }] });
+    expect(rows.some((r) => r.hist === null)).toBe(true);
+  });
+  it("marks only the last real report as the latest actual price", () => {
+    const rows = chartRows({ observed });
+    expect(rows.filter((r) => r.last != null)).toHaveLength(1);
+    expect(rows.find((r) => r.last != null).real).toBe(Date.parse("2025-12-31T00:00:00Z"));
+  });
+  it("keeps historical, expected and selected values in separate series and in date order", () => {
+    const rows = chartRows({ observed, expected: [{ date: "2026-11-02", price: 1201 }], selected: 1201, targetDate: "2026-11-02" });
+    expect(rows.filter((r) => r.hist != null)).toHaveLength(3);
+    expect(rows.filter((r) => r.exp != null)).toHaveLength(1);
+    expect(rows.filter((r) => r.sel != null)).toHaveLength(1);
+    expect(rows.every((r) => r.hist == null || r.exp == null)).toBe(true);
+    expect(rows.map((r) => r.x)).toEqual([...rows.map((r) => r.x)].sort((a, b) => a - b));
+    expect(rows.map((r) => r.real).filter((v) => v)).toEqual([...rows.map((r) => r.real)].sort((a, b) => a - b));
+  });
+});
+
+describe("SimplePriceChart", () => {
+  it("allowed forecast: exactly three legend items, a small selling-date marker, and one note saying the latest price is not today's", () => {
+    render(<SimplePriceChart forecast={base} ctxOnly={false} selected={selected} crop="Cabbage" market="APMC X" />);
+    const legend = screen.getByTestId("chart-legend");
+    for (const w of ["Past prices", "Latest price (reference)", "Expected future price"]) expect(legend.textContent).toContain(w);
+    expect(legend.children).toHaveLength(3);
+    expect(document.querySelector("[data-testid=simple-chart] svg").textContent).toContain("Selling date");
+    const note = screen.getByTestId("latest-note").textContent;
+    expect(note).toContain("₹1,100 per quintal on 31 Dec 2025");
+    expect(note).toContain("not today's price");
+    expect(screen.getByTestId("chart-notes").querySelectorAll("p")).toHaveLength(1);   // no extra notes cluttering the chart
+  });
+  it("does not call a price today's when the latest record is from today", () => {
+    render(<SimplePriceChart forecast={{ ...base, input_date: "2025-12-31" }} ctxOnly={false} selected={selected} crop="Cabbage" market="APMC X" />);
+    expect(screen.getByTestId("latest-note").textContent).not.toContain("not today's price");
+  });
+  it("history-only crop: no expected series, no gap, and the reason is stated", () => {
+    render(<SimplePriceChart forecast={base} ctxOnly selected={selected} crop="Onion" market="APMC X" />);
+    expect(screen.getByTestId("chart-legend").textContent).not.toContain("Expected future price");
+    expect(screen.getByTestId("no-forecast-line").textContent).toContain("No forecast is shown for Onion");
+    expect(document.querySelector(".alert")).toBeNull();
+  });
+  it("only forecast points that beat the baseline are drawn", () => {
+    const f = { ...base, chart_path: path.map((p) => ({ ...p, beats_baseline: false })) };
+    render(<SimplePriceChart forecast={f} ctxOnly={false} selected={selected} crop="Cabbage" market="APMC X" />);
+    expect(screen.getByTestId("chart-legend").textContent).not.toContain("Expected future price");
+  });
+  it("no historical prices and no forecast: a short message, no chart", () => {
+    render(<SimplePriceChart forecast={{ ...base, observed: [] }} ctxOnly selected={null} crop="Onion" market="APMC X" />);
+    expect(screen.getByTestId("no-history")).toBeTruthy();
+    expect(screen.queryByTestId("simple-chart")).toBeNull();
+  });
+});
+
+// synthetic explanation: base 0.01, contributions in log units, output = base + sum
+const local = (over = {}) => ({
+  start_price: 1000, baseline_inr: 10, baseline_price: 1010, end_price: 1040.8, forecast_price: 1040.8, matches_forecast: true,
+  steps: [
+    { group: "season", title: "Seasonal pattern", help: "h", inr: -20, log_contribution: -0.02, direction: "down" },
+    { group: "price_level", title: "Current price level", help: "h", inr: 45, log_contribution: 0.04, direction: "up" },
+    { group: "arrivals", title: "Market arrivals (supply)", help: "h", inr: 5, log_contribution: 0.005, direction: "up" },
+  ], ...over,
+});
+const exp = (over = {}) => ({ base_value: 0.01, date: "2026-11-02", technical: { reconstruction_ok: true, model_output_log: 0.035 }, charts: { local: local() }, ...over });
+
+describe("factorModel (model units, not rupees)", () => {
+  it("orders bars by SHAP size, folds the small ones into one and keeps every value", () => {
+    const many = local({ steps: Array.from({ length: 10 }, (_, i) => ({ group: `g${i}`, title: `G${i}`, help: "", log_contribution: (i + 1) / 100 })) });
+    const rows = barRows(many, 6);
+    expect(rows).toHaveLength(7);
+    expect(rows[0].value).toBeCloseTo(0.1);
+    expect(rows.at(-1).key).toBe("other");
+    expect(rows.at(-1).value).toBeCloseTo(0.01 + 0.02 + 0.03 + 0.04);
+  });
+  it("splits real rises and falls", () => {
+    const { up, down } = splitSteps(local());
+    expect(up.map((s) => s.group)).toEqual(["price_level", "arrivals"]);
+    expect(down.map((s) => s.group)).toEqual(["season"]);
+  });
+  it("the calculation adds up to the model output, and a mismatch is caught", () => {
+    const c = calculation(exp());
+    expect(c.sum).toBeCloseTo(0.025);
+    expect(c.ok).toBe(true);
+    expect(c.price).toBeCloseTo(1000 * Math.exp(0.035), 6);
+    expect(calculation(exp({ technical: { model_output_log: 0.2 } })).ok).toBe(false);
+  });
+  it("a log value means about that percent on the price", () => {
+    expect(aboutPct(0.05)).toBeCloseTo(5.127, 2);
+  });
+  it("trusts an explanation only for an allowed crop that adds up", () => {
+    expect(explanationOk(exp(), false)).toBe(true);
+    expect(explanationOk(exp(), true)).toBe(false);
+    expect(explanationOk(exp({ technical: { reconstruction_ok: false } }), false)).toBe(false);
+    expect(explanationOk(exp({ charts: { local: local({ matches_forecast: false }) } }), false)).toBe(false);
+    expect(explanationOk(exp({ v3: { context_only: true } }), false)).toBe(false);
+    expect(explanationOk(null, false)).toBe(false);
+  });
+});
+
+describe("FactorBars (What Affects Your Crop Price?)", () => {
+  it("puts the factors that push the price higher first, tallest first, then the ones pushing it lower, 'Other' last", () => {
+    const rows = orderRows([{ key: "a", value: -0.03 }, { key: "other", value: 0.001 }, { key: "b", value: 0.05 }, { key: "c", value: 0.01 }, { key: "d", value: -0.01 }]);
+    expect(rows.map((r) => r.key)).toEqual(["b", "c", "d", "a", "other"]);
+  });
+  it("axis ticks are evenly spaced and always include zero", () => {
+    const t = axisTicks(-0.0446, 0.0742);
+    expect(t).toContain(0);
+    expect(t[1] - t[0]).toBeCloseTo(t[2] - t[1], 9);
+    expect(Math.min(...t)).toBeGreaterThanOrEqual(-0.0446);
+    expect(Math.max(...t)).toBeLessThanOrEqual(0.0742);
+  });
+  it("draws the chart with the legend and the exact explanation text, and no plus signs or percentages beside the bars", () => {
+    render(<FactorBars exp={exp()} ctxOnly={false} crop="Cabbage" />);
+    const root = screen.getByTestId("factor-bars");
+    expect(screen.getByTestId("fb-legend").textContent).toBe("Pushes the price upPushes the price down");
+    expect(screen.getByTestId("fb-explain").textContent).toBe("Green bars show factors that push the predicted price higher. Red bars show factors that push it lower. The size of each bar shows how strongly that factor contributes to the model's prediction. These factors help explain the model's estimate; they do not guarantee that the market price will rise or fall. Check today's mandi price before deciding when to sell.");
+    const chartText = Array.from(root.querySelectorAll("svg text")).map((n) => n.textContent).join(" ");
+    expect(chartText).not.toMatch(/[+%]/);
+    expect(root.querySelector("h3")).toBeNull();
+  });
+  it("draws green bars for positive contributions and red bars for negative ones", () => {
+    render(<FactorBars exp={exp()} ctxOnly={false} crop="Cabbage" />);
+    const fills = Array.from(document.querySelectorAll("[data-testid=factor-bars] rect, [data-testid=factor-bars] path")).map((n) => n.getAttribute("fill"));
+    expect(fills.filter((f) => f === "#1f7a45")).toHaveLength(2);   // price level and arrivals
+    expect(fills.filter((f) => f === "#c43f2f")).toHaveLength(1);   // season
+  });
+  it("a history-only crop, a missing explanation or a bad one shows a short message, never bars", () => {
+    render(<FactorBars exp={exp()} ctxOnly crop="Onion" />);
+    expect(screen.getByTestId("fb-unavailable").textContent).toContain("No expected price is shown for Onion");
+    cleanup();
+    render(<FactorBars exp={null} ctxOnly={false} crop="Cabbage" />);
+    expect(screen.getByTestId("fb-unavailable")).toBeTruthy();
+    cleanup();
+    render(<FactorBars exp={exp({ technical: { reconstruction_ok: false } })} ctxOnly={false} crop="Cabbage" />);
+    expect(screen.queryByTestId("factor-bars")).toBeNull();
+  });
+  it("never shows weather or soil as a factor", () => {
+    render(<FactorBars exp={exp()} ctxOnly={false} crop="Cabbage" />);
+    expect(screen.getByTestId("factor-bars").textContent).not.toMatch(/temperature|rainfall|humidity|nitrogen|potassium|phosphorus|soil/i);
+  });
+});
+
+describe("UnderstandPrediction (short farmer version)", () => {
+  const view = (e = exp()) => render(<UnderstandPrediction exp={e} crop="Cabbage" targetDate="2026-11-02" />);
+
+  it("shows the predicted price, what pushes it higher, what pushes it lower, and what it means", () => {
+    view();
+    expect(screen.getByTestId("u-price").textContent).toContain("₹1,041");
+    expect(screen.getByTestId("u-up-price_level").textContent).toContain("Strong push");
+    expect(screen.getByTestId("u-up-arrivals").textContent).toContain("Small push");
+    expect(screen.getByTestId("u-down-season").textContent).toContain("−0.020");
+    expect(screen.getByTestId("u-meaning").textContent).toContain("higher price than its starting estimate");
+    expect(screen.getByTestId("u-meaning").textContent).toContain("Check today's mandi price");
+    expect(screen.getByTestId("u-caution").textContent).toContain("does not prove");
+  });
+  it("has only the four short sections and no technical tables, base value, weather or soil", () => {
+    view();
+    const t = screen.getByTestId("understand");
+    expect(t.querySelectorAll("h2")).toHaveLength(4);
+    expect(t.querySelector("table")).toBeNull();
+    expect(t.textContent).not.toMatch(/base value|log|temperature|rainfall|humidity|nitrogen|soil/i);
+  });
+  it("says so when nothing pushes the price one way", () => {
+    const only = local({ steps: [{ group: "season", title: "Seasonal pattern", help: "h", log_contribution: -0.02 }] });
+    view(exp({ charts: { local: only }, technical: { reconstruction_ok: true, model_output_log: -0.01 } }));
+    expect(screen.getByTestId("u-none-up")).toBeTruthy();
+  });
+});
+
+describe("Field Conditions: one combined chart (FieldConditionsOverview)", () => {
+  const wx = { state: "ok", data: { status: "forecast", date: "2026-11-02", temperature_c: 24, rainfall_mm: 6.2, humidity_pct: 80, place: "Pune (town centre)" } };
+  const soil = { state: "ok", data: { status: "estimate", ph: null, soil_type: "Vertisols" } };
+  const val = (id) => screen.getByTestId(`fc-${id}-value`).textContent;
+  const row = (id) => screen.getByTestId(`fc-${id}`);
+  const root = () => screen.getByTestId("field-conditions");
+
+  it("is ONE chart with one row per condition and the retrieved values beside the bars (24 °C, 80%, 6.2 mm, pH unavailable, Vertisols, location unavailable)", () => {
+    render(<FieldConditions weather={wx} soil={soil} />);
+    expect(root().querySelectorAll(".recharts-wrapper")).toHaveLength(1);          // a single chart, not six boxes
+    expect(root().querySelectorAll("li")).toHaveLength(0);                          // the old six-box layout is gone
+    expect(Array.from(root().querySelectorAll("[data-testid^=fc-][data-status]")).map((g) => g.getAttribute("data-testid")))
+      .toEqual(["fc-temperature", "fc-humidity", "fc-rainfall", "fc-ph", "fc-soil", "fc-location"]);
+    expect(val("temperature")).toBe("24 °C");
+    expect(val("humidity")).toBe("80%");
+    expect(val("rainfall")).toBe("6.2 mm");
+    expect(val("ph")).toBe("Unavailable");
+    expect(val("soil")).toBe("Vertisols");
+    expect(val("location")).toBe("Unavailable — no crop-origin data");
+  });
+  it("each number is drawn on its own scale (printed under its label); a bar's length is that value's place in its own range", () => {
+    render(<FieldConditions weather={wx} soil={soil} />);
+    const text = root().textContent;
+    expect(text).toContain("0–50 °C");
+    expect(text).toContain("0–100 %");
+    expect(text).toContain("0–50 mm");
+    expect(text).toContain("0–14");
+    expect(screen.getByTestId("fc-scale-note").textContent).toContain("own scale");
+    const filled = (id) => Number(row(id).querySelectorAll("rect")[1].getAttribute("width")) / Number(row(id).querySelectorAll("rect")[0].getAttribute("width"));
+    expect(filled("temperature")).toBeCloseTo(24 / 50, 1);
+    expect(filled("humidity")).toBeCloseTo(0.8, 1);
+    expect(filled("rainfall")).toBeCloseTo(6.2 / 50, 1);
+  });
+  it("soil type is a category pill with no bar, and unavailable rows are a dashed empty track, never a bar", () => {
+    render(<FieldConditions weather={wx} soil={soil} />);
+    expect(row("soil").querySelectorAll("rect")).toHaveLength(1);                  // just the pill
+    expect(row("soil").querySelector("rect").getAttribute("rx")).toBe("12");
+    for (const id of ["ph", "location"]) {
+      expect(row(id).getAttribute("data-status")).toBe("unavailable");
+      expect(row(id).querySelectorAll("rect")).toHaveLength(1);                    // an empty outline only
+      expect(row(id).querySelector("rect").getAttribute("stroke-dasharray")).toBe("4 3");
+      expect(row(id).querySelector("rect").getAttribute("fill")).toBe("none");
+    }
+  });
+  it("shows short sources and the required statement, with no SHAP, score, correlation or price effect", () => {
+    render(<FieldConditions weather={wx} soil={{ state: "ok", data: { status: "estimate", ph: 6.8, soil_type: "Vertisols" } }} />);
+    const src = screen.getByTestId("fc-sources").textContent;
+    expect(src).toContain("Weather: Open-Meteo forecast.");
+    expect(src).toContain("Soil: regional SoilGrids estimate, not a measurement from the farmer's field.");
+    expect(src).toContain("Growing location: unavailable when crop-origin data is missing.");
+    expect(screen.getByTestId("fc-note").textContent).toBe("Environmental conditions shown for context; these factors are not inputs to the current price prediction model.");
+    expect(root().textContent).not.toMatch(/shap|score|correlat|raise|lower|increase|decrease|push/i);
+    expect(val("ph")).toBe("6.8");
+  });
+  it("missing weather and soil read Unavailable on dashed rows, never 0 and never a bar", () => {
+    render(<FieldConditions weather={{ state: "ok", data: { status: "unavailable", temperature_c: null } }} soil={{ state: "ok", data: { status: "unavailable", ph: null, soil_type: null } }} />);
+    for (const id of ["temperature", "humidity", "rainfall", "ph", "soil"]) {
+      expect(val(id)).toBe("Unavailable");
+      expect(row(id).getAttribute("data-status")).toBe("unavailable");
+      expect(row(id).querySelectorAll("rect")).toHaveLength(1);
+    }
+    const values = Array.from(root().querySelectorAll("[data-testid$=-value]")).map((n) => n.textContent);
+    expect(values.filter((v) => /\d/.test(v))).toEqual([]);                           // no number is shown for any missing value
+    expect(screen.getByTestId("fc-sources").textContent).not.toContain("Open-Meteo");
+  });
+  it("failed lookups, a partial soil answer and loading all render safely", () => {
+    render(<FieldConditions weather={{ state: "error", data: null }} soil={{ state: "error", data: null }} />);
+    expect(val("temperature")).toBe("Unavailable");
+    expect(val("ph")).toBe("Unavailable");
+    cleanup();
+    render(<FieldConditions weather={wx} soil={{ state: "ok", data: { status: "estimate", ph: null, soil_type: "Cambisols" } }} />);
+    expect(val("ph")).toBe("Unavailable");
+    expect(val("soil")).toBe("Cambisols");
+    cleanup();
+    render(<FieldConditions weather={{ state: "loading", data: null }} soil={{ state: "loading", data: null }} />);
+    expect(val("temperature")).toBe("…");
+    expect(row("temperature").getAttribute("data-status")).toBe("loading");
+  });
+  it("a typical-weather answer is labelled as not a forecast, and an out-of-range value fills its bar but still shows its true number", () => {
+    render(<FieldConditions weather={{ state: "ok", data: { ...wx.data, status: "typical", rainfall_mm: 120 } }} soil={soil} />);
+    expect(screen.getByTestId("fc-sources").textContent).toContain("not a forecast");
+    expect(val("rainfall")).toBe("120 mm");
+    const r = row("rainfall").querySelectorAll("rect");
+    expect(Number(r[1].getAttribute("width"))).toBeCloseTo(Number(r[0].getAttribute("width")), 0);
+  });
+  it("is separate from the SHAP chart and never lists these fields as model factors", () => {
+    render(<><FactorBars exp={exp()} ctxOnly={false} crop="Cabbage" /><FieldConditions weather={wx} soil={soil} /></>);
+    expect(screen.getByTestId("factor-bars").textContent).not.toMatch(/temperature|humidity|rainfall|soil|growing/i);
+    expect(screen.getByTestId("field-conditions").closest("[data-testid=factor-bars]")).toBeNull();
+  });
+});
+
+describe("ConditionMeanings (What Do These Conditions Mean for Your Crop?)", () => {
+  const wx = (over = {}) => ({ state: "ok", data: { status: "forecast", date: "2026-11-02", temperature_c: 31.4, rainfall_mm: 1.5, humidity_pct: 76, place: "Pune (town centre)", ...over } });
+  const soil = (over = {}) => ({ state: "ok", data: { status: "estimate", ph: 6.8, soil_type: "Vertisols", ...over } });
+  const view = (weather = wx(), soilState = soil(), crop = "Cabbage") => render(<ConditionMeanings crop={crop} market="APMC Pune" weather={weather} soil={soilState} />);
+  const txt = (id) => screen.getByTestId(`cm-${id}`).textContent;
+
+  it("shows the title and six short explanations in order, directly using the retrieved values and the selected crop", () => {
+    view();
+    expect(screen.getByRole("heading", { name: "What Do These Conditions Mean for Your Crop?" })).toBeTruthy();
+    const ids = Array.from(screen.getByTestId("condition-meanings").querySelectorAll("li")).map((l) => l.getAttribute("data-testid"));
+    expect(ids).toEqual(["cm-temperature", "cm-humidity", "cm-rainfall", "cm-ph", "cm-soil", "cm-location"]);
+    expect(txt("temperature")).toContain("31.4 °C");
+    expect(txt("temperature")).toContain("hot");
+    expect(txt("temperature")).toContain("Forecast for 2 Nov 2026");
+    expect(txt("temperature")).toContain("Cabbage");
+    expect(txt("humidity")).toContain("76%");
+    expect(txt("rainfall")).toContain("1.5 mm");
+    expect(txt("ph")).toContain("6.8");
+    expect(txt("ph")).toContain("close to neutral");
+    expect(txt("soil")).toContain("Vertisols");
+  });
+  it("the wording follows the values: they are not always described the same way, or as good or bad", () => {
+    expect([tempBand(12), tempBand(26), tempBand(36)]).toEqual(["cool", "warm", "veryHot"]);
+    expect([phBand(5), phBand(6.5), phBand(8)]).toEqual(["acidic", "neutral", "alkaline"]);
+    view(wx({ temperature_c: 12, humidity_pct: 30, rainfall_mm: 0 }), soil({ ph: 8.1, soil_type: "Leptosols" }), "Onion");
+    expect(txt("temperature")).toContain("cool");
+    expect(txt("temperature")).toContain("Onion");
+    expect(txt("humidity")).toContain("dry");
+    expect(txt("humidity")).not.toContain("disease");
+    expect(txt("rainfall")).toContain("no rain");
+    expect(txt("ph")).toContain("alkaline");
+    expect(txt("soil")).toContain("thin, shallow soils");
+    cleanup();
+    view();
+    expect(txt("humidity")).toContain("high");
+    expect(txt("humidity")).toContain("diseases");
+    cleanup();
+    view(wx({ humidity_pct: 55 }));
+    expect(txt("humidity")).toContain("middle range");
+    expect(txt("humidity")).not.toContain("diseases");
+  });
+  it("unavailable weather and soil say there is not enough information, and never invent a value", () => {
+    view({ state: "ok", data: { status: "unavailable", temperature_c: null } }, { state: "ok", data: { status: "unavailable", ph: null, soil_type: null } });
+    for (const id of ["temperature", "humidity", "rainfall", "ph", "soil", "location"]) expect(txt(id)).toContain("not enough information");
+    expect(screen.getByTestId("condition-meanings").textContent).not.toMatch(/\d+(\.\d)? ?(°C|mm|%)/);
+    cleanup();
+    view({ state: "error", data: null }, { state: "error", data: null });
+    expect(txt("temperature")).toContain("not enough information");
+    expect(txt("ph")).toContain("not enough information");
+    cleanup();
+    view(wx(), soil({ ph: null }));                       // class known, pH missing: only the pH says so
+    expect(txt("ph")).toContain("not enough information");
+    expect(txt("soil")).toContain("Vertisols");
+  });
+  it("soil explanations say they are regional estimates, and an unlisted soil class gets no invented description", () => {
+    view(wx(), soil({ soil_type: "Podzols" }));
+    expect(txt("soil")).toContain("regional estimate");
+    expect(txt("ph")).toContain("regional estimate");
+    expect(txt("soil")).toContain("Podzols");
+    expect(txt("soil")).not.toMatch(/swell|thin|young|clay/);
+  });
+  it("growing location is always insufficient information and never assumes the selling market is the growing place", () => {
+    view();
+    expect(txt("location")).toContain("not enough information");
+    expect(txt("location")).toContain("no crop-origin data");
+    expect(txt("location")).toContain("APMC Pune");
+    expect(txt("location")).toContain("not necessarily where the crop was grown");
+  });
+  it("never says a condition raises or lowers the predicted price, and keeps each explanation short", () => {
+    view();
+    const lis = Array.from(screen.getByTestId("condition-meanings").querySelectorAll("li"));
+    for (const li of lis) {
+      expect(li.textContent).not.toMatch(/(rais|lower|increas|decreas|push|boost|reduc)\w*[^.]*price/i);
+      expect(li.textContent).not.toMatch(/%\s*(higher|lower)|score/i);
+      expect(li.querySelector("span").textContent.split(/[.!?](?:\s|$)/).filter(Boolean).length).toBeLessThanOrEqual(4);
+    }
+    expect(screen.getByTestId("condition-meanings").textContent).toContain("They do not change the predicted mandi price.");
+  });
+});

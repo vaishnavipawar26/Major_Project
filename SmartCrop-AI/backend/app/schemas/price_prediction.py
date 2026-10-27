@@ -188,6 +188,8 @@ class PriceForecastResponse(BaseModel):
     # the daily path to the end of the chart (it runs past the selected date) and the chart's last date
     chart_path: list[ForecastPoint] = []
     chart_end_date: dt.date | None = None
+    # prices the market really reported in the last months of the records (not filled, not inflation-adjusted)
+    observed: list[PricePoint] = []
     model: ModelInfo
     projection: ProjectionInfo | None = None
     source: SourceInfo
@@ -352,6 +354,8 @@ class PriceExplanation(BaseModel):
     data_basis: ExplainNote | None = None
     # evidence-first explanation (cards in rupees, dated evidence, trust block); see price_explainer_v3.py
     v3: dict | None = None
+    # chart data built from this forecast's SHAP values (local) and the saved global importance; see price_charts.py
+    charts: dict | None = None
 
 
 class PriceExplainResponse(BaseModel):

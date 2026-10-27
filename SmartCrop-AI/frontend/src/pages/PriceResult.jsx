@@ -10,7 +10,10 @@ import Loader from "../components/Loader";
 import ResultStep from "../components/ResultStep";
 import ServerText from "../components/ServerText";
 import Tip from "../components/Tip";
-import PriceTrendChart from "../components/charts/PriceTrendChart";
+import FactorBars from "../components/price/FactorBars";
+import FieldConditionsOverview from "../components/price/FieldConditionsOverview";
+import SimplePriceChart from "../components/price/SimplePriceChart";
+import { useFieldConditions } from "../hooks/useFieldConditions";
 import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { historyService } from "../services/historyService";
@@ -18,7 +21,7 @@ import { priceService } from "../services/priceService";
 import { STATE_MARKET } from "../utils/constants";
 import { addDays, cropName, fmtDate, pct, rupees, signedRupees } from "../utils/format";
 import { isContextOnly, rangeView } from "../utils/priceView";
-import { referenceRows, selectedPrice, typicalMiss } from "../utils/selectedPrice";
+import { selectedPrice, typicalMiss } from "../utils/selectedPrice";
 import { decideSelling, makePriceAt } from "../utils/sellingDecision";
 import { LAST_PRICE_REQUEST_KEY } from "./PricePrediction";
 
@@ -153,6 +156,8 @@ export default function PriceResult() {
     priceService.explain(source.req).then(setExplain).catch(() => {});
   }, [source]);
 
+  const { weather, soil } = useFieldConditions(forecast?.series?.market, forecast?.target_date);
+
   const backLinks = (
     <div className="row">
       {historyId && <Link to="/history" className="btn btn-secondary"><History size={16} aria-hidden="true" />{tr("common.backToHistory")}</Link>}
@@ -176,11 +181,6 @@ export default function PriceResult() {
   const latest = forecast.latest_recorded;
   // ONE price for the selected date: the chart dot, the estimate card and the planned-date tile all read it
   const selected = selectedPrice(forecast);
-  const rows = referenceRows(forecast);
-  const chartPath = forecast.chart_path || forecast.path;
-  const chartEnd = forecast.chart_end_date || addDays(forecast.target_date, 14);
-  const drawable = ctxOnly ? rows.some((r) => r.date >= forecast.forecast_origin_date) : chartPath.length > 0;
-  const stale = !latest || latest.age_days > 7;
   const decision = decideSelling({
     plannedDate: forecast.target_date, today: forecast.input_date, shelfDays: advice.storage.farm_hold_days ?? advice.storage.max_hold_days,
     plannedPrice: selected?.price ?? null, priceAt: makePriceAt(forecast), typicalMiss: typicalMiss(forecast),
@@ -200,70 +200,57 @@ export default function PriceResult() {
         <Tip id="price-result" className="mb-4">{tr("tip.priceResult")} <Link to="/history">{tr("tip.openHistory")}</Link></Tip>
       )}
 
-      <div className="result-top steps-top">
-        <ResultStep n={1} id="step-price" title={tr("price.steps.price")} className="hero-card">
-          {selected ? (
-            <>
-              <div className="hero-card-head">
-                <span className="stat-label" data-testid="price-label">{tr(ctxOnly ? (forecast.history_is_reference ? "price.result.lastYearOn" : "price.result.reportedOn") : "price.result.priceOn", { date: fmtDate(forecast.target_date) })}</span>
-              </div>
+      <ResultStep n={1} id="step-price" title={tr("price.steps.price")} className="hero-card">
+        {selected ? (
+          <div className="market-card" style={{ alignItems: "center" }}>
+            <CropArt crop={series.commodity} size={72} decorative className="hero-crop-art" />
+            <div style={{ minWidth: 0 }}>
+              <span className="stat-label" data-testid="price-label">{tr(ctxOnly ? (forecast.history_is_reference ? "price.result.lastYearOn" : "price.result.reportedOn") : "price.result.priceOn", { date: fmtDate(forecast.target_date) })}</span>
               <div className="hero-price" data-testid="hero-price">{rupees(selected.price)}<span className="unit"> {tr("unit.perQuintal")}</span></div>
+              <div className="stat-sub" data-testid="summary-line"><strong>{crop}</strong> · {marketName} · {tr("price.form.date")}: <strong>{fmtDate(forecast.target_date)}</strong></div>
+              {latest && (
+                <div className="stat-sub" data-testid="latest-actual">{tr("res.latestActual", { price: rupees(latest.price), date: fmtDate(latest.date) })}</div>
+              )}
               {!ctxOnly && (range.kind === "measured" || range.kind === "unmeasured") && (
                 <div className="stat-sub" data-testid="range-line">{tr("price.result.likelyRange", { low: rupees(range.low), high: rupees(range.high) })}</div>
               )}
-            </>
-          ) : <p className="hero-nodir" data-testid="no-price">{tr("price.result.noPrice")}</p>}
-        </ResultStep>
-
-        <ResultStep n={2} id="step-market" title={tr("price.steps.market")}>
-          <div className="market-card">
-            <CropArt crop={series.commodity} size={84} decorative className="hero-crop-art" />
-            <dl className="kv">
-              <dt>{tr("hist.col.crop")}</dt><dd><strong>{cropName(tr, series.commodity)}</strong>{series.variety && <span className="muted small"> · {series.variety}</span>}</dd>
-              <dt>{tr("hist.col.market")}</dt><dd>{marketName}</dd>
-              <dt>{tr("price.form.state")}</dt><dd>{cropName(tr, series.state, "state")}</dd>
-              <dt>{tr("price.steps.madeOn")}</dt><dd>{fmtDate(forecast.input_date)}</dd>
-              <dt>{tr("price.form.date")}</dt><dd><strong>{fmtDate(forecast.target_date)}</strong></dd>
-            </dl>
+            </div>
           </div>
-        </ResultStep>
-      </div>
-
-      <ResultStep n={3} id="step-chart" title={tr("price.chart.title", { crop })} className="reveal"
-        subtitle={tr(ctxOnly ? "price.chart.descBlocked" : "price.chart.descAllowed", { start: fmtDate(forecast.forecast_origin_date), end: fmtDate(chartEnd) })}>
-        {(stale || ctxOnly) && (
-          <div style={{ marginBottom: 12 }}>
-            <Alert type="info">
-              <div data-testid="chart-notice">
-                {stale && <p style={{ margin: 0 }}>{tr("price.chart.noticeStale")}</p>}
-                {ctxOnly && <p style={{ margin: stale ? "6px 0 0" : 0 }} data-testid="no-forecast-line">{tr("price.chart.noForecastNotice", { crop })}</p>}
-              </div>
-            </Alert>
-          </div>
+        ) : (
+          <>
+            <p className="hero-nodir" data-testid="no-price">{tr("price.result.noPrice")}</p>
+            <div className="stat-sub" data-testid="summary-line"><strong>{crop}</strong> · {marketName} · {tr("price.form.date")}: <strong>{fmtDate(forecast.target_date)}</strong></div>
+            {latest && <div className="stat-sub" data-testid="latest-actual">{tr("res.latestActual", { price: rupees(latest.price), date: fmtDate(latest.date) })}</div>}
+          </>
         )}
-        {drawable ? (
-          <PriceTrendChart historyIsReference={forecast.history_is_reference} referenceRows={rows} chartPath={ctxOnly ? [] : chartPath}
-            originDate={forecast.forecast_origin_date} inputDate={forecast.input_date} currentPrice={forecast.current_price}
-            targetDate={forecast.target_date} chartEnd={chartEnd} forecast={!ctxOnly} selected={selected} latest={latest}
-            caption={tr(ctxOnly ? (forecast.history_is_reference ? "price.chart.captionBlocked" : "price.chart.captionBlockedActual") : "price.chart.captionAllowed", { crop, market: marketName })} />
-        ) : <p className="muted" data-testid="no-history">{tr("price.chart.noHistory", { crop, market: marketName })}</p>}
       </ResultStep>
 
-      <ResultStep n={4} id="step-sell" title={tr("price.sell.title")} subtitle={tr("price.sell.subtitle")} className="sell-step">
+      <ResultStep n={2} id="step-chart" title={tr("pc.title")}>
+        <SimplePriceChart forecast={forecast} ctxOnly={ctxOnly} selected={selected} crop={crop} market={marketName} />
+      </ResultStep>
+
+      <ResultStep n={3} id="step-factors" title={tr("fb.title")} subtitle={tr("fb.intro")}>
+        <FactorBars exp={explain?.explanations?.[0] || null} ctxOnly={ctxOnly} crop={crop} />
+      </ResultStep>
+
+      <ResultStep n={4} id="step-conditions" title={tr("fc.title")}>
+        <FieldConditionsOverview weather={weather} soil={soil} />
+      </ResultStep>
+
+      <ResultStep n={5} id="step-sell" title={tr("price.sell.title")} subtitle={tr("price.sell.subtitle")} className="sell-step">
         <SellRecommendation decision={decision} planned={selected} plannedDate={forecast.target_date} crop={crop} storage={advice.storage}
           source={ctxOnly ? "earlier" : "model"} />
       </ResultStep>
 
-      <div className="row" style={{ margin: "1rem 0" }}>
-        <button type="button" className="btn btn-primary"
+      <div className="card" style={{ margin: "1rem 0", padding: "1.1rem", textAlign: "center" }} data-testid="explain-card">
+        <p className="muted small" style={{ margin: "0 0 0.6rem" }}>{tr("price.expl.buttonHint")}</p>
+        <button type="button" className="btn btn-primary btn-lg" data-testid="why-button" style={{ fontSize: "1.05rem", padding: "0.8rem 1.4rem" }}
           onClick={() => navigate(historyId ? `/price-prediction/explanation?id=${historyId}` : "/price-prediction/explanation",
             { state: { req: source.req, explain } })}>
-          <CircleHelp size={16} aria-hidden="true" />{tr("price.expl.button")}
+          <CircleHelp size={18} aria-hidden="true" />{tr("price.expl.button")}
         </button>
-        <span className="muted small">{tr("price.expl.buttonHint")}</span>
       </div>
 
-      <p className="price-disclaimer"><strong>{tr("price.result.disclaimerLabel")}</strong> {tr("price.result.disclaimer")}</p>
     </>
   );
 }

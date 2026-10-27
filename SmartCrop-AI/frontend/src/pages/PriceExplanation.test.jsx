@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../services/priceService", () => ({ priceService: { explain: vi.fn() } }));
+vi.mock("../services/priceService", () => ({ priceService: { explain: vi.fn(), weatherContext: vi.fn(), soilContext: vi.fn() } }));
 vi.mock("../services/historyService", () => ({ historyService: { priceItem: vi.fn() } }));
 vi.mock("../services/api", () => ({ errorMessage: (e) => e.message }));
 
@@ -57,7 +57,11 @@ const renderAt = (entry) => render(
   </MemoryRouter>);
 const withState = (r = response()) => ({ pathname: "/price-prediction/explanation", state: { req, explain: r } });
 
-beforeEach(() => { priceService.explain.mockReset(); historyService.priceItem.mockReset(); });
+beforeEach(() => {
+  priceService.explain.mockReset(); historyService.priceItem.mockReset();
+  priceService.weatherContext.mockReset(); priceService.weatherContext.mockResolvedValue({ status: "unavailable", temperature_c: null });
+  priceService.soilContext.mockReset(); priceService.soilContext.mockResolvedValue({ status: "unavailable", ph: null, soil_type: null });
+});
 afterEach(cleanup);
 
 describe("PriceExplanation page", () => {
@@ -238,5 +242,28 @@ describe("explanationView", () => {
   it("reliabilityView only claims an error figure with enough tests", () => {
     expect(reliabilityView(exp()).mae).toBe(300);
     expect(reliabilityView(exp({ reliability: { model_mae: 300, baseline_mae: 350, beats_no_change: true, n_tests: 5, sufficient_data: false } })).mae).toBeNull();
+  });
+});
+
+describe("the six condition explanations on the Explain My Prediction page", () => {
+  it("shows them with the retrieved values and the selected crop, and reads the market and date the forecast used", async () => {
+    priceService.weatherContext.mockResolvedValue({ status: "forecast", market: "Pune", date: "2026-11-11", temperature_c: 31.4, rainfall_mm: 0, humidity_pct: 76, place: "Pune (town centre)" });
+    priceService.soilContext.mockResolvedValue({ status: "estimate", market: "Pune", ph: 6.8, soil_type: "Vertisols" });
+    renderAt(withState());
+    const box = await screen.findByTestId("condition-meanings");
+    await waitFor(() => expect(box.textContent).toContain("31.4 °C"));
+    await waitFor(() => expect(box.textContent).toContain("Vertisols"));
+    expect(box.querySelectorAll("li")).toHaveLength(6);
+    expect(box.textContent).toContain("Brinjal");
+    expect(box.textContent).toContain("not necessarily where the crop was grown");
+    expect(priceService.weatherContext).toHaveBeenCalledWith("Pune", "2026-11-11");
+    expect(priceService.soilContext).toHaveBeenCalledWith("Pune");
+  });
+  it("says there is not enough information when nothing could be retrieved, and never claims a price effect", async () => {
+    renderAt(withState());
+    const box = await screen.findByTestId("condition-meanings");
+    await waitFor(() => expect(box.textContent).toContain("not enough information"));
+    expect(box.textContent).not.toMatch(/\d+(\.\d)? ?(°C|mm)/);
+    expect(box.textContent).toContain("They do not change the predicted mandi price.");
   });
 });

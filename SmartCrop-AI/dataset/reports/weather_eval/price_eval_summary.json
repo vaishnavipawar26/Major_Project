@@ -1,0 +1,160 @@
+{
+  "generated": "2026-10-27T15:59:44+00:00",
+  "status": "validation folds used for selection/calibration; test folds scored once",
+  "validation_folds": [
+    "2025-Q1",
+    "2025-Q2"
+  ],
+  "test_folds": [
+    "2025-Q3",
+    "2025-Q4"
+  ],
+  "feature_sets": {
+    "price_only": [
+      "log_price",
+      "lag_1_change",
+      "lag_3_change",
+      "lag_7_change",
+      "lag_14_change",
+      "lag_30_change",
+      "roll_mean_7_gap",
+      "roll_mean_14_gap",
+      "roll_mean_30_gap",
+      "volatility_30",
+      "momentum_7_30",
+      "pct_change_7",
+      "spread_ratio",
+      "log_arrivals",
+      "arrivals_vs_30d",
+      "state_price_gap",
+      "state_change_7",
+      "month",
+      "week_of_year",
+      "day_of_week",
+      "season_code",
+      "doy_sin",
+      "doy_cos",
+      "commodity_code",
+      "market_code",
+      "variety_code",
+      "horizon_days",
+      "target_doy_sin",
+      "target_doy_cos"
+    ],
+    "price_weather": [
+      "log_price",
+      "lag_1_change",
+      "lag_3_change",
+      "lag_7_change",
+      "lag_14_change",
+      "lag_30_change",
+      "roll_mean_7_gap",
+      "roll_mean_14_gap",
+      "roll_mean_30_gap",
+      "volatility_30",
+      "momentum_7_30",
+      "pct_change_7",
+      "spread_ratio",
+      "log_arrivals",
+      "arrivals_vs_30d",
+      "state_price_gap",
+      "state_change_7",
+      "month",
+      "week_of_year",
+      "day_of_week",
+      "season_code",
+      "doy_sin",
+      "doy_cos",
+      "commodity_code",
+      "market_code",
+      "variety_code",
+      "horizon_days",
+      "target_doy_sin",
+      "target_doy_cos",
+      "temp_mean_7",
+      "temp_anom_7",
+      "precip_sum_7",
+      "precip_sum_30",
+      "precip_ratio_30",
+      "humidity_mean_7"
+    ]
+  },
+  "weather_feature_note": "trailing observed weather + pre-2023 normals; no forecast data",
+  "selected_candidate_per_band_from_validation": {
+    "price_only": {
+      "1-7": "xgb_rate",
+      "15-30": "rf_rate",
+      "31-60": "rf_plain",
+      "8-14": "xgb_rate"
+    },
+    "price_weather": {
+      "1-7": "xgb_rate",
+      "15-30": "rf_rate",
+      "31-60": "rf_plain",
+      "8-14": "xgb_rate"
+    }
+  },
+  "interval_q_from_validation": {
+    "price_only": {
+      "1-7": {
+        "q10": -0.2029091715812683,
+        "q90": 0.1951066106557846
+      },
+      "15-30": {
+        "q10": -0.3870821952819824,
+        "q90": 0.3186063051223755
+      },
+      "31-60": {
+        "q10": -0.498026442527771,
+        "q90": 0.37545031905174264
+      },
+      "8-14": {
+        "q10": -0.2857060313224792,
+        "q90": 0.27388899326324473
+      }
+    },
+    "price_weather": {
+      "1-7": {
+        "q10": -0.20436549186706543,
+        "q90": 0.19379745423793793
+      },
+      "15-30": {
+        "q10": -0.3799738585948944,
+        "q90": 0.3212656021118164
+      },
+      "31-60": {
+        "q10": -0.4851949334144592,
+        "q90": 0.3787911146879198
+      },
+      "8-14": {
+        "q10": -0.2876876354217529,
+        "q90": 0.26910589933395396
+      }
+    }
+  },
+  "paired_weather_vs_price_only_on_test": {
+    "1-7": {
+      "mean_MAE_gain_rs": -1.332033049362687,
+      "naive_se_rs": 0.1426429892106343,
+      "share_rows_improved_pct": 48.142045736806374
+    },
+    "15-30": {
+      "mean_MAE_gain_rs": 1.0710681844079395,
+      "naive_se_rs": 0.14740117411940926,
+      "share_rows_improved_pct": 51.91651685885912
+    },
+    "31-60": {
+      "mean_MAE_gain_rs": -1.2866605220292877,
+      "naive_se_rs": 0.11718108626100854,
+      "share_rows_improved_pct": 50.232746407609795
+    },
+    "8-14": {
+      "mean_MAE_gain_rs": 1.3795202608342798,
+      "naive_se_rs": 0.28060335977710155,
+      "share_rows_improved_pct": 48.96981573718734
+    }
+  },
+  "origin_share_with_full_weather": 0.7155146152831896,
+  "n_test_pairs": 800000,
+  "n_validation_pairs": 800000
+}

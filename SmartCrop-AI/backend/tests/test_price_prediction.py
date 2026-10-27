@@ -237,3 +237,17 @@ def test_model_crop_keeps_the_full_advice_and_reports_range_coverage(client, use
     ri = b["range_info"]
     assert ri["scope"] == "real_origin" and ri["n"] > 100 and ri["shown"] == (ri["coverage_pct"] >= 40.0)
     assert b["latest_recorded"]["date"] <= b["dates"]["latest_data_date"]
+
+
+def test_field_conditions_sent_by_a_client_are_ignored_and_never_saved(client, user):
+    """Soil pH, soil type and growing location are no longer collected from the farmer: if a client still sends them, nothing is stored."""
+    from sqlalchemy import text
+    from app.database.connection import engine
+    plain = client.post("/api/price-prediction/predict", headers=user["headers"], json=STATE_REQ).json()
+    sent = client.post("/api/price-prediction/predict", headers=user["headers"],
+                       json={**STATE_REQ, "ph": 6.8, "soil_type": "loam", "growing_location": "Nashik"}).json()
+    assert sent["target"]["predicted_price"] == plain["target"]["predicted_price"]
+    with engine.connect() as c:
+        row = c.execute(text("select ph, soil_type, growing_location, temperature, humidity, rainfall from price_predictions where id = :i"),
+                        {"i": sent["id"]}).one()
+    assert tuple(row) == (None, None, None, None, None, None)   # the six columns stay empty (NULL), never 0

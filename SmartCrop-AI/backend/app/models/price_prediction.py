@@ -40,4 +40,13 @@ class PricePrediction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(),
                                                  nullable=False)
 
+    # The farmer's field conditions. Storage only: the price model does not use them. NULL = not recorded (never 0).
+    temperature: Mapped[float | None] = mapped_column(Float, nullable=True, comment="degrees Celsius")
+    humidity: Mapped[float | None] = mapped_column(Float, nullable=True, comment="relative humidity, percent (0-100)")
+    ph: Mapped[float | None] = mapped_column(Float, nullable=True, comment="soil pH (0-14)")
+    rainfall: Mapped[float | None] = mapped_column(Float, nullable=True, comment="millimetres per month")
+    soil_type: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="soil type label")
+    growing_location: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="where the crop is grown (city or district); not the selling market")
+
     user = relationship("User", back_populates="price_predictions")

@@ -20,8 +20,7 @@ WEATHER_DIR = paths.DATASET_DIR / "weather"
 def md_table(df: pd.DataFrame) -> str:
     rows = ["| feature | " + " | ".join(df.columns) + " |", "|---" * (len(df.columns) + 1) + "|"]
     rows += [f"| {i} | " + " | ".join(str(v) for v in r) + " |" for i, r in zip(df.index, df.values)]
-    return "
-".join(rows)
+    return "\n".join(rows)
 
 
 def main() -> None:

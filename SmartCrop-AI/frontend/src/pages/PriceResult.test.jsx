@@ -1,15 +1,20 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../services/priceService", () => ({ priceService: { trend: vi.fn(), explain: vi.fn() } }));
+vi.mock("../services/priceService", () => ({ priceService: { trend: vi.fn(), explain: vi.fn(), weatherContext: vi.fn(), soilContext: vi.fn() } }));
 vi.mock("../services/historyService", () => ({ historyService: { priceItem: vi.fn() } }));
 vi.mock("../services/api", () => ({ errorMessage: (e) => e.message }));
-// the chart is tested in its own file; here only the props the page passes matter
-vi.mock("../components/charts/PriceTrendChart", () => ({
-  default: (p) => <div data-testid="chart" data-forecast={String(p.forecast)} data-path={String(p.chartPath.length)} data-rows={String(p.referenceRows.length)}
-    data-selected={String(p.selected?.price)} data-end={p.chartEnd} data-caption={p.caption} />,
+// jsdom has no layout: give recharts' container a fixed size
+vi.mock("recharts", async (importOriginal) => {
+  const actual = await importOriginal();
+  const { cloneElement } = await import("react");
+  return { ...actual, ResponsiveContainer: ({ children }) => <div>{cloneElement(children, { width: 900, height: 400 })}</div> };
+});
+// the charts are tested in their own files; here only the props the page passes matter
+vi.mock("../components/price/SimplePriceChart", () => ({
+  default: (p) => <div data-testid="chart" data-ctx={String(p.ctxOnly)} data-selected={String(p.selected?.price)} data-observed={String((p.forecast.observed || []).length)} />,
 }));
 
 import { priceService } from "../services/priceService";
@@ -54,7 +59,11 @@ const renderPage = (f) => render(
 const body = () => document.body.textContent.replace(/ /g, " ");
 const tiles = () => Array.from(document.querySelectorAll(".sell-cell")).map((c) => c.textContent.replace(/ /g, " "));
 
-beforeEach(() => { priceService.explain.mockReset(); priceService.explain.mockResolvedValue(null); });
+beforeEach(() => {
+  priceService.explain.mockReset(); priceService.explain.mockResolvedValue(null);
+  priceService.weatherContext.mockReset(); priceService.weatherContext.mockResolvedValue({ status: "unavailable", market: "APMC Mumbai", date: PLANNED });
+  priceService.soilContext.mockReset(); priceService.soilContext.mockResolvedValue({ status: "unavailable", market: "APMC Mumbai", ph: null, soil_type: null });
+});
 afterEach(cleanup);
 
 describe("Your estimated price card", () => {
@@ -184,52 +193,23 @@ describe("Smart Selling", () => {
 });
 
 describe("chart section", () => {
-  it("allowed: the description mentions the likely range, the caption says expected prices are estimates, the chart gets the forecast", () => {
-    renderPage(forecast());
-    const sec = document.getElementById("step-chart").closest("section");
-    expect(sec.textContent).toContain("Daily predicted mandi price from 23 Oct 2026 to 18 Nov 2026");
-    expect(sec.textContent).toContain("The shaded band shows the likely range.");
-    expect(sec.textContent).toContain("The chart continues after your date so you can compare later selling dates.");
+  it("shows the Historical and Expected Market Price graph, with the forecast allowed", () => {
+    renderPage(forecast({ observed: [{ date: "2025-12-30", price: 2000 }] }));
+    expect(screen.getByRole("heading", { name: /Crop Price: Past, Today and Future/ })).toBeTruthy();
     const chart = screen.getByTestId("chart");
-    expect(chart.getAttribute("data-forecast")).toBe("true");
-    expect(chart.getAttribute("data-path")).toBe("30");
-    expect(chart.getAttribute("data-end")).toBe("2026-11-18");
-    expect(chart.getAttribute("data-caption")).toBe("Expected prices are estimates. Actual market prices may differ.");
+    expect(chart.getAttribute("data-ctx")).toBe("false");
+    expect(chart.getAttribute("data-observed")).toBe("1");
   });
 
-  it("a latest report older than 7 days adds the reference notice", () => {
-    renderPage(forecast());
-    expect(screen.getByTestId("chart-notice").textContent).toContain("Recent mandi prices are not available in this app. The dotted grey line is last year's price for the same dates, raised for inflation.");
-    expect(screen.queryByTestId("no-forecast-line")).toBeNull();
-  });
-
-  it("a recent report and an allowed forecast need no notice", () => {
-    renderPage(forecast({ latest_recorded: { price: 2100, date: TODAY, age_days: 2, stale: false, age_n: 0, age_unit: "days" } }));
-    expect(screen.queryByTestId("chart-notice")).toBeNull();
-  });
-
-  it("blocked: both notices, no forecast path, the blocked caption", () => {
+  it("a blocked crop passes the history-only flag, so no expected line can be drawn", () => {
     renderPage(blocked());
-    const n = screen.getByTestId("chart-notice").textContent;
-    expect(n).toContain("Recent mandi prices are not available in this app.");
-    expect(screen.getByTestId("no-forecast-line").textContent).toBe("We do not show a price forecast for Tomato at this distance because past tests showed it was not reliable enough.");
-    const chart = screen.getByTestId("chart");
-    expect(chart.getAttribute("data-forecast")).toBe("false");
-    expect(chart.getAttribute("data-path")).toBe("0");
-    expect(chart.getAttribute("data-caption")).toBe("Past prices for Tomato at APMC Mumbai, adjusted for inflation. This is not a forecast.");
-    expect(document.getElementById("step-chart").closest("section").textContent).not.toContain("The shaded band");
+    expect(screen.getByTestId("chart").getAttribute("data-ctx")).toBe("true");
   });
 
-  it("blocked with no past prices at all: the notice only, never a blank chart", () => {
-    renderPage(blocked({ reference_after: [], history: [] }));
-    expect(screen.queryByTestId("chart")).toBeNull();
-    expect(screen.getByTestId("no-forecast-line")).toBeTruthy();
-    expect(screen.getByTestId("no-history").textContent).toBe("There are not enough past prices to draw a chart for Tomato at APMC Mumbai.");
-  });
-
-  it("falls back to the selected date + 14 days when the API gives no chart end", () => {
-    renderPage(forecast({ chart_end_date: null }));
-    expect(screen.getByTestId("chart").getAttribute("data-end")).toBe("2026-11-18");
+  it("never shows the old large blue information box", () => {
+    renderPage(blocked());
+    expect(document.querySelector(".alert-info")).toBeNull();
+    expect(screen.queryByTestId("chart-notice")).toBeNull();
   });
 });
 
@@ -246,5 +226,92 @@ describe("language", () => {
     renderPage(forecast());
     const sell = screen.getByRole("heading", { name: /Smart Selling Recommendation/ }).closest("section");
     expect(within(sell).getByText("Choose a suitable selling date based on predicted prices, storage conditions, and forecast reliability.")).toBeTruthy();
+  });
+});
+
+describe("first page order and content", () => {
+  it("shows the summary, Graph 1, Graph 2, then the button, in that order, with the field conditions inside the Graph 2 card", () => {
+    renderPage(forecast());
+    const order = ["step-price", "step-chart", "step-factors"].map((id) => document.getElementById(id));
+    const btn = screen.getByTestId("why-button");
+    const follow = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(follow(order[0], order[1])).toBe(true);
+    expect(follow(order[1], order[2])).toBe(true);
+    expect(follow(order[2], btn)).toBe(true);
+    expect(screen.queryByText(/Weather at your market/)).toBeNull();
+    expect(screen.getByRole("heading", { name: /What Affects Your Crop Price\?/ })).toBeTruthy();
+  });
+  it("the button is the last thing on the page: nothing follows it", () => {
+    renderPage(forecast());
+    const btn = screen.getByTestId("why-button");
+    const card = screen.getByTestId("explain-card");
+    expect(card.lastElementChild).toBe(btn);                       // the hint sits above the button, never below it
+    const main = card.parentElement;
+    expect(main.lastElementChild).toBe(card);                       // no card, paragraph or table after it
+    expect(document.querySelector(".price-disclaimer")).toBeNull();
+  });
+  it("the summary names crop, market and date once, and the button has the requested wording", () => {
+    renderPage(forecast());
+    expect(screen.getByTestId("summary-line").textContent).toContain("APMC Mumbai");
+    expect(screen.getByTestId("why-button").textContent).toContain("Explain My Prediction");
+    expect(body()).toContain("Discover what the price history shows and which factors influenced your predicted price.");
+    expect(document.getElementById("step-market")).toBeNull();
+  });
+  it("a blocked crop gets no factor bars, and a missing explanation does not break the page", async () => {
+    priceService.explain.mockRejectedValue(new Error("x"));
+    renderPage(blocked());
+    expect(await screen.findByTestId("fb-unavailable")).toBeTruthy();
+    expect(screen.queryByTestId("factor-bars")).toBeNull();
+  });
+});
+
+describe("latest actual price and the explanation button", () => {
+  it("shows the latest actual market price with its own date, never as today's price", () => {
+    renderPage(forecast());
+    const n = screen.getByTestId("latest-actual").textContent;
+    expect(n).toContain("Latest actual market price");
+    expect(n).toContain("31 Dec 2025");
+  });
+});
+
+describe("Field Conditions on the result page", () => {
+  const follows = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+  it("is its own compact card after Graph 2 and before Smart Selling and the button, with automatic weather and soil-map values", async () => {
+    priceService.weatherContext.mockResolvedValue({ status: "forecast", market: "APMC Mumbai", date: PLANNED, temperature_c: 30.5, rainfall_mm: 1.2, humidity_pct: 61, place: "Mumbai (town centre)" });
+    priceService.soilContext.mockResolvedValue({ status: "estimate", market: "APMC Mumbai", ph: 6.5, soil_type: "Vertisols", place: "Mumbai (town centre)" });
+    renderPage(forecast());
+    const box = await screen.findByTestId("field-conditions");
+    const card = document.getElementById("step-conditions");
+    expect(card.closest("section").contains(box)).toBe(true);
+    expect(document.getElementById("step-factors").closest("section").contains(box)).toBe(false);    // not inside the SHAP graph's card
+    const order = ["step-price", "step-chart", "step-factors", "step-conditions", "step-sell"].map((id) => document.getElementById(id));
+    for (let i = 0; i < order.length - 1; i++) expect(follows(order[i], order[i + 1])).toBe(true);
+    expect(follows(order.at(-1), screen.getByTestId("why-button"))).toBe(true);
+    expect(card.textContent).toContain("Field Conditions");
+    await waitFor(() => expect(screen.getByTestId("fc-temperature-value").textContent).toBe("30.5 °C"));
+    await waitFor(() => expect(screen.getByTestId("fc-ph-value").textContent).toBe("6.5"));
+    expect(screen.getByTestId("fc-soil-value").textContent).toBe("Vertisols");
+    expect(priceService.weatherContext).toHaveBeenCalledWith("APMC Mumbai", PLANNED);
+    expect(priceService.soilContext).toHaveBeenCalledWith("APMC Mumbai");
+  });
+  it("the long explanations are not on the result page: they live on the Explain My Prediction page", async () => {
+    renderPage(forecast());
+    await screen.findByTestId("field-conditions");
+    expect(screen.queryByTestId("condition-meanings")).toBeNull();
+    expect(screen.queryByText(/What Do These Conditions Mean/)).toBeNull();
+  });
+  it("a failed or empty soil lookup shows Unavailable and the prediction page still works", async () => {
+    priceService.soilContext.mockRejectedValue(new Error("down"));
+    renderPage(forecast());
+    await waitFor(() => expect(screen.getByTestId("fc-ph-value").textContent).toBe("Unavailable"));
+    expect(screen.getByTestId("fc-soil-value").textContent).toBe("Unavailable");
+    expect(screen.getByTestId("hero-price").textContent).toContain("2,520");
+    expect(screen.getByTestId("why-button")).toBeTruthy();
+  });
+  it("the SHAP graph's card holds no field-condition values", async () => {
+    renderPage(forecast());
+    await screen.findByTestId("field-conditions");
+    expect(document.getElementById("step-factors").closest("section").querySelector("[data-testid=field-conditions]")).toBeNull();
   });
 });

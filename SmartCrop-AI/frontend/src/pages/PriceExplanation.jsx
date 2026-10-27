@@ -12,6 +12,10 @@ import { priceService } from "../services/priceService";
 import { addDays, cropName, fmtDate, pct, rupees } from "../utils/format";
 import { STATE_MARKET } from "../utils/constants";
 import ExplanationV3 from "../components/price/ExplanationV3";
+import ConditionMeanings from "../components/price/ConditionMeanings";
+import UnderstandPrediction from "../components/price/UnderstandPrediction";
+import { useFieldConditions } from "../hooks/useFieldConditions";
+import { explanationOk } from "../components/price/factorModel";
 import { isExplainedReliably, matchesRequest, reasonsOf, reliabilityView } from "../utils/explanationView";
 
 /**
@@ -153,6 +157,7 @@ export default function PriceExplanation() {
   const location = useLocation();
   const { req, explain: passed, which: passedWhich, id, error: srcError, missing } = useExplanationSource();
   const [explain, setExplain] = useState(passed);
+  const fieldConditions = useFieldConditions(explain?.series?.market, explain?.target_date);   // the market the forecast actually used
   const [error, setError] = useState(null);
   const [which, setWhich] = useState(passedWhich);
   const [attempt, setAttempt] = useState(0);
@@ -214,6 +219,8 @@ export default function PriceExplanation() {
   const exps = explain.explanations || [];
   const exp = exps[Math.min(which, exps.length - 1)];
   if (!exp) return <>{header}<Alert type="info">{explain.message ? <ServerText>{explain.message}</ServerText> : t("price.expl.noExplanation")}</Alert></>;
+  // the SHAP-based "Understand Your Crop Price Prediction" view, only when the app trusts a price and the explanation adds up
+  const newView = explanationOk(exp, false);
   const reasons = reasonsOf(exp);
   // evidence-first layout when the backend sent it (older saved responses keep the previous layout below)
   const v3 = exp.v3 || null;
@@ -221,7 +228,12 @@ export default function PriceExplanation() {
 
   return (
     <>
-      {header}
+      {newView ? (
+        <div className="page-header">
+          <div><h1>{t("ex.pageTitle")}</h1><p>{t("ex.pageDesc")}</p></div>
+          {backBtn}
+        </div>
+      ) : header}
       <div className="stack">
         {exps.length > 1 && (
           <div className="segmented" role="radiogroup" aria-label={t("price.why.whichDate")}>
@@ -233,11 +245,12 @@ export default function PriceExplanation() {
             ))}
           </div>
         )}
-        {v3 ? (
+        {newView ? <UnderstandPrediction exp={exp} crop={cropName(t, explain.series.commodity)} market={explain.series.market} targetDate={exp.date} req={req} />
+        : v3 ? (
           v3Ok ? <ExplanationV3 exp={exp} explain={explain} />
             : <Alert type="info">{t("price.expl.unreliable")}</Alert>
         ) : <Summary exp={exp} explain={explain} />}
-        {!v3 && (<>
+        {!newView && !v3 && (<>
         <section aria-labelledby="expl-main">
           <h2 id="expl-main" className="xai-h">{t("price.expl.driveTitle")}</h2>
           {reasons.length > 0 && isExplainedReliably(exp) ? (
@@ -258,6 +271,7 @@ export default function PriceExplanation() {
           <p className="muted small">{exp.data_basis && <ServerText>{exp.data_basis.text}</ServerText>} {exp.scope && <ServerText>{exp.scope.text}</ServerText>}</p>
         )}
         </>)}
+        <ConditionMeanings crop={cropName(t, explain.series.commodity)} market={explain.series.market === STATE_MARKET ? t("price.form.allMarkets") : explain.series.market} weather={fieldConditions.weather} soil={fieldConditions.soil} />
         <p className="muted small">{t("price.expl.note")}</p>
         {/* developer-only: base value, raw contributions, encoded features, model and explainer details */}
         {import.meta.env.DEV &&         <Advanced exp={exp} model={{ ...explain.model, algorithm: exp.algorithm || explain.model?.algorithm }} />}

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import datetime as dt
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -12,7 +14,7 @@ from app.schemas.price_prediction import (MonthlyForecastRequest, MonthlyForecas
                                           PriceExplainResponse, PriceForecastResponse,
                                           PriceOptionsResponse, PricePredictionResponse,
                                           PriceRequest)
-from app.services import price_service
+from app.services import price_service, price_weather_service
 
 router = APIRouter(prefix="/api/price-prediction", tags=["Price prediction"],
                    dependencies=[Depends(get_current_user)])
@@ -65,3 +67,17 @@ def monthly_forecast(body: MonthlyForecastRequest,
         return forecaster.forecast_path(crop, city, body.target_year, body.target_month)
     except MonthlyForecastError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+
+
+@router.get("/weather-context")
+def weather_context(market: str = Query(min_length=2, max_length=150), target_date: dt.date = Query()) -> dict:
+    """Background weather for the market and date (observed, forecast, typical or unavailable). The price model does
+    not use it; it is shown to farmers as context only."""
+    return price_weather_service.weather_context(market, target_date)
+
+
+@router.get("/soil-context")
+def soil_context(market: str = Query(min_length=2, max_length=150)) -> dict:
+    """Regional soil-map estimate (pH and soil class) for the market's area. Background information only: the price model does not use
+    it, a failed lookup returns status "unavailable", and it never affects a price prediction."""
+    return price_weather_service.soil_context(market)

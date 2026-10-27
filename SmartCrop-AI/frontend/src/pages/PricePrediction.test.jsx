@@ -69,6 +69,21 @@ describe("price prediction form", () => {
   });
 });
 
+describe("no manual field-condition inputs on the price form", () => {
+  it("does not ask the farmer for soil pH, soil type or growing location, and sends only the essentials", async () => {
+    await renderForm();
+    for (const id of ["ph", "soil_type", "growing_location"]) expect(document.getElementById(id)).toBeNull();
+    expect(document.body.textContent).not.toMatch(/soil pH|growing location|your field \(optional\)/i);
+    priceService.predict.mockReset(); priceService.predict.mockResolvedValue({ input_date: "2026-10-20" });
+    fireEvent.change(screen.getByLabelText("Crop"), { target: { value: "Onion" } });
+    fireEvent.change(screen.getByLabelText("Market (mandi)"), { target: { value: "APMC Pune" } });
+    fireEvent.change(document.getElementById("target_date"), { target: { value: "2026-11-05" } });
+    fireEvent.click(screen.getByRole("button", { name: "Show expected price" }));
+    await waitFor(() => expect(priceService.predict).toHaveBeenCalledWith(
+      { state: "Maharashtra", market: "APMC Pune", commodity: "Onion", variety: "Other", target_date: "2026-11-05" }));
+  });
+});
+
 describe("locked State on the price form", () => {
   const group = () => screen.getByRole("group", { name: "State" });
 

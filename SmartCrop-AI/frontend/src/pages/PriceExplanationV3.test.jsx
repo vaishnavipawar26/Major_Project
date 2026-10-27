@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../services/priceService", () => ({ priceService: { explain: vi.fn() } }));
+vi.mock("../services/priceService", () => ({ priceService: { explain: vi.fn(), weatherContext: vi.fn(), soilContext: vi.fn() } }));
 vi.mock("../services/historyService", () => ({ historyService: { priceItem: vi.fn() } }));
 vi.mock("../services/api", () => ({ errorMessage: (e) => e.message }));
 
@@ -75,7 +75,11 @@ const stepItems = () => Array.from(screen.getByTestId("steps").children);
 const stepTitle = (li) => li.querySelector("h3").textContent;
 const stepByName = (name) => stepItems().find((li) => stepTitle(li).startsWith(name));
 
-beforeEach(() => priceService.explain.mockReset());
+beforeEach(() => {
+  priceService.explain.mockReset();
+  priceService.weatherContext.mockReset(); priceService.weatherContext.mockResolvedValue({ status: "unavailable", temperature_c: null });
+  priceService.soilContext.mockReset(); priceService.soilContext.mockResolvedValue({ status: "unavailable", ph: null, soil_type: null });
+});
 afterEach(cleanup);
 
 describe("summary card", () => {

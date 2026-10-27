@@ -19,6 +19,7 @@ import shap
 
 from app.ml.common import paths
 from app.ml.explainability import price_explainer_v3 as v3x
+from app.ml.explainability.price_charts import build_charts
 from app.ml.explainability.price_explainer import explain_price
 from app.ml.price_prediction import freshness
 from app.ml.price_prediction.features import (FEATURE_COLUMNS, HORIZONS, MAX_HORIZON,
@@ -777,6 +778,18 @@ class PriceForecaster:
         r = o.iloc[-1]
         return {"price": round(float(r["price"]), 2), "date": r["Date"].date().isoformat()}
 
+    def observed_prices(self, state: str, market: str, commodity: str, variety: str, days: int = 240) -> list[dict]:
+        """Prices this series really reported during its last ``days`` days of records (no filling, no inflation).
+        Days without a report are simply absent."""
+        s = self._series.get((state, market, commodity, variety))
+        if s is None:
+            return []
+        o = s[s["observed"] & s["price"].notna()]
+        if o.empty:
+            return []
+        o = o[o["Date"] > o["Date"].iloc[-1] - pd.Timedelta(days=days)]
+        return [{"date": d.date().isoformat(), "price": round(float(p), 2)} for d, p in zip(o["Date"], o["price"])]
+
     def reliability_cell(self, crop: str, h: int, projected: bool) -> tuple[dict | None, str | None]:
         t = self.reliability_table
         if not t:
@@ -954,6 +967,9 @@ class PriceForecaster:
                                      target_point=path[h - 1], weather_status=weather_status,
                                      model_output=model_out,
                                      n_tests=self.crop_cv_n.get((h, commodity)))}
+            entry["charts"] = build_charts(sv, base, self.feature_columns, p0,
+                                           entry["summary"]["predicted_price"],
+                                           self.meta.get("global_shap_importance"))
             if series is not None and ref is not None and ctx_run is not None:
                 entry["v3"] = self._build_v3(series, ref, ref_origin_date, ctx_run, h, sv, base, values, origin,
                                              p0, commodity, projected, path[h - 1], target, weather_status,

@@ -26,7 +26,11 @@ def _run(forecaster: PriceForecaster, req: PriceRequest, as_of: date, explain: b
     try:
         variety = req.variety or forecaster.default_variety(req.state, req.market, req.commodity)
         ref = SeriesRef(req.state, req.market, req.commodity, variety)
-        return forecaster.forecast(ref, as_of, req.target_date, explain=explain)
+        f = forecaster.forecast(ref, as_of, req.target_date, explain=explain)
+        src = f.get("source") or {}
+        f["observed"] = forecaster.observed_prices(req.state, src.get("used_market", req.market), ref.commodity,
+                                                   src.get("used_variety", variety))
+        return f
     except ForecastError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
@@ -37,7 +41,7 @@ def _forecast_fields(f: dict) -> dict:
                               "path", "last_validated_days", "validated_days",
                               "max_horizon_days", "advice", "policy", "range_info", "latest_recorded", "verdict", "horizon", "history", "history_is_reference",
                               "actual_after_origin", "model", "projection", "source", "dates",
-                              "disclaimer")} | {k: f.get(k, []) for k in ("earlier_years", "reference_after", "chart_path")} | {"chart_end_date": f.get("chart_end_date")}
+                              "disclaimer")} | {k: f.get(k, []) for k in ("earlier_years", "reference_after", "chart_path", "observed")} | {"chart_end_date": f.get("chart_end_date")}
 
 
 def predict(db: Session, user: User, forecaster: PriceForecaster, req: PriceRequest) -> dict:
