@@ -80,9 +80,13 @@ def analyze(rec: CropRecommender, body: CropRequest) -> dict:
         warnings.append("No crop is a good match for your field, sellable in the chosen month "
                         "and expected to make a profit. Try a different selling month or "
                         "check your inputs.")
-    result = {**out, "season_used": season_for_month(body.planting_month), "warnings": warnings}
+    # The crop every card, chart and explanation presents. Without a personal plan it is the standard #1 (best overall score). With one,
+    # the farmer's priority, budget and risk level decide among the crops the suitability stage kept.
+    result = {**out, "recommended_crop": out["best_overall"], "recommendation_basis": "score", "season_used": season_for_month(body.planting_month), "warnings": warnings}
     if body.budget_inr is not None or body.priority or body.risk_level:       # otherwise the output is exactly the standard one
         result["personal_plan"] = build_plan(out, body.budget_inr, body.priority, body.risk_level, cost_basis(rec))
+        if result["personal_plan"]["best_for_you"]:
+            result["recommended_crop"], result["recommendation_basis"] = result["personal_plan"]["best_for_you"], "plan"
     return result
 
 

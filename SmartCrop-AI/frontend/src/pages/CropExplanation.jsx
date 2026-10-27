@@ -8,7 +8,10 @@ import Loader from "../components/Loader";
 import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { isExplainable, recommendedCrop } from "../utils/cropExplanation";
-import FarmExplanation from "../components/crop/FarmExplanation";
+import DetailedExplanation from "../components/crop/DetailedExplanation";
+import TimelineSection from "../components/crop/TimelineSection";
+import InfluencePanel from "../components/crop/InfluencePanel";
+import { buildInfluence } from "../utils/influence";
 import { fitSummary, monthYear } from "../utils/cropPlan";
 import { acresText } from "../utils/farmerExplanation";
 import { cropName } from "../utils/format";
@@ -37,7 +40,7 @@ function useSource() {
   return { data: fromState || loaded, id, crop: params.get("crop") || location.state?.crop || null, error, missing: !fromState && !id };
 }
 
-function Summary({ best, response, inputs }) {
+function Summary({ best, response, inputs, sentence }) {
   const t = useT();
   const facts = [
     [MapPin, t("cr.fx.hero.location"), cropName(t, response.city, "city")],
@@ -52,7 +55,7 @@ function Summary({ best, response, inputs }) {
         <CropArt crop={best.crop_name} size={88} className="best-photo" />
         <div className="min-w-0">
           <p className="best-name">{cropName(t, best.crop_name)}</p>
-          <p className="fit-text">{fitSummary(best, inputs, t)}</p>
+          <p className="fit-text">{sentence || fitSummary(best, inputs, t)}</p>
         </div>
         <div className="xp-score" role="group" aria-label={t("cr.fx.hero.score")}>
           <span className="xp-score-num num">{Math.round(best.recommendation_score)}<small>/100</small></span>
@@ -103,13 +106,17 @@ export default function CropExplanation() {
   const best = response.results.find((r) => r.crop_name === crop) || recommendedCrop(response);
   if (!best) return <>{header}<Alert type="info" action={emptyAction}>{t("cr.xp.noBest")}</Alert></>;
   const inputs = Object.fromEntries(INPUT_KEYS.map((k) => [k, req[k]]));
+  const inf = buildInfluence(best, response, inputs, t, (c) => cropName(t, c));
 
   return (
     <div className="crop-result">
       {header}
       <div className="stack">
-        <Summary best={best} response={response} inputs={inputs} />
-        <FarmExplanation result={best} response={response} inputs={inputs} />
+        <Summary best={best} response={response} inputs={inputs} sentence={inf?.summary} />
+        {inf
+          ? <InfluencePanel inf={inf} afterChart={<DetailedExplanation result={best} response={response} inputs={inputs} />} />
+          : <><Alert type="info">{t("cr.inf.unavailable")}</Alert><DetailedExplanation result={best} response={response} inputs={inputs} /></>}
+        <TimelineSection result={best} />
       </div>
     </div>
   );

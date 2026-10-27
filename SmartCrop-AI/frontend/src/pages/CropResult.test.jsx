@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-for (const c of ["BestCropCard", "CropCompare", "Financials", "PlanSummary", "TimelineSection"]) {
+for (const c of ["BestCropCard", "CropCompare", "Financials", "PlanSummary"]) {
   vi.doMock(`../components/crop/${c}`, () => ({ default: () => null }));
 }
 vi.mock("../services/api", () => ({ errorMessage: (e) => e.message }));

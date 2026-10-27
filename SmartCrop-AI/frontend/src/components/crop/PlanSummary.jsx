@@ -1,11 +1,12 @@
 import { CalendarClock, MapPin } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { fieldSizeText } from "../../utils/fieldSize";
-import { cropName, monthLabel } from "../../utils/format";
+import { cropName, monthLabel, rupees } from "../../utils/format";
 
 /** Section 1 - the farmer's own plan in a few short lines. */
 export default function PlanSummary({ response, crop }) {
   const t = useT();
+  const budget = response.personal_plan?.inputs?.budget_inr;
   const tl = crop?.timeline;
   const months = tl && (tl.growth_months_min === tl.growth_months_max ? `${tl.growth_months_min}` : `${tl.growth_months_min}–${tl.growth_months_max}`);
   return (
@@ -15,6 +16,7 @@ export default function PlanSummary({ response, crop }) {
         <div><dt>{t("cr.plan.plantLabel")}</dt><dd>{monthLabel(response.planting_date)}</dd></div>
         <div><dt>{t("cr.plan.sellLabel")}</dt><dd>{monthLabel(response.selling_date)}</dd></div>
         <div><dt>{t("cr.plan.sizeLabel")}</dt><dd>{fieldSizeText(t, response.area_acres)}</dd></div>
+        {budget != null && <div><dt>{t("cr.pv.budget")}</dt><dd>{rupees(budget)}</dd></div>}
       </dl>
       {months && <p className="plan-meta"><span className="inline-icon"><CalendarClock size={15} aria-hidden="true" />{t("cr.plan.growing", { crop: cropName(t, crop.crop_name), months })}</span></p>}
     </section>

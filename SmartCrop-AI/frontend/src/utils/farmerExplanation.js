@@ -3,7 +3,7 @@
 // timeline, economics, profit rank); nothing is recalculated here except comparing a value with a range. A missing
 // value or range leaves that comparison out ("Not available") instead of guessing. "Usual range" is the crop's
 // 5th-95th percentile in the dataset: it says where a value sits, never that the value caused the recommendation.
-import { SOIL, indicatorRows, reliabilityOf, sellableSummary } from "./cropPlan";
+import { recommendedName, SOIL, indicatorRows, reliabilityOf, sellableSummary } from "./cropPlan";
 import { fieldSizeText } from "./fieldSize";
 import { cropName, monthLong, rupees } from "./format";
 
@@ -179,7 +179,7 @@ function profitOf(r, response, crop, t) {
 // ---- final explanation ------------------------------------------------------------------------------------------------
 
 function finalOf({ r, response, planning, soil, temperature, rainfall, profit, crop, t }) {
-  const recommended = r.crop_name === response.best_overall;
+  const recommended = r.crop_name === recommendedName(response);
   const strengths = [], limits = [];
   if (profit?.top) strengths.push(t("cr.fx.s.profitTop", { n: profit.ranked }));
   else if (profit && !profit.loss && profit.rank != null) strengths.push(t("cr.fx.s.profitRank", { rank: profit.rank, n: profit.ranked }));

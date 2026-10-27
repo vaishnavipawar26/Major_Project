@@ -21,7 +21,7 @@ import Dashboard from "./Dashboard";
 import History from "./History";
 
 const FIXTURES = JSON.parse(readFileSync(resolve("src/test-fixtures/budget_plan_real.json"), "utf8"));
-const real = () => Object.values(FIXTURES).map((f) => f.history_item);
+const real = () => Object.values(FIXTURES).slice(0, 4).map((f) => f.history_item);      // the four area sizes below are matched to four items
 const withArea = (items) => items.map((x, i) => ({ ...x, area_acres: [0.5125, 0.0125, 2, 1][i % 4] }));
 
 let errors;

@@ -2,7 +2,7 @@ import { Award, CalendarCheck, Coins, Gauge, ShieldCheck, TrendingUp } from "luc
 import Alert from "../Alert";
 import CropArt from "../CropArt";
 import { useT } from "../../i18n/LanguageContext";
-import { harvestSpan, monthYear, reliabilityOf } from "../../utils/cropPlan";
+import { areaBasis, recommendedName, harvestSpan, monthYear, reliabilityOf } from "../../utils/cropPlan";
 import { compactRupees, cropName, monthLabel, rupees, signedRupees } from "../../utils/format";
 
 function Stat({ icon: Icon, label, value, sub, tone, big }) {
@@ -18,7 +18,7 @@ function Stat({ icon: Icon, label, value, sub, tone, big }) {
 /** Section 2a - the recommended crop with its key facts (a price-forecast fact only when no forecast could be made). */
 export default function BestCropCard({ response, onSelect }) {
   const t = useT();
-  const best = response.results.find((r) => r.crop_name === response.best_overall);
+  const best = response.results.find((r) => r.crop_name === recommendedName(response));
   const top = response.results.find((r) => r.crop_name === response.highest_profit);
 
   if (!best) {
@@ -34,7 +34,10 @@ export default function BestCropCard({ response, onSelect }) {
     );
   }
 
-  const e = best.economics, tl = best.timeline, rel = reliabilityOf(best);
+  // same area as the plan card and the chart: the whole field, or the smaller area the budget pays for
+  const k = areaBasis(response).factor;
+  const e = { ...best.economics, net_profit: Math.round(best.economics.net_profit * k), total_cost: Math.round(best.economics.total_cost * k) };
+  const tl = best.timeline, rel = reliabilityOf(best);
   return (
     <section className="card best-card" aria-labelledby="best-title">
       <h2 id="best-title" className="sr-only">{t("cr.best.title")}</h2>

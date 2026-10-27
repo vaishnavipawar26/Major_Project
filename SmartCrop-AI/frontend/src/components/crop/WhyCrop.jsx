@@ -1,3 +1,4 @@
+import { recommendedName } from "../../utils/cropPlan";
 import { CircleCheck, TriangleAlert } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { whyReasons } from "../../utils/cropReasons";
@@ -7,7 +8,7 @@ import { cropName } from "../../utils/format";
 export default function WhyCrop({ result, response, inputs }) {
   const t = useT();
   const { reasons, modelNotes } = whyReasons(result, response, inputs, t);
-  const best = result.crop_name === response.best_overall;
+  const best = result.crop_name === recommendedName(response);
   return (
     <section className="card why-crop" aria-labelledby="why-title">
       <h2 id="why-title" className="cr-h2">

@@ -8,7 +8,8 @@ from app.ml.crop_recommendation.budget_plan import (RISK_THRESHOLDS, SUPPLY_NOTE
 def crop(name, upfront, profit, low, *, reliable=True, eligible=True, feasible=True, viable=True, profitable=True, arrivals=None, series="Pune"):
     return {
         "crop_name": name, "eligible": eligible, "feasible": feasible, "low_agronomic_suitability": not viable, "profitable": profitable,
-        "economics": {"cultivation_cost": upfront - 1000, "storage_cost": 1000, "net_profit": profit, "net_profit_low": low},
+        "economics": {"cultivation_cost": upfront - 1000, "storage_cost": 1000, "net_profit": profit, "net_profit_low": low,
+                      "gross_revenue": upfront + profit, "marketing_cost": 0},
         "market": {"reliability": {"beats_baseline": reliable}, "series": series, "target_month": "2027-02",
                    "supply_check": None if arrivals is None else {"arrivals_vs_avg_pct": arrivals, "scope": "state" if series == STATE_SERIES else "city"}},
     }
@@ -109,8 +110,9 @@ def test_matches_standard_number_one_flag():
 
 def test_no_crop_fits_the_budget_shows_the_cheapest_suitable_one_and_the_money_needed():
     p = build_plan(analysis(A(), B(), crop("W", 30000, 9000, -2000, viable=False)), 10000, "spend_less", "low")
-    assert p["outcome"] == "none_fit" and p["best_for_you"] is None and p["no_fit_reason"] == "budget"
-    f = p["fallback"]
+    # the whole field cannot be paid for, but 0.2 acre of A can: a smaller-area option, never W (not suitable)
+    assert p["outcome"] == "partial" and p["best_for_you"] == "A" and p["partial"]["area_acres"] == 0.2 and p["fallback"] is None
+    f = p["crops"][0]
     assert f["crop"] == "A" and f["extra_needed"] == 40000 and f["affordable_area"] == 0.2      # the cheaper W is not suitable, so not offered
     assert any(x["crop"] == "W" and x["code"] == "poor_fit" for x in p["excluded"])
 
@@ -152,7 +154,8 @@ def test_empty_inputs_return_exactly_the_standard_output(client, user):
     assert plain["personal_plan"] is None
     withplan = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json={**BASE, "budget_inr": 80000, "priority": "balanced", "risk_level": "medium"}).json()
     assert withplan["personal_plan"]["best_for_you"] == "Brinjal"
-    assert {k: v for k, v in withplan.items() if k != "personal_plan"} == {k: v for k, v in plain.items() if k != "personal_plan"}   # nothing else moves
+    moved = {"personal_plan", "recommended_crop", "recommendation_basis"}        # the headline crop may follow the plan; every score, rank, price and profit stays
+    assert {k: v for k, v in withplan.items() if k not in moved} == {k: v for k, v in plain.items() if k not in moved}   # nothing else moves
 
 
 def test_plan_inputs_are_saved_and_history_returns_them_with_the_pick(client, user):
@@ -208,3 +211,69 @@ def test_priority_and_risk_work_without_a_budget(client, user):
     assert p["best_for_you"] == ranked[0]["crop"]                                          # spend less: the cheapest suitable crop within the risk level
     plain = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json=BASE).json()
     assert plain["personal_plan"] is None                                                   # both left at the defaults and no budget: nothing, as today
+
+
+# ---------------------------------------------------------------- stage 2: priority, budget, smaller area
+def test_highest_profit_picks_onion_over_wheat_even_when_wheat_scores_better():
+    onion = crop("Onion", 70000, 90000, -5000)
+    wheat = crop("Wheat", 28000, 20000, -1000)
+    p = build_plan(analysis(wheat, onion, best="Wheat"), None, "highest_profit", "high")      # Wheat is the standard (score) #1
+    assert p["best_for_you"] == "Onion" and p["alternatives"] == ["Wheat"] and p["matches_standard"] is False
+    assert p["compare"] == ["Onion", "Wheat"] and p["full_field_best"]["crop"] == "Onion"
+    assert build_plan(analysis(wheat, onion, best="Wheat"), None, "spend_less", "high")["best_for_you"] == "Wheat"   # another priority, another pick
+
+
+def test_onion_is_not_picked_when_it_fails_a_suitability_check():
+    onion = crop("Onion", 70000, 90000, 10000, viable=False)
+    wheat = crop("Wheat", 28000, 20000, -1000)
+    p = build_plan(analysis(wheat, onion, best="Wheat"), None, "highest_profit", "high")
+    assert p["best_for_you"] == "Wheat" and {"crop": "Onion", "code": "poor_fit", "params": {}} in p["excluded"]
+
+
+def test_budget_too_small_for_the_field_gives_a_smaller_area_with_scaled_money():
+    onion = crop("Onion", 140000, 90000, -10000)           # 2-acre field: 70,000 an acre
+    onion["economics"].update(gross_revenue=250000, marketing_cost=17500)
+    p = build_plan(analysis(onion, best="Onion", area=2.0), 52500, "highest_profit", "high")
+    assert p["outcome"] == "partial" and p["best_for_you"] == "Onion"
+    o = p["partial"]
+    assert o["area_acres"] == 0.75 and o["guntha"] == 30                      # 52,500 / 70,000 per acre, in whole guntha
+    assert (o["upfront"], o["revenue"], o["profit"]) == (52500, 93750, 33750)  # each is 0.375 x the full-field figure
+    assert o["upfront"] <= 52500
+    assert p["full_field_best"]["crop"] == "Onion" and p["full_field_best"]["extra_needed"] == 87500
+
+
+def test_smaller_area_is_rounded_down_to_whole_guntha_so_it_stays_in_budget():
+    p = build_plan(analysis(crop("A", 40000, 20000, -1000)), 31000, "balanced", "high")      # 0.775 acre = 31 guntha exactly; 30,999 would be 30
+    assert p["partial"]["guntha"] == 31
+    q = build_plan(analysis(crop("A", 40000, 20000, -1000)), 30999, "balanced", "high")
+    assert q["partial"]["guntha"] == 30 and q["partial"]["upfront"] <= 30999
+
+
+def test_smaller_area_obeys_priority_and_risk():
+    cheap = crop("C", 100000, 30000, -3000)              # 30% of cost
+    rich = crop("R", 100000, 80000, -9000)               # 80% of cost
+    p = build_plan(analysis(cheap, rich), 50000, "highest_profit", "high")
+    assert p["best_for_you"] == "R" and p["alternatives"] == ["C"]
+    risky = crop("R", 100000, 80000, -60000)             # -60% at the low end: High risk
+    assert build_plan(analysis(cheap, risky), 50000, "highest_profit", "low")["best_for_you"] == "C"
+
+
+def test_budget_too_small_even_for_a_practical_plot_gives_no_option_and_says_so():
+    p = build_plan(analysis(crop("A", 100000, 30000, -3000)), 5000, "balanced", "high")       # 0.05 acre < the 0.1 acre minimum
+    assert p["outcome"] == "none_fit" and p["best_for_you"] is None and p["partial"] is None and p["no_fit_reason"] == "budget"
+    assert p["fallback"]["crop"] == "A" and p["fallback"]["extra_needed"] == 95000
+
+
+def test_no_suitable_crop_means_no_recommendation_at_all():
+    p = build_plan(analysis(crop("P", 40000, 90000, 10000, viable=False), crop("Q", 40000, -100, -900, profitable=False), best=None), 500000, "highest_profit", "high")
+    assert p["outcome"] == "none_fit" and p["best_for_you"] is None and p["no_fit_reason"] == "no_suitable"
+    assert p["partial"] is None and p["full_field_best"] is None and p["compare"] == []
+
+
+def test_recommended_crop_follows_the_plan_through_the_api(client, user):
+    plain = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json=BASE).json()
+    assert plain["recommended_crop"] == plain["best_overall"] and plain["recommendation_basis"] == "score"
+    r = client.post("/api/crop-recommendation/analyze", headers=user["headers"], json={**BASE, "priority": "highest_profit", "risk_level": "high"}).json()
+    assert r["recommended_crop"] == r["personal_plan"]["best_for_you"] and r["recommendation_basis"] == "plan"
+    profits = {f["crop"]: f["profit"] for f in r["personal_plan"]["crops"] if not f["unsuitable"]}
+    assert r["recommended_crop"] == max(profits, key=profits.get)

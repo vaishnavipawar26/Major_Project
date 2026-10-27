@@ -44,6 +44,7 @@ describe("the fixtures are real API responses", () => {
     const p = (k) => FIXTURES[k].response.personal_plan;
     expect(p("no_fit_budget")).toMatchObject({ outcome: "none_fit", no_fit_reason: "budget" });
     expect(p("no_fit_budget").excluded).toHaveLength(7);
+    expect(p("partial_area")).toMatchObject({ outcome: "partial", best_for_you: "Brinjal" });
     expect(p("one_card")).toMatchObject({ outcome: "ok", alternatives: [] });
     expect(p("matches_standard")).toMatchObject({ outcome: "ok", matches_standard: true });
     expect(p("matches_standard").alternatives.length).toBeGreaterThan(0);
@@ -174,7 +175,8 @@ describe("the real no-budget response (only a priority and a risk level)", () =>
     expect(container.querySelector("[data-testid=plan-header]").textContent).toBe("Based on your choices · Priority: Spend less to start · Risk: Low");
     const text = container.textContent;
     expect(text).not.toMatch(/of your ₹|needs ₹[\d,]+ more|budget covers|fits your budget/);
-    expect(container.querySelector("[data-testid=plan-match]").textContent).toContain("Our top recommendation also fits your priority and risk level.");
+    expect(container.querySelector("[data-testid=plan-option]")).not.toBeNull();
+    expect(container.querySelector("[data-testid=budget-bar]")).toBeNull();
     expect(response.personal_plan.excluded.some((x) => x.code === "over_budget")).toBe(false);
     expect(planStep(response, t("en")).lines[0]).toBe("You did not set a budget, so every suitable crop was considered.");
   });

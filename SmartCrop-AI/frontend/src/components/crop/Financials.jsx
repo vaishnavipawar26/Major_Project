@@ -5,8 +5,12 @@ import ChartIntro from "../ChartIntro";
 import MonthlyPriceChart, { MonthlyPriceTable, buildPriceRows } from "../charts/MonthlyPriceChart";
 import BestTimeHero from "./BestTimeHero";
 import { useT } from "../../i18n/LanguageContext";
-import { bestSellTime, reliabilityOf } from "../../utils/cropPlan";
+import { areaBasis, bestSellTime, reliabilityOf } from "../../utils/cropPlan";
 import { cropName, monthLabel, rupees, signedRupees } from "../../utils/format";
+
+/** The money figures of the whole field scaled to the area the page is showing (the economics are linear in area). */
+const scaleMoney = (e, k) => (k === 1 ? e : Object.fromEntries(Object.entries(e).map(([key, v]) =>
+  [key, ["gross_revenue", "total_cost", "net_profit", "net_profit_low", "net_profit_high"].includes(key) ? Math.round(v * k) : v])));
 
 /** Sales → costs → money left: the profit arithmetic in three boxes, profit first in size. */
 function ProfitFlow({ e }) {
@@ -50,7 +54,7 @@ export default function Financials({ result, response }) {
       <h2 id="fin-title" className="cr-h2">{t("cr.fin.title", { crop })}</h2>
       {!result.feasible && <Alert type="warn">{t(`cr.fin.${e?.status === "spoiled" ? "spoiled" : "notReady"}`, { crop })}</Alert>}
       {best && <BestTimeHero result={result} response={response} />}
-      {ok && <ProfitFlow e={e} />}
+      {ok && <ProfitFlow e={scaleMoney(e, areaBasis(response).factor)} />}
       {m && rel !== "tested" && m.beyond_model_horizon && (
         <p className="fin-warn" role="status"><TriangleAlert size={16} aria-hidden="true" />{t("cr.fin.beyondWarning")}</p>
       )}

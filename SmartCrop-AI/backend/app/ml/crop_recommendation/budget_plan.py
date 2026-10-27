@@ -24,6 +24,10 @@ BALANCED_DOWNSIDE_WEIGHT = 0.5
 # Supply note: the selling month's arrivals against that crop's average month (2023-2025), as a percentage
 SUPPLY_NOTE_PCT = 25.0
 SUPPLY_YEARS = "2023–2025"
+# Smaller-area option: the smallest field worth planting. An assumption of this layer, not a crop fact: below 4 guntha (0.1 acre) the
+# plan says no reliable option exists rather than recommending a token plot.
+MIN_PRACTICAL_ACRES = 0.1
+GUNTHA_PER_ACRE = 40
 
 
 def upfront_cost(econ: dict) -> float:
@@ -66,7 +70,8 @@ def crop_facts(r: dict, area: float, budget: float | None) -> dict:
         return f
     up = upfront_cost(e)
     per_acre = up / area if area else up
-    f.update(upfront=round(up), upfront_per_acre=round(per_acre), profit=e["net_profit"], downside_profit=e["net_profit_low"])
+    f.update(upfront=round(up), upfront_per_acre=round(per_acre), profit=e["net_profit"], downside_profit=e["net_profit_low"],
+             revenue=e["gross_revenue"], marketing=e["marketing_cost"])
     f["downside_pct"] = round(e["net_profit_low"] / up, 3) if up else 0.0
     f["reliable_forecast"] = bool(m and m["reliability"]["beats_baseline"])
     f["risk_level"] = risk_level(f["downside_pct"], f["reliable_forecast"])
@@ -76,6 +81,16 @@ def crop_facts(r: dict, area: float, budget: float | None) -> dict:
             f["extra_needed"] = round(up - budget)
             f["affordable_area"] = round(budget / per_acre, 4) if per_acre else None      # 4 decimals: a very small budget must not round to "0 acre"
     return f
+
+
+def scaled_for_area(f: dict, full_area: float, acres: float) -> dict:
+    """The same crop on a smaller field. The economics engine is linear in area (cost per acre, yield per acre, marketing as a share
+    of sales; the reference data has no separate fixed cost), so every money figure scales by acres / full_area. Risk ratios do not change."""
+    k = acres / full_area
+    g = dict(f)
+    g.update(area_acres=acres, guntha=round(acres * GUNTHA_PER_ACRE), upfront=round(f["upfront"] * k), revenue=round(f["revenue"] * k),
+             profit=round(f["profit"] * k), downside_profit=round(f["downside_profit"] * k), fits_budget=True, extra_needed=None)
+    return g
 
 
 def _sort_key(priority: str):
@@ -102,16 +117,32 @@ def build_plan(analysis: dict, budget: float | None, priority: str | None, risk:
         else:
             passing.append(f)
     passing.sort(key=_sort_key(priority))
-    best = passing[0]["crop"] if passing else None
+    # Stage 2 without the budget: the best suitable crop for the whole field, and what it would need
+    risk_ok = [f for f in facts if not f["unsuitable"] and f["upfront"] is not None and RISK_ORDER[f["risk_level"]] <= RISK_ORDER[risk]]
+    risk_ok.sort(key=_sort_key(priority))
+    full = risk_ok[0] if risk_ok else None
+    partial = []
+    if not passing and budget is not None:
+        for f in risk_ok:
+            per_acre = f["upfront"] / area if area else f["upfront"]
+            acres = int(budget / per_acre * GUNTHA_PER_ACRE + 1e-9) / GUNTHA_PER_ACRE if per_acre else 0      # whole guntha, rounded down (from the unrounded figure) so the cost stays within budget
+            if acres >= MIN_PRACTICAL_ACRES:
+                partial.append(scaled_for_area(f, area, acres))
+        partial.sort(key=_sort_key(priority))
+    picks = passing or partial
+    best = picks[0]["crop"] if picks else None
     plan = {"inputs": {"budget_inr": budget, "priority": priority, "risk_level": risk, "area_acres": area},
-            "outcome": "ok" if passing else "none_fit", "best_for_you": best,
-            "alternatives": [f["crop"] for f in passing[1:3]],
+            "outcome": "ok" if passing else ("partial" if partial else "none_fit"), "best_for_you": best,
+            "alternatives": [f["crop"] for f in picks[1:3]],
             "matches_standard": bool(best) and best == analysis.get("best_overall"),
             "crops": facts, "excluded": [x for x in excluded if x["crop"] != best],
+            "full_field_best": None if full is None else {k: full[k] for k in ("crop", "upfront", "profit", "revenue", "risk_level", "fits_budget", "extra_needed", "affordable_area")},
+            "partial": partial[0] if partial else None, "partial_options": partial[:3],
+            "compare": [f["crop"] for f in risk_ok[:3]],
             "fallback": None, "no_fit_reason": None, "cost_basis": cost_basis,
             "rules": {"risk_thresholds": RISK_THRESHOLDS, "balanced_downside_weight": BALANCED_DOWNSIDE_WEIGHT,
-                      "supply_note_pct": SUPPLY_NOTE_PCT}}
-    if not passing:
+                      "supply_note_pct": SUPPLY_NOTE_PCT, "min_practical_acres": MIN_PRACTICAL_ACRES}}
+    if not picks:
         suitable = [f for f in facts if not f["unsuitable"] and f["upfront"] is not None]
         if not suitable:
             plan["no_fit_reason"] = "no_suitable"

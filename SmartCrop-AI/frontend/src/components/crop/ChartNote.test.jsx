@@ -36,19 +36,26 @@ const response = (results, best = "Potato", over = {}) => ({
 const BRINJAL_OUT = { K: [135, 36, 83], P: [85, 38, 74], temperature: [19, 21.15, 34.17] };
 
 describe("why-note under the profit chart", () => {
-  it("1. shows nothing when the recommended crop is also the most profitable", () => {
+  it("1. gives no 'could earn more' note when the recommended crop is also the most profitable", () => {
     const r = response([crop("Potato", 1, 50000), crop("Brinjal", 2, 20000)]);
     expect(chartNote(r, tEn)).toBeNull();
     render(<CropCompare response={r} selected="Potato" onSelect={() => {}} />);
-    expect(screen.queryByTestId("chart-note")).toBeNull();
+    const box = screen.getByTestId("chart-note");      // the block itself always explains the pick, with one line
+    expect(box.querySelector("h3").textContent).toBe("Why Potato is recommended");
+    expect(box.querySelectorAll("p")).toHaveLength(2);      // fits the field, and it also earns the most
+    expect(box.textContent).toContain("highest estimated profit (₹50,000)");
   });
 
   it("2. names the two largest out-of-range factors, with 'fully' when every value fits the recommended crop", () => {
-    const r = response([crop("Potato", 1, 18816), crop("Brinjal", 4, 48467, { eligible: false, recommended: false, important_factors: factors(BRINJAL_OUT), range_fit: range_fit(3) })]);
+    const r = response([crop("Potato", 1, 18816), crop("Brinjal", 4, 48467, { eligible: false, recommended: false, low_agronomic_suitability: true, important_factors: factors(BRINJAL_OUT), range_fit: range_fit(3) })]);
     const note = chartNote(r, tEn);
     expect(note).toBe("Why Potato? Your soil and weather suit Potato fully. Brinjal could earn about ₹30,000 more, but high potassium and high phosphorus in your field may reduce its yield. So Potato is the safer choice.");
     render(<CropCompare response={r} selected="Potato" onSelect={() => {}} />);
-    expect(screen.getByTestId("chart-note").textContent).toBe(note);
+    const shown = screen.getByTestId("chart-note").textContent;
+    expect(shown).toContain("Potato suits your soil and weather conditions");
+    expect(shown).toContain("Brinjal has a higher estimated profit (₹30,000)".replace("30,000", "48,467"));
+    expect(shown).toContain("did not pass the suitability checks");
+    expect(shown).not.toContain("highest estimated profit");
   });
 
   it("3. says 'better' when the recommended crop has a value out of range itself", () => {

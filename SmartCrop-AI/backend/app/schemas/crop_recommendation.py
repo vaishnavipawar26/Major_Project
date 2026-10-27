@@ -161,9 +161,24 @@ class CropStatus(BaseModel):
 
 
 class ScorePoints(BaseModel):
+    """Weighted points of the overall score. location + planting + selling + soil + weather + profit = recommendation_score;
+    agronomic = soil + weather and timing = planting + selling are kept for older clients."""
+    location: float
+    planting: float
+    selling: float
+    soil: float
+    weather: float
+    profit: float
     agronomic: float
     timing: float
-    profit: float
+
+
+class LocationFit(BaseModel):
+    score: float
+    growing_area_share_pct: float
+    growing_area_score: float
+    climate_score: float
+    climate: dict
 
 
 class RankingReason(BaseModel):
@@ -196,6 +211,13 @@ class CropResult(BaseModel):
     recommendation_score: float
     agronomic_score: float
     timing_score: float
+    location_score: float
+    location: LocationFit
+    soil_score: float
+    weather_score: float
+    planting_suitable: bool
+    planting_fit_score: float    # 0-100; timing_score = 0.5 planting fit + 0.5 selling fit
+    selling_fit_score: float
     profit_score: float
     profit_score_used: float
     forecast_reliability: str
@@ -230,6 +252,8 @@ class CropAnalysis(BaseModel):
     generated_at: str
     personal_plan: dict | None = None     # only when the farmer gave a budget, priority or risk level
     best_overall: str | None
+    recommended_crop: str | None = None     # the plan's best_for_you when there is a personal plan with a pick, else best_overall
+    recommendation_basis: str = "score"     # "plan" when the farmer's priority / budget / risk level chose the crop
     highest_profit: str | None
     ranking_explanation: RankingExplanation
     season_used: str

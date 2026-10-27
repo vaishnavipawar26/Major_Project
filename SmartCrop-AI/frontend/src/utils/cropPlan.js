@@ -2,6 +2,7 @@
 // facts the page shows. No React and no calculations of money here - prices, profit and scores are
 // always the API's own numbers; these helpers only classify and phrase them.
 import { cropName, monthLabel, monthLong, rupees } from "./format";
+import { exReason } from "./personalPlan";
 
 const INPUT_OF = { N: "nitrogen", P: "phosphorus", K: "potassium", ph: "ph", temperature: "temperature", humidity: "humidity", rainfall: "rainfall" };
 export const SOIL = ["N", "P", "K", "ph"];
@@ -11,6 +12,21 @@ const FLAT_PCT = 5;
 
 /** Month number (1-12) of "2027-03". */
 const monthNo = (ym) => Number(ym.split("-")[1]);
+
+/** The crop every card, chart and explanation presents: the personal plan's pick when there is one, else the best overall crop. */
+export const recommendedName = (response) => response?.recommended_crop ?? response?.best_overall ?? null;
+
+/**
+ * The farm area all money figures on the result page are shown for. Normally the whole field; when the budget only covers part of it,
+ * the smaller area of the recommended option, so the card, the chart and the explanation never mix areas. ``factor`` scales the
+ * whole-field figures (the economics are linear in area), ``guntha`` is the cultivated area in guntha (40 per acre).
+ */
+export function areaBasis(response) {
+  const full = response?.area_acres ?? 1;
+  const part = response?.personal_plan?.outcome === "partial" ? response.personal_plan.partial : null;
+  if (!part || !(part.area_acres > 0) || !(full > 0)) return { acres: full, factor: 1, partial: false, full };
+  return { acres: part.area_acres, factor: part.area_acres / full, partial: true, full };
+}
 
 export const inRange = (r) => r.range_fit.soil.within + r.range_fit.weather.within;
 export const rangeTotal = (r) => r.range_fit.soil.total + r.range_fit.weather.total;
@@ -96,22 +112,24 @@ export function rankingCompare(response) {
  * Always found by crop name, never by position, so the chart's profit order cannot shift it.
  */
 export function defaultCrop(results, response, selected) {
-  return results.find((r) => r.crop_name === selected) || results.find((r) => r.crop_name === response.best_overall)
+  return results.find((r) => r.crop_name === selected) || results.find((r) => r.crop_name === recommendedName(response))
     || results.find((r) => r.crop_name === response.highest_profit) || results[0];
 }
 
 /** Rows for the all-crops chart and table: every number comes straight from the API. */
 export function compareRows(results, response, t) {
+  const k = areaBasis(response).factor;      // every crop on the same area; the whole field unless the budget covers only part of it
+  const scale = (v) => (v == null ? null : Math.round(v * k));
   return results.map((r) => {
     const e = r.economics;
     return {
       crop: r.crop_name, name: cropName(t, r.crop_name), result: r,
-      price: e?.selling_price ?? null, revenue: e?.gross_revenue ?? null, cost: e?.total_cost ?? null,
-      profit: e?.net_profit ?? null, roi: e?.roi_pct ?? null,
+      price: e?.selling_price ?? null, revenue: scale(e?.gross_revenue), cost: scale(e?.total_cost),
+      profit: scale(e?.net_profit), roi: e?.roi_pct ?? null,
       soil: r.range_fit.soil, weather: r.range_fit.weather,
       timing: e?.status ?? r.timeline.status, feasible: r.feasible,
       reliability: reliabilityOf(r), status: r.status, rank: r.rank, profitRank: r.profit_rank,
-      isBest: r.crop_name === response.best_overall, isTop: r.crop_name === response.highest_profit,
+      isBest: r.crop_name === recommendedName(response), isTop: r.crop_name === response.highest_profit,
       // no reliable price forecast for this crop (crop_policy.json): its profit bar is a rough estimate
       rough: r.price_policy === "context_only",
     };
@@ -148,7 +166,7 @@ const roundGap = (g) => (g >= 500 ? Math.round(g / 1000) * 1000 : Math.max(100, 
  */
 export function chartNote(response, t) {
   const results = response.results || [];
-  const best = results.find((r) => r.crop_name === response.best_overall);
+  const best = results.find((r) => r.crop_name === recommendedName(response));
   const sellable = results.filter((r) => r.feasible && Number.isFinite(r.economics?.net_profit));
   const top = sellable.reduce((m, r) => (!m || r.economics.net_profit > m.economics.net_profit ? r : m), null);
   if (!best || !top || top.crop_name === best.crop_name || !Number.isFinite(best.economics?.net_profit)) return null;
@@ -281,4 +299,45 @@ export function sellableSummary(response, t) {
   const text = n === 1 ? t("cr.sell.one", { total, month, crop })
     : top.economics.net_profit > 0 ? t("cr.sell.many", { n, total, month, crop }) : t("cr.sell.noProfit", { n, total, month });
   return { n, total, month, top: top.crop_name, text };
+}
+
+/**
+ * "Why <crop> is recommended", shown under the profit chart: two or three short sentences from the results themselves.
+ *  1. the recommended crop suits the field (its soil / weather values inside the crop's usual range);
+ *  2. when another sellable crop earns more, the real reason it was not chosen: values outside its usual range, an unusual planting
+ *     month, a rule of the farmer's plan (budget, risk), or the farmer's priority / the overall score when it passed every check;
+ *  3. a closing line. Profit is never called the highest unless it is. Money is for the area the chart shows.
+ * Returns { crop, title, lines } or null when nothing is recommended.
+ */
+export function whySelected(response, t) {
+  const name = recommendedName(response);
+  const results = response.results || [];
+  const best = results.find((r) => r.crop_name === name);
+  if (!best || !Number.isFinite(best.economics?.net_profit)) return null;
+  const k = areaBasis(response).factor;
+  const money = (r) => rupees(Math.round(r.economics.net_profit * k));
+  const crop = cropName(t, name);
+  const plan = response.personal_plan;
+  const lead = results.filter((r) => r.feasible && Number.isFinite(r.economics?.net_profit) && r.economics.net_profit > best.economics.net_profit)
+    .reduce((m, r) => (!m || r.economics.net_profit > m.economics.net_profit ? r : m), null);
+
+  const lines = [inRange(best) === rangeTotal(best) ? t("cr.sel.fits", { crop }) : t("cr.sel.mostlyFits", { crop, n: inRange(best), total: rangeTotal(best) })];
+  if (!lead) {
+    lines.push(t("cr.sel.mostProfit", { profit: money(best), month: monthLabel(response.selling_date) }));
+    return { crop: name, title: t("cr.sel.titleFor", { crop }), lines };
+  }
+  const p = { lead: cropName(t, lead.crop_name), crop, profit: money(lead) };
+  const ex = (plan?.excluded || []).find((x) => x.crop === lead.crop_name);
+  if (lead.planting_suitable === false) {
+    lines.push(t("cr.sel.leadSeason", { ...p, month: monthLong(response.planting_month) }), t("cr.sel.reduceRisk"));
+  } else if (lead.low_agronomic_suitability) {
+    const bad = outOfRange(lead).slice(0, 2).map((x) => t(`cr.chart.f.${x.feature}.${x.low ? "low" : "high"}`));
+    lines.push(bad.length ? t("cr.sel.leadFit", { ...p, factors: joinWords(bad, t("cr.chart.and")) }) : t("cr.sel.leadFitGeneral", p), t("cr.sel.reduceRisk"));
+  } else if (ex && ex.code !== "poor_fit") {
+    lines.push(t("cr.sel.leadRule", { ...p, why: exReason(ex, t) }));
+  } else {
+    const basis = response.recommendation_basis === "plan" && plan ? t("cr.sel.byPriority", { priority: t(`crop.form.priority.${plan.inputs.priority}`) }) : t("cr.sel.byScore");
+    lines.push(t("cr.sel.leadRank", { ...p, basis }));
+  }
+  return { crop: name, title: t("cr.sel.titleFor", { crop }), lines };
 }

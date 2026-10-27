@@ -20,17 +20,18 @@ from app.ml.price_prediction.monthly_forecaster import MonthlyPriceForecaster
 
 SAMPLE = 300
 ALTERNATIVES = {
-    "suitability_heavy": {"agronomic": 0.60, "timing": 0.20, "profit": 0.20},
-    "profit_heavy": {"agronomic": 0.30, "timing": 0.10, "profit": 0.60},
-    "equal_thirds": {"agronomic": 1 / 3, "timing": 1 / 3, "profit": 1 / 3},
-    "no_timing": {"agronomic": 0.50, "timing": 0.0, "profit": 0.50},
+    "profit_heavy": {"location": 0.10, "planting": 0.10, "selling": 0.10, "soil": 0.10, "weather": 0.10, "profit": 0.50},
+    "equal_parts": {k: 1 / 6 for k in WEIGHTS},
+    "field_heavy": {"location": 0.10, "planting": 0.15, "selling": 0.05, "soil": 0.25, "weather": 0.25, "profit": 0.20},
+    "no_location": {"location": 0.0, "planting": 0.25, "selling": 0.10, "soil": 0.20, "weather": 0.20, "profit": 0.25},
 }
 
 
 def top(results: list[dict], w: dict) -> list[str]:
-    scored = sorted(results, key=lambda r: (r["eligible"], w["agronomic"] * r["agronomic_score"]
-                                            + w["timing"] * r["timing_score"]
-                                            + w["profit"] * r["profit_score"]), reverse=True)
+    """Top-3 eligible crops when the six score parts (weighted points / default weight = 0-100 score) are re-weighted."""
+    def score(r):
+        return sum(w[k] * r["score_points"][k] / WEIGHTS[k] for k in WEIGHTS)
+    scored = sorted(results, key=lambda r: (r["eligible"], score(r)), reverse=True)
     return [r["crop_name"] for r in scored[:TOP_N] if r["eligible"]]
 
 

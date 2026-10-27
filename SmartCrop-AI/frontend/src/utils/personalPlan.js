@@ -74,11 +74,12 @@ const exText = (x, t) => {
   return t(`cr.pp.ex.${x.code}`);
 };
 /** "<Crop> — <reason>", never empty and never a raw dictionary key: an unknown code falls back to a plain generic reason. */
+export function exReason(x, t) {
+  const reason = exText(x, t);
+  return !reason || /^cr\.pp\./.test(reason) || /\{\w+\}/.test(reason) ? t("cr.pp.ex.other") : reason;
+}
 function exLine(x, t) {
-  const crop = cropName(t, x.crop) || String(x.crop);
-  let reason = exText(x, t);
-  if (!reason || /^cr\.pp\./.test(reason) || /\{\w+\}/.test(reason)) reason = t("cr.pp.ex.other");
-  return `${crop} — ${reason}`;
+  return `${cropName(t, x.crop) || String(x.crop)} — ${exReason(x, t)}`;
 }
 
 /** The sentence(s) shown when no crop passes the filters, with the cheapest suitable crop's full cost for the field. */
@@ -134,4 +135,64 @@ export function planStep(response, t) {
   }
   lines.push(costNote(plan, t));
   return { headline: best ? cropName(t, best.crop) : t("cr.pp.step.none"), tone: best ? "good" : "warn", lines };
+}
+
+/** "30 guntha" for a cultivated area, always shown beside the acres. */
+export const gunthaText = (t, acres) => `${Math.round(Number(acres) * 40)} ${t("crop.form.gunthaWord")}`;
+
+/** "0.75 acre · 30 guntha" (whole fields of 1 acre or more keep the guntha too, so a farmer can read either unit). */
+export function areaBoth(t, acres) {
+  const n = Number(acres);
+  const a = Number(n.toFixed(2));
+  return `${t(a <= 1 ? "cr.plan.acre" : "cr.plan.acres", { n: a })} · ${gunthaText(t, n)}`;
+}
+
+/**
+ * The visual plan card: budget and field size, the best crop for the whole field, the best option the budget really pays for (the whole
+ * field or a smaller area), a budget bar and the two or three best suitable crops side by side. Every number is a field of
+ * ``response.personal_plan``; the smaller-area money is the backend's own scaled figures, never recomputed here.
+ */
+export function planVisualView(response, t) {
+  const plan = response.personal_plan;
+  if (!plan) return null;
+  const facts = byCrop(plan);
+  const budget = plan.inputs.budget_inr;
+  const fullArea = response.area_acres;
+  const fullBest = plan.full_field_best;
+  const pick = plan.outcome === "partial" ? plan.partial : plan.best_for_you ? facts[plan.best_for_you] : null;
+  const partial = plan.outcome === "partial";
+  const view = {
+    ok: plan.outcome !== "none_fit", partial, budget: budget != null ? rupees(budget) : null, hasBudget: budget != null,
+    area: areaBoth(t, fullArea), header: headerLine(plan, t), costNote: costNote(plan, t),
+    full: fullBest && {
+      crop: fullBest.crop, name: cropName(t, fullBest.crop), cost: rupees(fullBest.upfront), profit: rupees(fullBest.profit),
+      profitLoss: fullBest.profit < 0, shortfall: fullBest.extra_needed != null ? rupees(fullBest.extra_needed) : null,
+      fits: fullBest.fits_budget !== false, area: areaBoth(t, fullArea),
+    },
+    option: pick && {
+      crop: pick.crop, name: cropName(t, pick.crop), partial, area: areaBoth(t, partial ? pick.area_acres : fullArea),
+      cost: rupees(pick.upfront), revenue: rupees(pick.revenue), profit: rupees(pick.profit), profitLoss: pick.profit < 0,
+      risk: pick.risk_level, riskText: t(`cr.pp.risk.${pick.risk_level}`),
+    },
+    bar: null, compare: [], noFit: null,
+    excluded: (plan.excluded || []).filter((x) => x?.crop).map((x) => ({ crop: x.crop, text: exLine(x, t) })),
+  };
+  if (budget != null && pick) {
+    const scale = Math.max(budget, pick.upfront, partial ? fullBest?.upfront ?? 0 : 0) || 1;
+    view.bar = {
+      money: rupees(budget), moneyPct: Math.round((budget / scale) * 100), cost: rupees(pick.upfront), costPct: Math.round((pick.upfront / scale) * 100),
+      over: pick.upfront > budget, fullCost: partial && fullBest ? rupees(fullBest.upfront) : null, fullPct: partial && fullBest ? Math.round((fullBest.upfront / scale) * 100) : null,
+    };
+  }
+  // the same area for every crop in the comparison: the option's own area
+  const k = partial ? pick.area_acres / fullArea : 1;
+  const rows = (plan.compare || []).map((c) => facts[c]).filter(Boolean);
+  const top = Math.max(1, ...rows.map((f) => Math.abs(f.profit * k)));
+  view.compareArea = areaBoth(t, partial ? pick.area_acres : fullArea);
+  view.compare = rows.map((f) => ({
+    crop: f.crop, name: cropName(t, f.crop), cost: rupees(Math.round(f.upfront * k)), profit: rupees(Math.round(f.profit * k)),
+    pct: Math.max(4, Math.round((Math.abs(f.profit * k) / top) * 100)), isPick: pick ? f.crop === pick.crop : false,
+  }));
+  if (!pick) view.noFit = noFitText(plan, response, t);
+  return view;
 }

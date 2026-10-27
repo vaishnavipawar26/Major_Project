@@ -61,7 +61,6 @@ export function Step({ n, id, icon: Icon, title, headline, tone = "neutral", chi
 export default function FarmExplanation({ result, response, inputs }) {
   const t = useT();
   const { crop, location, planning, soil, temperature, rainfall, profit, final } = buildExplanation(result, response, inputs, t);
-  const best = result.crop_name === response.best_overall;
   // a section whose data is missing keeps its number and says "Not available" instead of disappearing
   const missing = { headline: t("score.notAvailable"), tone: "neutral", text: t("cr.fx.na") };
   const place = location || missing, when = planning || missing;
@@ -122,9 +121,7 @@ export default function FarmExplanation({ result, response, inputs }) {
   }
 
   return (
-    <section className="card xp-section" aria-labelledby="xp-why-title">
-      <h2 id="xp-why-title" className="cr-h2">{t(best ? "cr.fx.title" : "cr.fx.titleOther", { crop })}</h2>
-      <p className="xp-intro">{t(best ? "cr.fx.subtitle" : "cr.fx.subtitleOther")}</p>
+    <section className="card xp-section" aria-label={t("cr.det.title")}>
       <ol className="xp-steps">
         {steps.map((s, i) => (
           <Step key={s.key} n={i + 1} id={`xp-${s.key}`} icon={s.icon} title={t(`cr.fx.n.${s.key}`)} headline={s.headline} tone={s.tone}>{s.body}</Step>

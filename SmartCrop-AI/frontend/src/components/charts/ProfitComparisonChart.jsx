@@ -58,7 +58,7 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
     revenue: r.feasible ? r.revenue : null, cost: r.feasible ? r.cost : null, profit: r.feasible ? r.profit : null,
     label: r.feasible ? r.name : `${r.name} ✕`,
   })).sort((a, b) => (b.profit ?? -Infinity) - (a.profit ?? -Infinity));
-  const rowH = breakdown ? 74 : 44;
+  const rowH = breakdown ? 74 : 48;
   const { domain, ticks } = niceAxis(data.map((d) => d.profit).filter((v) => v != null));
   const nameW = tiny ? 84 : narrow ? 104 : 110;
   const plotLeft = MARGIN.left + nameW;
@@ -71,7 +71,8 @@ export default function ProfitComparisonChart({ rows, selected, onSelect, breakd
     return (
       <g>
         {src && !tiny && <image href={src} x={x - nameW} y={y - 10} width={20} height={20} preserveAspectRatio="xMidYMid slice" />}
-        <text x={x - 8} y={y} dy={4} textAnchor="end" fontSize={narrow ? 11 : 12.5} fontWeight={sel ? 700 : 500} fill="var(--text)">{payload.value}</text>
+        <text x={x - 8} y={y} dy={d?.cost != null && !breakdown ? -2 : 4} textAnchor="end" fontSize={narrow ? 11 : 12.5} fontWeight={sel ? 700 : 500} fill="var(--text)">{payload.value}</text>
+        {d?.cost != null && !breakdown && <text x={x - 8} y={y} dy={12} textAnchor="end" fontSize={10.5} fill="var(--muted)">{t("cr.pv.costShort", { cost: compactRupees(d.cost) })}</text>}
       </g>
     );
   };

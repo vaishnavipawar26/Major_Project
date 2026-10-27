@@ -28,6 +28,13 @@ const plan = (over = {}) => ({
 const response = (p = plan(), over = {}) => ({ personal_plan: p, area_acres: 1, best_overall: "Brinjal", ...over });
 const text = (el) => el.textContent.replace(/\s+/g, " ").trim();
 
+const withMoney = (f, o = {}) => ({ revenue: f.upfront + f.profit, marketing: 0, ...f, ...o });
+const vplan = (over = {}) => {
+  const p = plan();
+  return { ...p, crops: p.crops.map((f) => withMoney(f)), full_field_best: { crop: "Brinjal", upfront: 71662, profit: 96931, revenue: 168593, risk_level: "medium", fits_budget: false, extra_needed: 11662, affordable_area: 0.84 },
+    partial: null, partial_options: [], compare: ["Brinjal", "Cabbage", "Cauliflower"], ...over };
+};
+
 describe("personalised plan card", () => {
   it("is not rendered at all when the farmer gave no budget, priority or risk level", () => {
     const { container } = render(<PersonalPlan response={response(null)} />);
@@ -35,128 +42,99 @@ describe("personalised plan card", () => {
     expect(planView(response(null), (k) => k)).toBeNull();
   });
 
-  it("starts with the budget, priority and risk the farmer chose", () => {
-    render(<PersonalPlan response={response()} />);
+  it("starts with the budget, priority and risk the farmer chose, and shows the budget and the farm as big figures", () => {
+    render(<PersonalPlan response={response(vplan())} />);
     expect(screen.getByTestId("plan-header").textContent).toBe("Based on your budget ₹60,000 · Priority: Balanced · Risk: Medium");
+    const t = text(screen.getByTestId("personal-plan"));
+    expect(t).toContain("Your money₹60,000");
+    expect(t).toContain("Your farm1 acre · 40 guntha");
   });
 
-  it("leaves the budget out of that line when none was entered", () => {
-    render(<PersonalPlan response={response(plan({ inputs: { budget_inr: null, priority: "spend_less", risk_level: "low", area_acres: 1 } }))} />);
+  it("leaves the budget out when none was entered", () => {
+    render(<PersonalPlan response={response(vplan({ inputs: { budget_inr: null, priority: "spend_less", risk_level: "low", area_acres: 1 } }))} />);
     expect(screen.getByTestId("plan-header").textContent).toBe("Based on your choices · Priority: Spend less to start · Risk: Low");
+    expect(text(screen.getByTestId("personal-plan"))).not.toContain("Your money");
+    expect(screen.queryByTestId("budget-bar")).toBeNull();
   });
 
-  it("shows the best crop and an alternative as small cards with cost against the budget, profit, low-end profit, risk chip and one reason", () => {
-    render(<PersonalPlan response={response()} />);
-    const best = screen.getByTestId("plan-card-Cabbage");
-    const t = text(best);
-    expect(t).toContain("Cabbage");
-    expect(t).toContain("Best for you");
-    expect(t).toContain("₹55,125 of your ₹60,000");
-    expect(best.querySelector(".pp-bar > span").style.width).toBe("92%");
-    expect(t).toContain("Estimated profit₹6,469");
-    expect(t).toContain("If the price is at the low end of its expected range−₹21,415");
-    expect(within(best).getByTestId("risk-chip").textContent).toBe("Medium risk");
-    expect(t).toContain("Fits your budget and gives the best profit for the money among suitable crops.");
-    const alt = screen.getByTestId("plan-card-Cauliflower");
-    expect(text(alt)).toContain("Alternative");
-    expect(text(alt)).toContain("Also suitable, and fits your budget and risk level.");
-    expect(screen.getAllByTestId(/plan-card-/)).toHaveLength(2);
+  it("shows the best crop for the whole field with its cost, profit and the money it is short, beside the crop the budget pays for", () => {
+    render(<PersonalPlan response={response(vplan())} />);
+    const full = text(screen.getByTestId("plan-full"));
+    expect(full).toContain("Best crop for your whole field");
+    expect(full).toContain("Brinjal");
+    expect(full).toContain("Cost to grow₹71,662");
+    expect(full).toContain("Profit₹96,931");
+    expect(screen.getByTestId("plan-shortfall").textContent).toBe("You are short by ₹11,662 for the whole field");
+    const opt = text(screen.getByTestId("plan-option"));
+    expect(opt).toContain("Cabbage");
+    expect(opt).toContain("Cost to grow₹55,125");
+    expect(opt).toContain("Profit₹6,469");
   });
 
-  it("explains an alternative by what is really different from the pick", () => {
-    const p = plan({ alternatives: ["Brinjal"], crops: plan().crops.map((f) => (f.crop === "Brinjal" ? { ...f, upfront: 50000, fits_budget: true, extra_needed: null } : f)) });
+  it("draws the budget bar: available money against the cost of the plan", () => {
+    render(<PersonalPlan response={response(vplan())} />);
+    const bar = screen.getByTestId("budget-bar");
+    expect(text(bar)).toContain("Available money");
+    expect(text(bar)).toContain("₹60,000");
+    expect(text(bar)).toContain("₹55,125");
+    const fills = bar.querySelectorAll(".pv-track > span");
+    expect(fills[0].style.width).toBe("100%");
+    expect(fills[1].style.width).toBe("92%");
+    expect(fills[1].className).toBe("is-cost");
+  });
+
+  it("shows a smaller-area plan: acres and guntha, and the cost, sales and profit of that area", () => {
+    const part = withMoney(vplan().crops[2], { crop: "Brinjal", area_acres: 0.55, guntha: 22, upfront: 39414, revenue: 100790, profit: 53312, fits_budget: true });
+    const p = vplan({ inputs: { budget_inr: 40000, priority: "highest_profit", risk_level: "high", area_acres: 1 }, outcome: "partial", best_for_you: "Brinjal", alternatives: [], partial: part });
     render(<PersonalPlan response={response(p)} />);
-    expect(text(screen.getByTestId("plan-card-Brinjal"))).toContain("Costs less to start than Cabbage.");
+    expect(screen.getByTestId("plan-grow").textContent).toBe("Grow it on 0.55 acre · 22 guntha of your field.");
+    const opt = text(screen.getByTestId("plan-option"));
+    expect(opt).toContain("Best option within your money");
+    expect(opt).toContain("Cost to grow₹39,414");
+    expect(opt).toContain("Sales₹1,00,790");
+    expect(opt).toContain("Profit₹53,312");
+    expect(text(screen.getByTestId("budget-bar"))).toContain("Cost of the whole field₹71,662");
+    expect(text(screen.getByTestId("plan-compare"))).toContain("compared on 0.55 acre · 22 guntha");
   });
 
-  it("adds a supply chip with its basis, and says Maharashtra-wide when the whole state was used", () => {
-    const p = plan({ alternatives: ["Tomato"] });
-    p.crops.find((f) => f.crop === "Tomato").fits_budget = true;
-    render(<PersonalPlan response={response(p)} />);
-    const card = screen.getByTestId("plan-card-Tomato");
-    expect(within(card).getByTestId("supply-chip").textContent).toBe("Usually low supply in January");
-    expect(text(card)).toContain("Based on past arrivals 2023–2025, not a forecast · Maharashtra-wide");
-  });
-
-  it("matches the standard #1: one line and one short reason instead of the cards", () => {
-    render(<PersonalPlan response={response(plan({ matches_standard: true }), { best_overall: "Cabbage" })} />);
-    const m = screen.getByTestId("plan-match");
-    expect(m.textContent).toContain("Our top recommendation also fits your budget and preferences.");
-    expect(m.textContent).toContain("Fits your budget and gives the best profit for the money among suitable crops.");
-    expect(screen.queryAllByTestId(/plan-card-/)).toHaveLength(0);
-  });
-
-  it("still names the other crops that fit, compactly, with their risk, when the plan matches the standard #1", () => {
-    const p = plan({ matches_standard: true, alternatives: ["Cauliflower", "Brinjal"] });
-    p.crops.find((f) => f.crop === "Brinjal").fits_budget = true;
-    render(<PersonalPlan response={response(p, { best_overall: "Cabbage" })} />);
-    expect(screen.getByTestId("plan-others").textContent).toBe("Other options that fit: Cauliflower (Medium risk), Brinjal (Low risk)");
-  });
-
-  it("shows no 'other options' line when nothing else fits", () => {
-    render(<PersonalPlan response={response(plan({ matches_standard: true, alternatives: [] }), { best_overall: "Cabbage" })} />);
-    expect(screen.queryByTestId("plan-others")).toBeNull();
-  });
-
-  it("adds 'May lose money if prices are low' on a crop whose low-end profit is below zero, and not otherwise", () => {
-    const p = plan({ alternatives: ["Brinjal"] });
-    p.crops.find((f) => f.crop === "Brinjal").fits_budget = true;                              // Brinjal's low-end profit is +20,608
-    render(<PersonalPlan response={response(p)} />);
-    expect(within(screen.getByTestId("plan-card-Cabbage")).getByTestId("lose-chip").textContent).toBe("May lose money if prices are low");
-    expect(within(screen.getByTestId("plan-card-Brinjal")).queryByTestId("lose-chip")).toBeNull();
-  });
-
-  it("shows that chip on the matching-#1 line too when its low-end profit is a loss", () => {
-    render(<PersonalPlan response={response(plan({ matches_standard: true }), { best_overall: "Cabbage" })} />);
-    expect(within(screen.getByTestId("plan-match")).getByTestId("lose-chip").textContent).toBe("May lose money if prices are low");
-  });
-
-  it("puts the forecast sentence in the card's reason only when it is true", () => {
-    const p = plan(); p.crops.find((f) => f.crop === "Brinjal").reliable_forecast = false;
-    const { unmount } = render(<PersonalPlan response={response(p)} />);
-    expect(text(screen.getByTestId("plan-card-Cabbage"))).toContain("among suitable crops. Its price has been more predictable in past tests.");
-    unmount();
-    render(<PersonalPlan response={response()} />);
-    expect(text(screen.getByTestId("plan-card-Cabbage"))).toContain("among suitable crops. Its price forecast held up in past tests.");
-    cleanup();
-    const q = plan(); q.crops[0].reliable_forecast = false;
-    render(<PersonalPlan response={response(q)} />);
-    expect(text(screen.getByTestId("plan-card-Cabbage"))).not.toMatch(/predictable|held up/);
+  it("compares the best crops with the same cost and profit the plan holds", () => {
+    render(<PersonalPlan response={response(vplan())} />);
+    const rows = screen.getByTestId("plan-compare").querySelectorAll("li");
+    expect(rows).toHaveLength(3);
+    expect(text(rows[0])).toContain("Brinjal");
+    expect(text(rows[0])).toContain("₹96,931");
+    expect(text(rows[0])).toContain("cost ₹71,662");
+    expect(rows[1].className).toBe("is-pick");
   });
 
   it("lists, collapsed, why other crops are not shown, each with its plain reason", () => {
-    render(<PersonalPlan response={response()} />);
+    render(<PersonalPlan response={response(vplan())} />);
     const d = screen.getByTestId("plan-excluded");
-    expect(d.tagName).toBe("DETAILS");
-    expect(d.hasAttribute("open")).toBe(false);
+    expect(d.open).toBe(false);
     const items = Array.from(d.querySelectorAll("li")).map((li) => li.textContent);
-    expect(items).toEqual(["Brinjal — needs ₹11,662 more · your budget covers about 0.84 acre", "Tomato — high price risk", "Wheat — does not suit your soil and weather"]);
-    expect(d.querySelector("summary").textContent).toBe("Why other crops aren't shown");
+    expect(items).toContain("Wheat — does not suit your soil and weather");
+    expect(items).toContain("Tomato — low price risk".replace("low", "high"));
+  });
+
+  it("says plainly that no crop is practical, with the cheapest crop's full cost, when the budget does not even pay for a small plot", () => {
+    const p = vplan({ outcome: "none_fit", best_for_you: null, alternatives: [], no_fit_reason: "budget", partial: null,
+      fallback: { crop: "Cabbage", upfront: 55125, upfront_per_acre: 55125, extra_needed: 52125, affordable_area: 0.0544, risk_level: "medium", profit: 6469, downside_profit: -21415 },
+      inputs: { budget_inr: 3000, priority: "balanced", risk_level: "medium", area_acres: 1 } });
+    render(<PersonalPlan response={response(p)} />);
+    expect(screen.getByTestId("plan-nofit").textContent).toContain("No suitable crop fits your budget.");
+    expect(screen.queryByTestId("plan-option")).toBeNull();
+    expect(screen.queryByTestId("budget-bar")).toBeNull();
+  });
+
+  it("says when no crop suits the field at all", () => {
+    render(<PersonalPlan response={response(vplan({ outcome: "none_fit", best_for_you: null, alternatives: [], no_fit_reason: "no_suitable", full_field_best: null, compare: [] }))} />);
+    expect(screen.getByTestId("plan-nofit").textContent).toContain("No crop is suitable for your soil, weather and months");
+    expect(screen.queryByTestId("plan-full")).toBeNull();
   });
 
   it("ends with the estimates footer and the cost basis", () => {
-    render(<PersonalPlan response={response()} />);
-    const t = text(screen.getByTestId("personal-plan"));
-    expect(t).toContain("Costs and prices are estimates from past data.");
-    expect(t).toContain("Costs are approximate estimates (2024 prices + 5% a year).");
-  });
-
-  it("says plainly that no crop fits and shows the cheapest suitable crop's full cost for the field and the extra money needed", () => {
-    const p = plan({ outcome: "none_fit", best_for_you: null, alternatives: [], no_fit_reason: "budget", inputs: { budget_inr: 10000, priority: "spend_less", risk_level: "low", area_acres: 1 },
-      fallback: { crop: "Brinjal", upfront: 71662, upfront_per_acre: 71662, extra_needed: 61662, affordable_area: 0.14, risk_level: "low", profit: 96931, downside_profit: 20608 } });
-    render(<PersonalPlan response={response(p)} />);
-    expect(screen.getByTestId("plan-nofit").textContent).toBe(
-      "No suitable crop fits your budget. The cheapest suitable crop is Brinjal: it costs about ₹71,662 for your 1 acre field, so you need ₹61,662 more. Your budget covers about 0.14 acre.");
-    expect(screen.queryAllByTestId(/plan-card-/)).toHaveLength(0);
-  });
-
-  it("says when no suitable crop matches the risk level, and when no crop suits the field at all", () => {
-    const risk = plan({ outcome: "none_fit", best_for_you: null, no_fit_reason: "risk", fallback: { crop: "Tomato", upfront: 121275, upfront_per_acre: 121275, extra_needed: null, affordable_area: null, risk_level: "high" } });
-    const { unmount } = render(<PersonalPlan response={response(risk)} />);
-    expect(screen.getByTestId("plan-nofit").textContent).toBe("No suitable crop matches your risk level. The closest is Tomato (High risk, about ₹1,21,275 for your 1 acre field).");
-    unmount();
-    render(<PersonalPlan response={response(plan({ outcome: "none_fit", best_for_you: null, no_fit_reason: "no_suitable", fallback: null }))} />);
-    expect(screen.getByTestId("plan-nofit").textContent).toBe("No crop is suitable for your soil, weather and months, so there is no plan to show.");
+    render(<PersonalPlan response={response(vplan())} />);
+    expect(text(screen.getByTestId("personal-plan"))).toContain("Costs and prices are estimates from past data. Costs are approximate estimates (2024 prices + 5% a year).");
   });
 });
 

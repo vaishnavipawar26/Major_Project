@@ -2,37 +2,32 @@
 
 Scores (each 0-100)
 -------------------
-Agronomic  A = share of the farmer's 7 soil and weather values (N, P, K, pH, temperature,
-               humidity, rainfall) that lie inside the crop's typical 5th-95th percentile range
-               in the training dataset, x 100 (so 5 of 7 values -> 71.4). It is an absolute
-               measure of whether the crop can grow in these conditions. The XGBoost classifier
-               probability ("model_match_score") is NOT used in the score: it is relative to the
-               other six crops, so a crop that fits every value can still get ~0 % when another
-               crop fits slightly better, which wrongly decided rankings.
-Timing     T = 50 % planting-window fit (100 in a documented planting month, 50 one month
-               off, else 0) + 50 % selling fit (100 if the crop is freshly harvested in the
-               selling month, minus 12 per month of storage for storable crops, 0 if it would
-               not be ready yet or would have spoiled).
-Profit     P = 50 + 50 tanh(ROI) from the profitability engine, using the XGBoost monthly
-               price forecast for the selling month in the user's city (0 if infeasible).
+Where and when come first, then the field itself, and profit decides between crops that already suit the place and the season.
 
-Overall    = 0.40 A + 0.20 T + 0.40 P'
+Location   L = 50 % growing-belt + 50 % local climate.
+               growing-belt: the crop's share of the training records from the farmer's city, relative to an even split over the
+               supported cities (100 when the city holds at least 1/11 of the crop's records: the crop's main growing belts, see
+               DATASET.md). local climate: share of the city's climate normals (mean temperature, humidity and monthly rainfall of
+               the growing months starting at the planting month, city_climate_normals.csv) that lie inside the crop's typical
+               5th-95th percentile range.
+Planting   F = planting-month fit from the crop calendar: 100 in a documented planting month, 50 one month off, else 0.
+Selling    S = selling-month fit: 100 if freshly harvested in the selling month, minus 12 per month of storage for storable
+               crops, 0 if it would not be ready yet or would have spoiled.
+Soil       the share of the farmer's N, P, K and pH values inside the crop's typical 5th-95th percentile range, x 100.
+Weather    the same for temperature, humidity and rainfall.
+Profit     P = 50 + 50 tanh(ROI) from the profitability engine, using the XGBoost monthly price forecast for the selling month in
+               the user's city (0 if infeasible), pulled towards 50 by RELIABILITY_SHRINK when the forecast is not reliable.
 
-where P' is the profit score after the forecast-reliability adjustment: when the price forecast did
-not beat the simple "latest price + inflation" baseline in testing (or reaches beyond the model's
-horizon), P is pulled towards the neutral 50 by RELIABILITY_SHRINK (P' = 50 + 0.75 (P - 50)), so an
-uncertain price can neither lift nor sink a crop as much as a tested one. The unadjusted P is still
-reported as profit_score. P is based on ROI (net profit / total cost), so a crop with the largest
-rupee profit can score below a cheaper crop with a better return per rupee spent; that is why
-"highest profit" and "best overall" can differ and why the API explains the difference
-(ranking_explanation).
+Overall    = 0.20 L + 0.20 F + 0.10 S + 0.15 Soil + 0.15 Weather + 0.20 P'
 
-Why these weights: there is no labelled ground truth for "best crop to plant", so weights
-cannot be learned. Suitability and profit share most of the weight equally — a crop that
-cannot grow is never a good choice, and the farmer asked for financial returns — while
-timing is a feasibility check. scripts/score_sensitivity.py reports how rankings change.
+Location, planting and selling timing together carry 50 points, soil and weather 30, profit 20. The XGBoost classifier probability
+("model_match_score") is NOT used in the score: it is relative to the other six crops. It (with SHAP) only explains the model.
+There is no labelled ground truth for "best crop to plant", so the weights are a documented judgement, not learned;
+scripts/score_sensitivity.py reports how rankings change. Timing score T = (F + S) / 2 and the combined agronomic score
+A = share of the 7 soil and weather values in range are still reported. P is based on ROI (net profit / total cost), so
+"highest profit" and "best overall" can differ and the API explains the difference (ranking_explanation).
 
-Eligibility: a crop is recommended only if it is agronomically viable - at least MIN_RANGE_FIT of
+Eligibility: a crop is recommended only if the planting month is a documented (or adjacent) planting month for it, it is agronomically viable - at least MIN_RANGE_FIT of
 the farmer's 7 soil/weather values lie inside the crop's typical range (each range covers 90 % of
 that crop's training rows, so a suitable field normally has about 6 of 7 inside; fewer than 5 is
 unusual) - it can actually be sold in the chosen month, AND its expected net profit is positive. A
@@ -51,6 +46,7 @@ percentile range in the training dataset.
 from __future__ import annotations
 
 import json
+from calendar import month_name
 from datetime import date
 
 import joblib
@@ -59,14 +55,15 @@ import pandas as pd
 import shap
 
 from app.ml.common import paths
-from app.ml.common.reference import (STATE, add_months, calendar, economics, month_label,
+from app.ml.common.reference import (STATE, add_months, calendar, city_climate, economics, month_label,
                                      months_between)
 from app.ml.crop_recommendation.features import FEATURES, build_features, collapse_shap
-from app.ml.economics.profit import evaluate, timeline, timing_score
+from app.ml.economics.profit import evaluate, planting_fit, timeline, timing_score
 from app.ml.explainability.crop_explainer import explain_crop
 from app.ml.price_prediction.monthly_forecaster import MonthlyForecastError
 
-WEIGHTS = {"agronomic": 0.40, "timing": 0.20, "profit": 0.40}
+MONTH_NAMES = list(month_name)[1:]
+WEIGHTS = {"location": 0.20, "planting": 0.20, "selling": 0.10, "soil": 0.15, "weather": 0.15, "profit": 0.20}
 RELIABILITY_SHRINK = 0.75  # weight kept on (P - 50) when the price forecast is limited
 POLICY_BAND = "31-60"   # the longest daily-price band: selling months are weeks to months away
 MATERIAL_POINTS = 0.5  # weighted score difference below which a part is not named as a reason
@@ -98,6 +95,8 @@ def status_of(r: dict, best_overall: str | None) -> dict:
     """The single label of a crop in the comparison table. Order matters: the first match wins."""
     if not r["feasible"]:
         return {"key": "notFeasible", "tone": "bad"}
+    if not r["planting_suitable"]:
+        return {"key": "offSeason", "tone": "bad"}
     if r["crop_name"] == best_overall:
         return {"key": "best", "tone": "good"}
     if r["recommended"]:
@@ -120,14 +119,17 @@ def ranking_explanation(results: list[dict], best_overall: str | None, highest_p
         return out
     b, h = by[best_overall], by[highest_profit]
     out["profit_gap"] = round(h["economics"]["net_profit"] - b["economics"]["net_profit"], 0)
-    pts = {k: WEIGHTS[k] * (b[s] - h[s]) for k, s in
-           (("agronomic", "agronomic_score"), ("timing", "timing_score"), ("profit", "profit_score_used"))}
+    pts = {k: sum(b["score_points"][c] - h["score_points"][c] for c in cs) for k, cs in
+           (("agronomic", ("soil", "weather")), ("location", ("location",)), ("timing", ("planting", "selling")),
+            ("profit", ("profit",)))}
     n = lambda r: r["range_fit"]["soil"]["within"] + r["range_fit"]["weather"]["within"]
     total = b["range_fit"]["soil"]["total"] + b["range_fit"]["weather"]["total"]
     reasons = out["reasons"]
     if pts["agronomic"] > MATERIAL_POINTS:
         reasons.append({"code": "fit", "points": round(pts["agronomic"], 1),
                         "params": {"best_in": n(b), "top_in": n(h), "total": total}})
+    if pts["location"] > MATERIAL_POINTS:
+        reasons.append({"code": "location", "points": round(pts["location"], 1), "params": {}})
     if pts["timing"] > MATERIAL_POINTS:
         reasons.append({"code": "timing", "points": round(pts["timing"], 1), "params": {}})
     if pts["profit"] > MATERIAL_POINTS:
@@ -164,6 +166,7 @@ class CropRecommender:
         self.explainer = shap.TreeExplainer(self.estimator)
         self.version = self.meta["version"]
         self.calendar = calendar()
+        self.climate = city_climate()
         self.economics = economics()
         self.forecaster = monthly_forecaster
         # per crop x distance-band "model" / "context_only" of the daily price model (scripts/build_crop_policy.py); used here
@@ -187,6 +190,22 @@ class CropRecommender:
 
     def _base_values(self) -> np.ndarray:
         return np.atleast_1d(self.explainer.expected_value).astype(float)
+
+    def _location(self, crop: str, city: str, planting_month: int, offset: int) -> dict:
+        """Location score (0-100): growing-belt share + the city's own climate over the growing months vs the crop's usual ranges."""
+        cal = self.calendar[crop]
+        share = float(self.ranges[crop].get("_cities", {}).get(city, 0.0))
+        belt = min(1.0, share * len(self.cities)) * 100.0
+        n = max(1, min(offset, cal.growth_months_max))
+        months = [(planting_month - 1 + k) % 12 + 1 for k in range(n)]
+        rows = self.climate[(self.climate["city"] == city) & (self.climate["month"].isin(months))]
+        cols = {"temperature": "temperature_c", "humidity": "humidity_pct", "rainfall": "rainfall_mm"}
+        values = {f: float(rows[c].mean()) for f, c in cols.items()} if len(rows) else {}
+        items = {f: bool(self.ranges[crop][f]["p05"] <= v <= self.ranges[crop][f]["p95"]) for f, v in values.items()}
+        clim = 100.0 * sum(items.values()) / len(cols) if items else 0.0
+        return {"score": round(0.5 * belt + 0.5 * clim, 2), "growing_area_share_pct": round(share * 100, 1),
+                "growing_area_score": round(belt, 1), "climate_score": round(clim, 1),
+                "climate": {"months": months, "values": {f: round(v, 1) for f, v in values.items()}, "items": items}}
 
     # ------------------------------------------------------------------ market + profit
     def _market(self, crop: str, city: str, py: int, pm: int, offset: int,
@@ -245,7 +264,11 @@ class CropRecommender:
             n_in = fit["soil"]["within"] + fit["weather"]["within"]
             n_all = fit["soil"]["total"] + fit["weather"]["total"]
             a = 100.0 * n_in / n_all
+            soil_s = 100.0 * fit["soil"]["within"] / fit["soil"]["total"]
+            weather_s = 100.0 * fit["weather"]["within"] / fit["weather"]["total"]
             t, status, stored = timing_score(cal, planting_month, offset)
+            plant_fit = planting_fit(cal, planting_month)
+            sell_fit = 2 * t - plant_fit    # T = 0.5 planting fit + 0.5 selling fit
             shap_map = dict(zip(self.features, map(float, sv[:, i])))
             exp = explain_crop(crop, shap_map, ctx, self.ranges[crop], cal)
             try:
@@ -259,18 +282,26 @@ class CropRecommender:
             reliability = forecast_reliability(market)
             p_used = (50 + RELIABILITY_SHRINK * (p_score - 50)
                       if econ and p_score and reliability == "limited" else p_score)
-            overall = (WEIGHTS["agronomic"] * a + WEIGHTS["timing"] * t
-                       + WEIGHTS["profit"] * p_used)
+            loc = self._location(crop, city, planting_month, offset)
+            parts = {"location": WEIGHTS["location"] * loc["score"], "planting": WEIGHTS["planting"] * plant_fit,
+                     "selling": WEIGHTS["selling"] * sell_fit, "soil": WEIGHTS["soil"] * soil_s,
+                     "weather": WEIGHTS["weather"] * weather_s, "profit": WEIGHTS["profit"] * p_used}
+            overall = sum(parts.values())
             feasible = econ["feasible"] if econ else status in ("fresh", "stored")
             profitable = bool(econ and econ["net_profit"] > 0)
             viable = n_in >= MIN_RANGE_FIT
-            eligible = bool(viable and feasible and profitable)
+            planting_ok = plant_fit > 0     # a documented or adjacent planting month in the crop calendar
+            eligible = bool(planting_ok and viable and feasible and profitable)
             results.append({
                 "crop_name": crop, "probability": float(proba[i]),
                 "model_match_score": round(float(proba[i] * 100), 2),
                 "agronomic_score": round(a, 2), "timing_score": round(t, 1),
+                "planting_fit_score": round(plant_fit, 1), "selling_fit_score": round(sell_fit, 1),
                 "profit_score": p_score, "profit_score_used": round(p_used, 1),
                 "forecast_reliability": reliability, "recommendation_score": round(overall, 2),
+                "location_score": loc["score"], "location": loc, "soil_score": round(soil_s, 1),
+                "weather_score": round(weather_s, 1), "planting_suitable": bool(planting_ok),
+                "_parts": parts,
                 "price_policy": self.price_policy.get(f"{crop}|{POLICY_BAND}", {}).get("mode", "model"),
                 "seasonal_score": float(100 if planting_month in cal.planting_months else 0),
                 "price_score": market["forecast"]["price_score"] if market["forecast"] else None,
@@ -282,7 +313,7 @@ class CropRecommender:
                 "low_agronomic_suitability": not viable,
                 "summary": exp["summary"], "reasons": exp["reasons"],
                 "limitations": self._limitations(crop, exp, status, stored, offset, econ,
-                                                 market, proba[i], not viable),
+                                                 market, proba[i], not viable, plant_fit),
                 "important_factors": exp["factors"], "factor_groups": exp["groups"],
                 "shap_base_value": float(self._base_values()[i]),
                 "economics": econ, "timeline": market["timeline"],
@@ -298,9 +329,9 @@ class CropRecommender:
         priced = sorted((r for r in results if r["feasible"] and r["economics"]),
                         key=lambda r: r["economics"]["net_profit"], reverse=True)
         for r in results:
-            r["score_points"] = {"agronomic": round(WEIGHTS["agronomic"] * r["agronomic_score"], 1),
-                                 "timing": round(WEIGHTS["timing"] * r["timing_score"], 1),
-                                 "profit": round(WEIGHTS["profit"] * r["profit_score_used"], 1)}
+            sp = {k: round(v, 2) for k, v in r.pop("_parts").items()}
+            r["score_points"] = {**sp, "agronomic": round(sp["soil"] + sp["weather"], 2),
+                                 "timing": round(sp["planting"] + sp["selling"], 2)}
         for k, r in enumerate(priced, start=1):
             r["profit_rank"] = k
         for r in results:
@@ -334,12 +365,15 @@ class CropRecommender:
         }
 
     def _limitations(self, crop, exp, status, stored, offset, econ, market, p,
-                     low: bool) -> list[str]:
+                     low: bool, plant_fit: float) -> list[str]:
         out = list(exp["limitations"])
         cal = self.calendar[crop]
         if low:
             out.insert(0, f"Low suitability: the model gives {crop} only a {p * 100:.0f}% match "
                           "for your soil, weather and timing.")
+        if plant_fit == 0:
+            out.insert(0, f"{crop} is not usually planted in this month; documented planting months are "
+                          f"{', '.join(MONTH_NAMES[m - 1] for m in sorted(cal.planting_months))}.")
         if status == "not_ready":
             out.insert(0, f"{crop} needs {cal.growth_months_min}–{cal.growth_months_max} months; "
                           f"it will not be ready {offset} months after planting.")

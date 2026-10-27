@@ -66,9 +66,16 @@ def test_score_formula(client, user):
     b = post(client, user, ONION_LIKE).json()
     w = b["weights"]
     for x in b["results"]:
-        exp = (w["agronomic"] * x["agronomic_score"] + w["timing"] * x["timing_score"]
-               + w["profit"] * x["profit_score_used"])
+        exp = (w["location"] * x["location_score"] + w["planting"] * x["planting_fit_score"] + w["selling"] * x["selling_fit_score"]
+               + w["soil"] * x["soil_score"] + w["weather"] * x["weather_score"] + w["profit"] * x["profit_score_used"])
         assert abs(exp - x["recommendation_score"]) < 0.05
+
+
+def test_timing_score_is_the_mean_of_planting_and_selling_fit(client, user):
+    b = post(client, user, ONION_LIKE).json()
+    for x in b["results"]:
+        assert abs(0.5 * x["planting_fit_score"] + 0.5 * x["selling_fit_score"] - x["timing_score"]) < 0.06
+        assert 0 <= x["planting_fit_score"] <= 100 and 0 <= x["selling_fit_score"] <= 100
 
 
 def test_economics_are_consistent(client, user):
@@ -339,10 +346,46 @@ def test_explanation_when_most_profitable_crop_is_not_best_overall(client, user)
     assert seen >= 1, "no scenario had a most-profitable crop that is not the best overall"
 
 
-def test_same_crop_wins_both_when_profit_and_score_agree(client, user):
+def test_location_and_season_outrank_profit(client, user):
+    """In Nagpur Onion earns the most, but it is a Nashik/Ahilyanagar crop: a crop that suits the place wins (profit is secondary)."""
     b = analyze(client, user, NAGPUR_PLAN)
-    assert b["best_overall"] == b["highest_profit"] == "Onion"
-    assert b["ranking_explanation"]["same_crop"]
+    by = {x["crop_name"]: x for x in b["results"]}
+    assert b["highest_profit"] == "Onion" and b["best_overall"] != "Onion"
+    best = by[b["best_overall"]]
+    assert best["eligible"] and best["score_points"]["location"] > by["Onion"]["score_points"]["location"]
+    assert best["economics"]["net_profit"] < by["Onion"]["economics"]["net_profit"]
+    assert b["ranking_explanation"]["reasons"][0]["code"] == "location"
+
+
+def test_location_changes_the_location_score(client, user):
+    nashik = {x["crop_name"]: x for x in analyze(client, user, ONION_LIKE)["results"]}
+    nagpur = {x["crop_name"]: x for x in analyze(client, user, NAGPUR_PLAN)["results"]}
+    assert nashik["Onion"]["location"]["growing_area_share_pct"] > nagpur["Onion"]["location"]["growing_area_share_pct"]
+    assert nashik["Onion"]["location_score"] > nagpur["Onion"]["location_score"]
+    assert 0 <= nashik["Onion"]["location"]["climate_score"] <= 100
+    assert set(nashik["Onion"]["location"]["climate"]["values"]) == {"temperature", "humidity", "rainfall"}
+
+
+def test_off_season_crops_are_not_eligible(client, user):
+    b = analyze(client, user, {**ONION_LIKE, "planting_month": 4, "selling_month": 8})
+    off = [x for x in b["results"] if not x["planting_suitable"]]
+    assert off, "April is outside several crops' planting windows"
+    for x in off:
+        assert not x["eligible"] and not x["recommended"] and x["status"]["key"] == "offSeason"
+        assert x["planting_fit_score"] == 0 and any("not usually planted" in m for m in x["limitations"])
+    for x in b["results"]:
+        if x["recommended"]:
+            assert x["planting_suitable"]
+
+
+def test_profit_breaks_ties_between_equally_suitable_crops(client, user):
+    """With the same location/season/soil/weather points, the higher profit score ranks higher."""
+    b = analyze(client, user, ONION_LIKE)
+    pts = lambda x, ks: sum(x["score_points"][k] for k in ks)
+    for x, y in zip(b["results"], b["results"][1:]):
+        if x["eligible"] and y["eligible"] and abs(pts(x, ("location", "planting", "selling", "soil", "weather"))
+                                                    - pts(y, ("location", "planting", "selling", "soil", "weather"))) < 0.01:
+            assert x["score_points"]["profit"] >= y["score_points"]["profit"]
 
 
 def test_losses_poor_fit_and_limited_forecasts_are_labelled(client, user):
@@ -371,7 +414,7 @@ def test_net_profit_and_score_parts_are_consistent_for_other_plans(client, user)
         for x in analyze(client, user, body)["results"]:
             e, p = x["economics"], x["score_points"]
             assert abs(e["net_profit"] - (e["gross_revenue"] - e["total_cost"])) <= 2
-            assert abs(sum(p.values()) - x["recommendation_score"]) <= 0.2
+            assert abs(sum(p[k] for k in ("location", "planting", "selling", "soil", "weather", "profit")) - x["recommendation_score"]) <= 0.2
     # selling a month earlier or later changes the plan the whole page reports
     other = analyze(client, user, {**ONION_LIKE, "selling_month": 4})
     assert other["selling_date"] == "2027-04" and other["ranking_explanation"]["best_overall"] == other["best_overall"]
@@ -400,8 +443,7 @@ def test_best_overall_is_by_score_not_profit_and_price_policy_labels_the_unrelia
     assert by["Brinjal"]["eligible"] is False and by["Brinjal"]["low_agronomic_suitability"] is True
     assert b["ranking_explanation"]["reasons"][0]["code"] == "fit" and b["ranking_explanation"]["profit_gap"] > 0
     w = b["weights"]
-    for x in b["results"]:                     # Overall = 0.40 agronomic + 0.20 timing + 0.40 profit (after the reliability adjustment)
-        assert math.isclose(x["recommendation_score"], w["agronomic"] * x["agronomic_score"] + w["timing"] * x["timing_score"]
-                            + w["profit"] * x["profit_score_used"], abs_tol=0.02)
+    for x in b["results"]:                     # Overall = the six weighted parts (profit after the reliability adjustment)
+        assert math.isclose(x["recommendation_score"], sum(x["score_points"][k] for k in w), abs_tol=0.05)
     assert {k for k, x in by.items() if x["price_policy"] == "context_only"} == {"Potato", "Tomato", "Onion", "Wheat"}
     assert {k for k, x in by.items() if x["price_policy"] == "model"} == {"Brinjal", "Cabbage", "Cauliflower"}

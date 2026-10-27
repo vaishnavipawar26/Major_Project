@@ -99,7 +99,7 @@ describe("CropCompare order", () => {
     const { container } = render(<CropCompare response={differ} selected="Cauliflower" onSelect={() => {}} />);
     expect(container.querySelector(".why-box")).toBeNull();
     expect(container.textContent).not.toContain("Why Cauliflower ranks first");
-    expect(container.querySelector("[data-testid=chart-note]").textContent).toMatch(/^Why Cauliflower\?/);
+    expect(container.querySelector("[data-testid=chart-note]").textContent).toContain("Why Cauliflower is recommended");
     const chart = container.querySelector("[data-testid=chart]"), toggle = container.querySelector("button.btn-link");
     expect(container.querySelector("table")).toBeNull();
     expect(!!(chart.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
@@ -109,6 +109,7 @@ describe("CropCompare order", () => {
     const { container } = render(<CropCompare response={same} selected="Brinjal" onSelect={() => {}} />);
     expect(container.querySelector(".why-box")).toBeNull();
     const chart = container.querySelector("[data-testid=chart]"), toggle = container.querySelector("button.btn-link");
-    expect(chart.nextElementSibling).toBe(toggle);
+    expect(chart.nextElementSibling).toBe(container.querySelector("[data-testid=chart-note]"));      // chart, then why-block, then the toggle
+    expect(container.querySelector("[data-testid=chart-note]").nextElementSibling).toBe(toggle);
   });
 });

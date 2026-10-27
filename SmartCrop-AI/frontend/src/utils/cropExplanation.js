@@ -6,7 +6,7 @@ const TIE = 0.05;
 
 /** The crop to explain: the best overall crop, else the top-ranked one. */
 export const recommendedCrop = (response) =>
-  response?.results?.find((r) => r.crop_name === response.best_overall) || null;
+  response?.results?.find((r) => r.crop_name === (response.recommended_crop ?? response.best_overall)) || null;
 
 /** A response the page can explain: it must carry the fields the sections read. */
 export const isExplainable = (data) => {

@@ -8,15 +8,13 @@ import ServerText from "../components/ServerText";
 import BestCropCard from "../components/crop/BestCropCard";
 import CropCompare from "../components/crop/CropCompare";
 import Financials from "../components/crop/Financials";
-import PersonalPlan from "../components/crop/PersonalPlan";
 import PlanSummary from "../components/crop/PlanSummary";
-import TimelineSection from "../components/crop/TimelineSection";
 import { useT } from "../i18n/LanguageContext";
 import { errorMessage } from "../services/api";
 import { cropService } from "../services/cropService";
 import { historyService } from "../services/historyService";
 import { cropName, fmtDateTime, titleCase } from "../utils/format";
-import { defaultCrop } from "../utils/cropPlan";
+import { recommendedName, defaultCrop } from "../utils/cropPlan";
 import { LAST_CROP_RESULT_KEY, SOILS } from "./CropRecommendation";
 
 export const INPUT_KEYS = ["nitrogen", "phosphorus", "potassium", "temperature", "humidity", "ph", "rainfall"];
@@ -89,7 +87,7 @@ export default function CropResult() {
       action={<Link className="btn btn-primary" to="/crop-recommendation">{tr("crop.result.emptyAction")}</Link>} />;
   }
 
-  const best = results.find((r) => r.crop_name === response.best_overall);
+  const best = results.find((r) => r.crop_name === recommendedName(response));
 
   return (
     <div className="crop-result">
@@ -109,10 +107,8 @@ export default function CropResult() {
           <PlanSummary response={response} crop={best || current} />
           <BestCropCard response={response} onSelect={setSelected} />
         </div>
-        <PersonalPlan response={response} />
         <CropCompare response={response} selected={current.crop_name} onSelect={setSelected} />
         <Financials result={current} response={response} />
-        <TimelineSection result={current} />
         <div className="row">
           <button type="button" className="btn btn-primary" onClick={() => {
             // the saved record id travels in the URL; an unsaved result has none, so it is handed over as page state instead

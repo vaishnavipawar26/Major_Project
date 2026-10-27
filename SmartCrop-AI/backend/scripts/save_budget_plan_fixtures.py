@@ -18,7 +18,9 @@ OUT = Path(__file__).resolve().parents[2] / "frontend" / "src" / "test-fixtures"
 CAB = dict(soil_type="sandy_loam", nitrogen=115, phosphorus=60, potassium=75, ph=6.3, temperature=21, humidity=70, rainfall=90, city="Pune", area_acres=1)
 SCENARIOS = {
     # nothing fits the budget: the cheapest suitable crop is shown and every other crop is listed with its reason
-    "no_fit_budget": dict(CAB, planting_month=10, selling_month=1, budget_inr=40000, priority="balanced", risk_level="medium"),
+    "no_fit_budget": dict(CAB, planting_month=10, selling_month=1, budget_inr=3000, priority="balanced", risk_level="medium"),
+    # the budget cannot pay for the whole field but does pay for part of it: a smaller-area plan
+    "partial_area": dict(CAB, planting_month=10, selling_month=1, budget_inr=40000, priority="highest_profit", risk_level="high"),
     # one crop fits: a single "Best for you" card
     "one_card": dict(CAB, planting_month=10, selling_month=1, budget_inr=60000, priority="balanced", risk_level="medium"),
     # the plan agrees with the standard #1 and other crops fit too
