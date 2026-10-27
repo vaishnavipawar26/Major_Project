@@ -37,7 +37,7 @@ def _forecast_fields(f: dict) -> dict:
                               "path", "last_validated_days", "validated_days",
                               "max_horizon_days", "advice", "policy", "range_info", "latest_recorded", "verdict", "horizon", "history", "history_is_reference",
                               "actual_after_origin", "model", "projection", "source", "dates",
-                              "disclaimer")}
+                              "disclaimer")} | {k: f.get(k, []) for k in ("earlier_years", "reference_after", "chart_path")} | {"chart_end_date": f.get("chart_end_date")}
 
 
 def predict(db: Session, user: User, forecaster: PriceForecaster, req: PriceRequest) -> dict:

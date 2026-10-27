@@ -33,6 +33,14 @@ from app.ml.price_prediction.weather_features import WEATHER_FEATURES, attach
 log = logging.getLogger(__name__)
 
 HISTORY_DAYS = 60
+EARLIER_YEARS = 5           # how many earlier years the "same time in earlier years" fallback looks back
+EARLIER_WINDOW_DAYS = 7     # reported prices within this many days of the target date count for a year
+EARLIER_MIN_REPORTS = 3
+CHART_AFTER_DAYS = 14        # the chart continues this many days past the selected date so later selling dates can be compared
+EARLIER_STEP_DAYS = 7       # earlier-year prices are also returned every 7 days around the target date
+EARLIER_STEPS = 9           # ... for this many steps before and after it
+EARLIER_POINT_WINDOW_DAYS = 3
+REFERENCE_NEAR_DAYS = 3     # last year's rows are returned this many days past the target so a day without a report can use its neighbours
 MAX_OTHER_MARKETS = 6      # other markets tried, most reports first
 MIN_BASELINE_OBS = 3       # reports needed for a historical estimate
 BASELINE_WINDOW_DAYS = 10  # +- days around a date of an earlier year when measuring seasonal change
@@ -370,6 +378,42 @@ class PriceForecaster:
                   for d, p in zip(after["Date"], after["price"])]
         return history, actual
 
+    @staticmethod
+    def _reference_after(series: pd.DataFrame, ctx: "_Ctx", ref_origin_date: date, target_h: int, projected: bool) -> list[dict]:
+        """For a projection: last year's reported prices from the day after the reference origin to ``target_h`` days
+        (plus REFERENCE_NEAR_DAYS, so a date without a report can use its neighbours), moved to the requested
+        year and price level exactly like ``history``. Empty for real dates, whose later prices are ``actual_after_origin``."""
+        if not projected:
+            return []
+        ro = pd.Timestamp(ref_origin_date)
+        rows = series[(series["Date"] > ro) & (series["Date"] <= ro + pd.Timedelta(days=target_h + REFERENCE_NEAR_DAYS)) & series["observed"]]
+        return [{"date": _shift_years(d.date(), ctx.years_ahead).isoformat(), "price": round(float(p) * ctx.level, 2)}
+                for d, p in zip(rows["Date"], rows["price"])]
+
+    def _earlier_years(self, series: pd.DataFrame, target_date: date) -> list[dict]:
+        """The price around the target date's calendar day in each earlier year, moved to the target year's price level
+        with the app's inflation assumption. It is history, not a forecast: the page draws it when no forecast is shown.
+        A year with fewer than EARLIER_MIN_REPORTS reports in the window is left out."""
+        out = []
+        for k in range(1, EARLIER_YEARS + 1):
+            centre = _shift_years(target_date, -k)
+            lo, hi = pd.Timestamp(centre) - pd.Timedelta(days=EARLIER_WINDOW_DAYS), pd.Timestamp(centre) + pd.Timedelta(days=EARLIER_WINDOW_DAYS)
+            obs = series[series["observed"] & (series["Date"] >= lo) & (series["Date"] <= hi)]["price"].dropna()
+            if len(obs) < EARLIER_MIN_REPORTS:
+                continue
+            raw = float(obs.mean())
+            # the same year every 7 days around the target date: how the price moved in the weeks before and after it
+            weekly = {}
+            for step in range(-EARLIER_STEPS, EARLIER_STEPS + 1):
+                c = pd.Timestamp(centre) + pd.Timedelta(days=step * EARLIER_STEP_DAYS)
+                w = series[series["observed"] & (series["Date"] >= c - pd.Timedelta(days=EARLIER_POINT_WINDOW_DAYS))
+                           & (series["Date"] <= c + pd.Timedelta(days=EARLIER_POINT_WINDOW_DAYS))]["price"].dropna()
+                if len(w) >= 2:
+                    weekly[str(step * EARLIER_STEP_DAYS)] = round(float(w.mean()) * (1 + self.inflation) ** k, 2)
+            out.append({"year": centre.year, "date": centre.isoformat(), "price": round(raw * (1 + self.inflation) ** k, 2),
+                        "raw_price": round(raw, 2), "n": int(len(obs)), "weekly": weekly})
+        return out
+
     def _forecast_model(self, ref: SeriesRef, ctx: "_Ctx", target_date: date,
                         explain: bool = True) -> dict:
         """Trained-model forecast from the latest complete report at or before the reference date."""
@@ -461,7 +505,8 @@ class PriceForecaster:
             except Exception:  # never fabricate reasons; the API reports "no explanation"
                 log.exception("SHAP explanation failed")
 
-        history, actual_after = self._context(series, ctx, ref_origin_date, len(shown), projected)
+        chart_h = min(target_h + CHART_AFTER_DAYS, len(path))     # the chart (and later-date comparisons) run past the selected date
+        history, actual_after = self._context(series, ctx, ref_origin_date, chart_h, projected)
         for p in path:
             p.pop("_band")
 
@@ -487,6 +532,9 @@ class PriceForecaster:
             "history": history,
             "history_is_reference": projected,
             "actual_after_origin": actual_after,
+            "earlier_years": self._earlier_years(series, target_date),
+            "reference_after": self._reference_after(series, ctx, ref_origin_date, chart_h, projected),
+            "chart_path": path, "chart_end_date": path[chart_h - 1]["date"],
             "model": {"version": self.version, "algorithm": self._algorithm(target_h),
                       "approach": self.meta.get("approach", ""),
                       "data_end": self.data_end.isoformat()},
@@ -580,7 +628,8 @@ class PriceForecaster:
         shown = path[:target_h]
         advice = best_time_to_sell(shown, target_h, ref.commodity, projected)
         ref_origin = known["Date"].iloc[-1].date()
-        history, actual_after = self._context(series, ctx, ref_origin, len(shown), projected)
+        chart_h = min(target_h + CHART_AFTER_DAYS, len(path))
+        history, actual_after = self._context(series, ctx, ref_origin, chart_h, projected)
         # the real prices reported on the days that were forecast, when they are in the dataset
         if not projected:
             tp = series.set_index("Date")["price"]
@@ -608,6 +657,9 @@ class PriceForecaster:
             "latest_recorded": ctx.latest,
             "history": history, "history_is_reference": projected,
             "actual_after_origin": actual_after,
+            "earlier_years": self._earlier_years(series, target_date),
+            "reference_after": self._reference_after(series, ctx, ref_origin, chart_h, projected),
+            "chart_path": path, "chart_end_date": path[chart_h - 1]["date"],
             "model": {"version": self.version, "algorithm": "Historical price estimate (no model)",
                       "approach": ("Latest reported price level, moved to the requested year with the "
                                    "annual inflation assumption and by the typical seasonal change "

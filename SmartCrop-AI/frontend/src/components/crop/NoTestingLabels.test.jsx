@@ -97,7 +97,7 @@ describe("dictionaries", () => {
   });
 
   it.each(Object.keys(all))("%s still has the cautions, errors and farming warnings", (lang) => {
-    for (const k of ["price.result.roughGuide", "price.kid.notTested", "price.form.roughBody", "price.form.roughValidated",
+    for (const k of ["price.kid.notTested", "price.form.roughBody", "price.form.roughValidated",
       "table.lessReliable", "auth.errEmail", "auth.errPassword",
       "timeline.concl.spoiled", "timeline.concl.not_ready"]) {
       expect(typeof (all[lang][k] ?? en[k]), `${lang} ${k}`).toBe("string");

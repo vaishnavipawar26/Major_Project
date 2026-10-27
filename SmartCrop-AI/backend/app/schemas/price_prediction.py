@@ -105,6 +105,15 @@ class PricePoint(BaseModel):
     price: float
 
 
+class EarlierYearPrice(BaseModel):
+    year: int
+    date: dt.date          # the target date's calendar day in that year
+    price: float           # average reported price within a week of it, moved to the target year with inflation
+    raw_price: float       # the same average as reported
+    n: int                 # number of reported prices behind it
+    weekly: dict[str, float] = {}   # same year, price at 7-day steps from the target date ("-14", "0", "7", ...), inflation adjusted
+
+
 class SeriesInfo(BaseModel):
     state: str
     market: str
@@ -172,6 +181,13 @@ class PriceForecastResponse(BaseModel):
     history: list[PricePoint]
     history_is_reference: bool
     actual_after_origin: list[PricePoint]
+    # price around the target date in each earlier year (inflation adjusted): the history-only fallback when no forecast is shown
+    earlier_years: list[EarlierYearPrice] = []
+    # projections only: last year's prices from the start date to the selected date (inflation adjusted like `history`)
+    reference_after: list[PricePoint] = []
+    # the daily path to the end of the chart (it runs past the selected date) and the chart's last date
+    chart_path: list[ForecastPoint] = []
+    chart_end_date: dt.date | None = None
     model: ModelInfo
     projection: ProjectionInfo | None = None
     source: SourceInfo
