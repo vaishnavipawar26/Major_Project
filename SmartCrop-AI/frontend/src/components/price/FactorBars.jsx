@@ -87,13 +87,10 @@ export default function FactorBars({ exp, ctxOnly, crop }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="legend" style={{ gap: narrow ? "0.6rem" : "1.4rem", margin: "6px 0 10px", fontSize: narrow ? "0.76rem" : "0.95rem", flexWrap: "nowrap", whiteSpace: "nowrap" }} data-testid="fb-legend">
+      <div className="legend" style={{ gap: narrow ? "0.6rem" : "1.4rem", margin: "6px 0 0", fontSize: narrow ? "0.76rem" : "0.95rem", flexWrap: "nowrap", whiteSpace: "nowrap" }} data-testid="fb-legend">
         <span><span style={{ width: 13, height: 13, borderRadius: "50%", background: GREEN, display: "inline-block" }} />{t("fb.raises")}</span>
         <span><span style={{ width: 13, height: 13, borderRadius: "50%", background: RED, display: "inline-block" }} />{t("fb.lowers")}</span>
       </div>
-      <p data-testid="fb-explain" style={{ margin: 0, padding: "0.9rem 1.1rem", background: "#f1f0e3", borderRadius: 16, lineHeight: 1.55, fontSize: "0.95rem" }}>
-        {t("fb.explain")}
-      </p>
     </div>
   );
 }

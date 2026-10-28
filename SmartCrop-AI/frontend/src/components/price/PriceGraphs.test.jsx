@@ -59,16 +59,13 @@ describe("chartRows", () => {
 });
 
 describe("SimplePriceChart", () => {
-  it("allowed forecast: the expected price above the graph, two legend items, and one note saying the latest price is not today's", () => {
+  it("allowed forecast: one short sentence, the highlighted expected price, no legend or axis captions, and one note saying the latest price is not today's", () => {
     render(<SimplePriceChart forecast={base} ctxOnly={false} selected={selected} crop="Cabbage" market="APMC X" />);
-    const head = screen.getByTestId("g1-headline");
-    expect(head.textContent).toContain("Expected Crop Price");
-    expect(screen.getByTestId("g1-price").textContent.replace(/\u00a0/g, " ")).toBe("₹1,201 per quintal");     // the API's value for the date
-    expect(screen.getByTestId("g1-sentence").textContent).toBe("The estimated price for Cabbage on 2 Nov 2026 is ₹1,201 per quintal.");
-    const legend = screen.getByTestId("chart-legend");
-    expect([...legend.children].map((c) => c.textContent)).toEqual(["Past Prices", "Expected Price"]);
-    expect(screen.getByText("Price (₹/quintal)")).toBeTruthy();
-    expect(screen.getByText("Date")).toBeTruthy();
+    expect(screen.getByTestId("g1-intro").textContent).toBe("Past prices show what this crop sold for. The highlighted point shows the expected price.");
+    expect(screen.getByTestId("expected-point-label").textContent.replace(/\u00a0/g, " ")).toBe("Expected ₹1,201");   // the API's value for the date
+    expect(screen.queryByTestId("chart-legend")).toBeNull();                         // no legend: the sentence says what is what
+    expect(screen.queryByText("Price (₹/quintal)")).toBeNull();                      // and no axis captions
+    expect(screen.queryByText("Date")).toBeNull();
     const note = screen.getByTestId("latest-note").textContent;
     expect(note).toContain("₹1,100 per quintal on 31 Dec 2025");
     expect(note).toContain("not today's price");
@@ -80,10 +77,8 @@ describe("SimplePriceChart", () => {
   });
   it("history-only crop: no expected price, series or point, and the reason is stated", () => {
     render(<SimplePriceChart forecast={base} ctxOnly selected={{ price: 990, source: "reference" }} crop="Onion" market="APMC X" />);
-    expect(screen.getByTestId("chart-legend").textContent).not.toContain("Expected Price");
-    expect(screen.getByTestId("g1-price").textContent).toBe("Not available");          // a past/reference price is never called expected
-    expect(screen.getByTestId("g1-sentence").textContent).toBe("There is no reliable expected price for Onion on 2 Nov 2026. The graph shows past prices only.");
-    expect(screen.getByTestId("g1-headline").textContent).not.toContain("990");
+    expect(screen.getByTestId("g1-intro").textContent).toBe("Past prices show what this crop sold for. There is no expected price for Onion on this date.");
+    expect(screen.getByTestId("simple-chart").textContent).not.toContain("990");        // a past/reference price is never called expected
     expect(screen.queryByTestId("expected-point-label")).toBeNull();
     expect(document.querySelector("[data-testid=simple-chart] svg").textContent).toContain("Selling date");
     expect(screen.getByTestId("no-forecast-line").textContent).toContain("No forecast is shown for Onion");
@@ -92,13 +87,13 @@ describe("SimplePriceChart", () => {
   it("only forecast points that beat the baseline are drawn", () => {
     const f = { ...base, chart_path: path.map((p) => ({ ...p, beats_baseline: false })) };
     render(<SimplePriceChart forecast={f} ctxOnly={false} selected={selected} crop="Cabbage" market="APMC X" />);
-    expect(screen.getByTestId("chart-legend").textContent).not.toContain("Expected Price");
+    expect(document.querySelectorAll("[data-testid=simple-chart] .recharts-line").length).toBeGreaterThan(0);
   });
   it("no historical prices and no forecast: a short message, no chart", () => {
     render(<SimplePriceChart forecast={{ ...base, observed: [] }} ctxOnly selected={null} crop="Onion" market="APMC X" />);
     expect(screen.getByTestId("no-history")).toBeTruthy();
     expect(screen.queryByTestId("simple-chart")).toBeNull();
-    expect(screen.getByTestId("g1-price").textContent).toBe("Not available");
+    expect(screen.getByTestId("g1-intro").textContent).toContain("There is no expected price for Onion");
   });
   it("past and expected prices are separate series, and only the selling-date point is marked and labelled", () => {
     const rows = chartRows({ observed, expected: path.map((p) => ({ date: p.date, price: p.predicted_price })), selected: 1201, targetDate: "2026-11-02" });
@@ -175,11 +170,12 @@ describe("FactorBars (What Affects Your Crop Price?)", () => {
     expect(Math.min(...t)).toBeGreaterThanOrEqual(-0.0446);
     expect(Math.max(...t)).toBeLessThanOrEqual(0.0742);
   });
-  it("draws the chart with the legend and the exact explanation text, and no plus signs or percentages beside the bars", () => {
+  it("draws the chart with its legend and no extra explanation text below it, and no plus signs or percentages beside the bars", () => {
     render(<FactorBars exp={exp()} ctxOnly={false} crop="Cabbage" />);
     const root = screen.getByTestId("factor-bars");
     expect(screen.getByTestId("fb-legend").textContent).toBe("Pushes the price upPushes the price down");
-    expect(screen.getByTestId("fb-explain").textContent).toBe("Green bars show factors that push the predicted price higher. Red bars show factors that push it lower. The size of each bar shows how strongly that factor contributes to the model's prediction. These factors help explain the model's estimate; they do not guarantee that the market price will rise or fall. Check today's mandi price before deciding when to sell.");
+    expect(screen.queryByTestId("fb-explain")).toBeNull();                         // the long explanation under the graph is gone
+    expect(root.querySelectorAll("p")).toHaveLength(0);
     const chartText = Array.from(root.querySelectorAll("svg text")).map((n) => n.textContent).join(" ");
     expect(chartText).not.toMatch(/[+%]/);
     expect(root.querySelector("h3")).toBeNull();
@@ -277,40 +273,44 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
       expect(row(id).querySelector("rect").getAttribute("fill")).toBe("none");
     }
   });
-  it("says for each group what it is, its date, its source and whether it was just fetched, plus the required statement", () => {
+  it("explains why each condition matters, in plain words and without naming any data provider", () => {
     const wxLive = { state: "ok", data: { ...wx.data, source: "Open-Meteo weather forecast", served_from: "live", retrieved_at: "2026-10-28T06:00:00+00:00" } };
-    render(<FieldConditions weather={wxLive} soil={{ state: "ok", data: { status: "estimate", ph: 6.8, soil_type: "Vertisols", ph_scope: "town_centre", served_from: "live" } }} />);
-    expect(screen.getByTestId("fc-src-weather").textContent).toBe("Temperature, humidity and rainfall: forecast for 2 Nov 2026 · Open-Meteo weather forecast · fetched just now.");
-    expect(screen.getByTestId("fc-src-soil").textContent).toBe("Soil pH and soil type: regional SoilGrids estimate (at the market town), not a measurement from the farmer's field · fetched just now.");
-    expect(screen.getByTestId("fc-src-location").textContent).toContain("not assumed to be where the crop was grown");
+    render(<FieldConditions weather={wxLive} soil={{ state: "ok", data: { status: "estimate", ph: 6.8, soil_type: "Vertisols", ph_scope: "town_centre", served_from: "live", source: "SoilGrids (ISRIC), regional soil map" } }} />);
+    const why = (id) => screen.getByTestId(`fc-why-${id}`).textContent;
+    expect(why("temperature")).toBe("Temperature: Helps you understand whether the weather is suitable for crop growth.");
+    expect(why("humidity")).toBe("Humidity: High humidity can increase the risk of crop diseases.");
+    expect(why("rainfall")).toBe("Rainfall: Helps you understand how much rain the crop may receive.");
+    expect(why("ph")).toBe("Soil pH: Helps you understand whether the soil acidity is suitable for your crop.");
+    expect(why("soil")).toBe("Soil Type: Helps you understand the kind of soil your crop is growing in.");
+    expect(screen.getByTestId("fc-note-weather").textContent).toBe("Temperature, humidity and rainfall are the forecast for 2 Nov 2026.");
+    expect(screen.getByTestId("fc-note-soil").textContent).toBe("Soil pH and soil type are regional estimates (at the market town), not measurements from your farm.");   // an older result: no growing location
+    expect(screen.getByTestId("fc-note-location").textContent).toContain("not given for this prediction");
     expect(screen.getByTestId("fc-note").textContent).toBe("Environmental conditions shown for context; these factors are not inputs to the current price prediction model.");
-    expect(root().textContent).not.toMatch(/shap|score|correlat|raise|lower|increase|decrease|push|null|undefined|NaN/i);
+    expect(root().textContent).not.toMatch(/Open-Meteo|SoilGrids|GeoNames|ISRIC|geocoding|API|Source:/);                                  // no provider or technical names anywhere
+    expect(screen.queryByTestId("fc-sources")).toBeNull();
+    expect(root().textContent).not.toMatch(/shap|score|correlat|null|undefined|NaN/i);
     expect(val("ph")).toBe("6.8");
   });
-  it("labels stored answers with when they were saved, recorded history as recorded, and soil pH read around the town", () => {
+  it("recorded weather is called recorded, and soil pH read around the place is said to come from the surrounding farmland", () => {
     const wxCached = { state: "ok", data: { ...wx.data, status: "observed", date: "2025-10-29", source: "Open-Meteo historical archive", served_from: "cache", retrieved_at: "2026-10-27T10:15:00+00:00" } };
     render(<FieldConditions weather={wxCached} soil={{ state: "ok", data: { status: "estimate", ph: 7.1, soil_type: "Vertisols", ph_scope: "surrounding_area", ph_area_km: 2, served_from: "cache", retrieved_at: "2026-10-26T09:00:00+00:00" } }} />);
-    const w = screen.getByTestId("fc-src-weather").textContent;
-    expect(w).toContain("historical record for 29 Oct 2025");
-    expect(w).toContain("Open-Meteo historical archive");
-    expect(w).toContain("saved 27 Oct 2026");
-    const s = screen.getByTestId("fc-src-soil").textContent;
-    expect(s).toContain("pH from farmland about 2 km around the market town");
-    expect(s).toContain("saved 26 Oct 2026");
+    expect(screen.getByTestId("fc-note-weather").textContent).toBe("Temperature, humidity and rainfall were recorded on 29 Oct 2025.");
+    expect(screen.getByTestId("fc-note-soil").textContent).toContain("pH from farmland about 2 km around the market town");
+    expect(root().textContent).not.toMatch(/Open-Meteo|SoilGrids|GeoNames|ISRIC|geocoding|API|Source:/);
   });
-  it("explains why something is unavailable in plain words, never as a raw error", () => {
+  it("explains why something is unavailable in plain words, never as a raw error, and keeps the warning", () => {
     render(<FieldConditions weather={{ state: "ok", data: { status: "unavailable", reason: "no_coordinates", temperature_c: null } }}
       soil={{ state: "ok", data: { status: "unavailable", reason: "service_unreachable", ph: null, soil_type: null } }} />);
-    expect(screen.getByTestId("fc-src-weather").textContent).toBe("Temperature, humidity and rainfall: unavailable. No location is configured for this market yet.");
-    expect(screen.getByTestId("fc-src-soil").textContent).toBe("Soil pH and soil type: unavailable. The data service could not be reached just now. Please try again later.");
+    expect(screen.getByTestId("fc-note-weather").textContent).toBe("Temperature, humidity and rainfall are unavailable. No location is configured for this market yet.");
+    expect(screen.getByTestId("fc-note-soil").textContent).toBe("Soil pH and soil type are unavailable. Soil information could not be loaded just now. Please try again later.");
     cleanup();
     render(<FieldConditions weather={{ state: "error", data: null }} soil={{ state: "ok", data: { status: "unavailable", reason: "ambiguous_location", ph: null, soil_type: null } }} />);
-    expect(screen.getByTestId("fc-src-weather").textContent).toContain("could not be reached");
-    expect(screen.getByTestId("fc-src-soil").textContent).toContain("matches more than one town");
+    expect(screen.getByTestId("fc-note-weather").textContent).toContain("could not be reached");
+    expect(screen.getByTestId("fc-note-soil").textContent).toContain("matches more than one town");
     cleanup();
     render(<FieldConditions weather={{ state: "ok", data: { status: "unavailable", reason: "beyond_forecast_range", temperature_c: null } }} soil={soil} />);
-    expect(screen.getByTestId("fc-src-weather").textContent).toContain("beyond the 15-day weather forecast");
-    expect(screen.getByTestId("fc-src-soil").textContent).toContain("The soil map has no pH value for this area.");
+    expect(screen.getByTestId("fc-note-weather").textContent).toContain("beyond the 15-day weather forecast");
+    expect(screen.getByTestId("fc-note-soil").textContent).toContain("The soil map has no pH value for this area.");
   });
   it("missing weather and soil read Unavailable on dashed rows, never 0 and never a bar", () => {
     render(<FieldConditions weather={{ state: "ok", data: { status: "unavailable", temperature_c: null } }} soil={{ state: "ok", data: { status: "unavailable", ph: null, soil_type: null } }} />);
@@ -321,7 +321,7 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
     }
     const values = Array.from(root().querySelectorAll("[data-testid$=-value]")).map((n) => n.textContent);
     expect(values.filter((v) => /\d/.test(v))).toEqual([]);                           // no number is shown for any missing value
-    expect(screen.getByTestId("fc-src-weather").textContent).not.toContain("Open-Meteo");
+    expect(screen.getByTestId("fc-note-weather").textContent).toContain("unavailable");
   });
   it("failed lookups, a partial soil answer and loading all render safely", () => {
     render(<FieldConditions weather={{ state: "error", data: null }} soil={{ state: "error", data: null }} />);
@@ -338,10 +338,10 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
   });
   it("a typical-weather answer is labelled as not a forecast, and an out-of-range value fills its bar but still shows its true number", () => {
     render(<FieldConditions weather={{ state: "ok", data: { ...wx.data, status: "typical", rainfall_mm: 120, reason: "service_unreachable", served_from: "stored_history", source: "Stored market weather, same time of year, 2015-2025" } }} soil={soil} />);
-    const w = screen.getByTestId("fc-src-weather").textContent;
-    expect(w).toContain("typical conditions for this time of year, an estimate and not a measurement for 2 Nov 2026");
-    expect(w).toContain("from the project's stored weather records");
+    const w = screen.getByTestId("fc-note-weather").textContent;
+    expect(w).toContain("typical for this time of year, an estimate and not a measurement for 2 Nov 2026");
     expect(w).toContain("The live forecast could not be reached.");
+    expect(w).not.toMatch(/stored|project|Open-Meteo/);
     expect(val("rainfall")).toBe("120 mm");
     const r = row("rainfall").querySelectorAll("rect");
     expect(Number(r[1].getAttribute("width"))).toBeCloseTo(Number(r[0].getAttribute("width")), 0);
@@ -443,24 +443,23 @@ describe("Field Conditions for the farmer's growing location", () => {
   const growing = { value: NASHIK, available: true, latitude: 19.9973, longitude: 73.791, source: "Open-Meteo geocoding (GeoNames)" };
   const val = (id) => screen.getByTestId(`fc-${id}-value`).textContent;
 
-  it("shows the returned values, the growing location and where each value came from", () => {
+  it("shows the returned values and the growing location, with a plain explanation for each", () => {
     render(<FieldConditions weather={wx} soil={soil} growing={growing} />);
     expect([val("temperature"), val("humidity"), val("rainfall"), val("ph"), val("soil"), val("location")])
       .toEqual(["22.5 °C", "89%", "12 mm", "7.8", "Vertisols", "Nashik"]);
     expect(screen.getByTestId("fc-location").getAttribute("data-status")).toBe("ok");
-    expect(screen.getByTestId("fc-src-location").textContent)
-      .toBe("Growing location: Nashik, Maharashtra, India (19.9973° N, 73.7910° E) · chosen by you from Open-Meteo geocoding (GeoNames).");
-    expect(screen.getByTestId("fc-src-weather").textContent).toContain("forecast for 2 Nov 2026 · Open-Meteo weather forecast · fetched just now");
-    const s = screen.getByTestId("fc-src-soil").textContent;
-    expect(s).toContain("pH from farmland about 2 km around the growing location");
-    expect(s).toContain("cached, saved 26 Oct 2026");
+    expect(screen.getByTestId("fc-note-location").textContent).toBe("Growing location: Nashik, Maharashtra, India.");
+    expect(screen.getByTestId("fc-note-weather").textContent).toBe("Temperature, humidity and rainfall are the forecast for 2 Nov 2026.");
+    expect(screen.getByTestId("fc-note-soil").textContent).toContain("pH from farmland about 2 km around the growing location");
+    expect(screen.getByTestId("fc-why-ph")).toBeTruthy();
+    expect(screen.getByTestId("field-conditions").textContent).not.toMatch(/Open-Meteo|SoilGrids|GeoNames|ISRIC|geocoding|API|Source:/);
     expect(screen.getByTestId("field-conditions").textContent).not.toMatch(/market town|null|undefined|NaN/);
   });
 
   it("takes the growing location from the weather answer when no factor block is given (explanation page)", () => {
     render(<FieldConditions weather={wx} soil={soil} />);
     expect(val("location")).toBe("Nashik");
-    expect(screen.getByTestId("fc-src-location").textContent).toContain("Nashik, Maharashtra, India (19.9973° N, 73.7910° E)");
+    expect(screen.getByTestId("fc-note-location").textContent).toBe("Growing location: Nashik, Maharashtra, India.");
   });
 
   it("a growing location that could not be found is unavailable with the reason, and so are weather and soil", () => {
@@ -470,8 +469,8 @@ describe("Field Conditions for the farmer's growing location", () => {
     for (const id of ["temperature", "humidity", "rainfall", "ph", "soil", "location"]) {
       expect(screen.getByTestId(`fc-${id}`).getAttribute("data-status")).toBe("unavailable");
     }
-    expect(screen.getByTestId("fc-src-location").textContent).toBe("Growing location: \"Nowhereville\" could not be used. No place with this name was found.");
-    expect(screen.getByTestId("fc-src-weather").textContent).toContain("No place with this name was found.");
+    expect(screen.getByTestId("fc-note-location").textContent).toBe("Growing location: \"Nowhereville\" could not be used. No place with this name was found.");
+    expect(screen.getByTestId("fc-note-weather").textContent).toContain("No place with this name was found.");
   });
 
   it("a soil-service outage shows Unavailable for soil while the weather values stay", () => {
@@ -480,7 +479,7 @@ describe("Field Conditions for the farmer's growing location", () => {
     expect(val("temperature")).toBe("22.5 °C");
     expect(val("ph")).toBe("Unavailable");
     expect(val("soil")).toBe("Unavailable");
-    expect(screen.getByTestId("fc-src-soil").textContent).toContain("could not be reached");
+    expect(screen.getByTestId("fc-note-soil").textContent).toContain("Soil information could not be loaded just now");   // a short, clear explanation
   });
 });
 

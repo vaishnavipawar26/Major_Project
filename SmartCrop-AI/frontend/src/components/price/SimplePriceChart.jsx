@@ -18,7 +18,7 @@ const iso = (ms) => new Date(ms).toISOString().slice(0, 10);
  */
 export function makeScale(lastObs, nextStart) {
   if (lastObs == null || nextStart == null || nextStart - lastObs <= 30 * DAY) return { scale: (t) => t, gap: null };
-  const width = 12 * DAY;   // drawn width of the band, in axis units
+  const width = 5 * DAY;    // drawn width of the band, in axis units (kept narrow: it only marks that no prices were reported)
   return { scale: (t) => (t <= lastObs ? t : t >= nextStart ? t - nextStart + lastObs + width : lastObs + width / 2), gap: { from: lastObs, to: lastObs + width, nextStart } };
 }
 
@@ -68,7 +68,7 @@ function Tip({ active, payload, t }) {
 function axisTicks(rows, targetDate, narrow) {
   const hist = rows.filter((r) => r.hist != null);
   const span = Math.max(...rows.map((r) => r.x)) - Math.min(...rows.map((r) => r.x)) || 1;
-  const pickN = narrow ? 2 : 4;
+  const pickN = narrow ? 2 : 3;
   const optional = hist.length <= pickN ? hist.map((r) => r.real) : Array.from({ length: pickN }, (_, i) => hist[Math.round((i * (hist.length - 1)) / (pickN - 1))].real);
   const candidates = [targetDate ? ts(targetDate) : null, hist.at(-1)?.real, ...optional].filter((v) => v != null);
   const minGap = span * (narrow ? 0.3 : 0.13);
@@ -99,27 +99,12 @@ export function priceAxis(lo, hi) {
 /** "Expected ₹1,379" above the selling-date point: drawn only at the one row that has the selected price. */
 function SelLabel({ x, y, value, text }) {
   if (value == null || x == null) return null;
-  return <text x={x} y={y - 13} textAnchor="middle" fontSize={12.5} fontWeight={700} fill="var(--brand)" data-testid="expected-point-label">{text}</text>;
+  return <text x={x} y={y - 13} textAnchor="middle" fontSize={12.5} fontWeight={700} fill="var(--brand)" stroke="var(--surface)" strokeWidth={4} paintOrder="stroke" strokeLinejoin="round" data-testid="expected-point-label">{text}</text>;
 }
 
-/** The expected price in words and numbers, above the graph: the API's own value for the selling date, or a plain "not available". */
-function Headline({ t, show, selected, crop, date }) {
-  return (
-    <div className="g1-headline" data-testid="g1-headline">
-      <span className="g1-headline-label">{t("pc.expectedTitle")}</span>
-      {show ? (
-        <>
-          <span className="g1-headline-price" data-testid="g1-price">{rupees(selected.price)}<span className="unit"> {t("unit.perQuintal")}</span></span>
-          <span className="g1-headline-text" data-testid="g1-sentence">{t("pc.expectedSentence", { crop, price: rupees(selected.price), date: fmtDate(date) })}</span>
-        </>
-      ) : (
-        <>
-          <span className="g1-headline-price is-none" data-testid="g1-price">{t("pc.expectedNone")}</span>
-          <span className="g1-headline-text" data-testid="g1-sentence">{t("pc.expectedNoneSentence", { crop, date: fmtDate(date) })}</span>
-        </>
-      )}
-    </div>
-  );
+/** One short sentence under the title: what the line and the highlighted point mean (or, with no expected price, that there is none). */
+function Intro({ t, show, crop }) {
+  return <p className="g1-intro" data-testid="g1-intro">{t(show ? "pc.intro" : "pc.introNone", { crop })}</p>;
 }
 
 /**
@@ -137,13 +122,13 @@ export default function SimplePriceChart({ forecast, ctxOnly, selected, crop, ma
   const showSel = !ctxOnly && selected?.source === "forecast";
   const rows = chartRows({ observed, expected, selected: showSel ? selected.price : null, targetDate: forecast.target_date });
   const latest = observed.at(-1);
-  const headline = <Headline t={t} show={showSel} selected={selected} crop={crop} date={forecast.target_date} />;
+  const headline = <Intro t={t} show={showSel} crop={crop} />;
 
   if (!observed.length && !expected.length) {
     return <>{headline}<p className="muted small" data-testid="no-history">{t("price.chart.noHistory", { crop, market })}</p></>;
   }
   const ticks = axisTicks(rows, forecast.target_date, narrow);
-  const labels = new Map(ticks.map((tk) => [tk.x, fmtDate(iso(tk.real), { day: "numeric", month: "short", year: "2-digit" })]));
+  const labels = new Map(ticks.map((tk) => [tk.x, fmtDate(iso(tk.real), { day: "numeric", month: "short", year: narrow ? "2-digit" : "numeric" })]));
   const targetX = rows.scale(ts(forecast.target_date));
   const xs = rows.map((r) => r.x).concat(targetX);
   const lo = Math.min(...xs), hi = Math.max(...xs);
@@ -156,12 +141,7 @@ export default function SimplePriceChart({ forecast, ctxOnly, selected, crop, ma
   return (
     <div data-testid="simple-chart">
       {headline}
-      <div className="legend g1-legend" data-testid="chart-legend">
-        <span><span className="swatch-line" style={{ borderColor: "var(--text-2)" }} />{t("pc.legendHist")}</span>
-        {expected.length > 0 && <span><span className="swatch-dash" style={{ borderColor: "var(--brand)" }} />{t("pc.legendExpected")}</span>}
-      </div>
-      <div className="g1-axis-caption" aria-hidden="true">{t("pc.axisPrice")}</div>
-      <div style={{ width: "100%", height: narrow ? 210 : 240 }} role="img" aria-label={t("pc.title")}>
+      <div style={{ width: "100%", height: narrow ? 200 : 230 }} role="img" aria-label={t("pc.title")}>
         <ResponsiveContainer>
           <LineChart data={rows} margin={{ top: showSel ? 22 : 10, right: narrow ? 30 : 22, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--grid)" vertical={false} />
@@ -170,18 +150,17 @@ export default function SimplePriceChart({ forecast, ctxOnly, selected, crop, ma
             <YAxis domain={yDomain} ticks={yTicks} interval={0} width={narrow ? 50 : 56} tickLine={false} axisLine={false}
               tickFormatter={(v) => rupees(v)} stroke="var(--axis)" tick={{ fill: "var(--muted)", fontSize: 12 }} />
             <Tooltip content={<Tip t={t} />} />
-            {gap && <ReferenceArea x1={gap.from} x2={gap.to} fill="var(--grid)" fillOpacity={0.9} strokeOpacity={0}
+            {gap && <ReferenceArea x1={gap.from} x2={gap.to} fill="var(--grid)" fillOpacity={0.55} strokeOpacity={0}
               label={{ value: narrow ? "" : t("pc.gapLabel"), position: "insideBottom", fill: "var(--muted)", fontSize: 11 }} />}
             <ReferenceLine x={targetX} stroke="#b45309" strokeDasharray="3 3" label={showSel ? undefined : { value: t("pc.marker"), position: narrow ? "insideTopRight" : "insideTopLeft", fill: "#b45309", fontSize: 11, offset: 4 }} />
             <Line dataKey="hist" stroke="var(--text-2)" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
             <Line dataKey="exp" stroke="var(--brand)" strokeWidth={2.5} strokeDasharray="6 4" dot={false} connectNulls={false} isAnimationActive={false} />
             <Line dataKey="last" stroke="none" dot={{ r: 5, fill: "var(--text-2)", stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={false} />
-            <Line dataKey="sel" stroke="none" dot={{ r: 7, fill: "var(--brand)", stroke: "#fff", strokeWidth: 2.5 }} activeDot={{ r: 8 }} isAnimationActive={false}
+            <Line dataKey="sel" stroke="none" dot={{ r: 8, fill: "var(--brand)", stroke: "#cfe8d6", strokeWidth: 5 }} activeDot={{ r: 9 }} isAnimationActive={false}
               label={(p) => <SelLabel {...p} text={selText} />} />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="g1-axis-caption is-x" aria-hidden="true">{t("pc.axisDate")}</div>
       <div className="muted small" data-testid="chart-notes">
         {latest && <p style={{ margin: "6px 0 0" }} data-testid="latest-note">{t(forecast.input_date && latest.date < forecast.input_date ? "pc.latestOld" : "pc.latestToday", { price: rupees(latest.price), date: fmtDate(latest.date) })}</p>}
         {!latest && <p style={{ margin: "6px 0 0" }}>{t("pc.noHistory")}</p>}

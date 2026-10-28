@@ -195,7 +195,7 @@ describe("Smart Selling", () => {
 describe("chart section", () => {
   it("shows the Historical and Expected Market Price graph, with the forecast allowed", () => {
     renderPage(forecast({ observed: [{ date: "2025-12-30", price: 2000 }] }));
-    expect(screen.getByRole("heading", { name: /Crop Price: Past, Today and Future/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /How Much Might My Crop Sell For?/ })).toBeTruthy();
     const chart = screen.getByTestId("chart");
     expect(chart.getAttribute("data-ctx")).toBe("false");
     expect(chart.getAttribute("data-observed")).toBe("1");
@@ -328,7 +328,8 @@ describe("environmental factors from the prediction response", () => {
     await screen.findByTestId("field-conditions");
     expect(screen.getByTestId("fc-temperature-value").textContent).toBe("27.4 °C");
     expect(screen.getByTestId("fc-ph-value").textContent).toBe("6.9");
-    expect(screen.getByTestId("fc-src-weather").textContent).toContain("saved 23 Oct 2026");
+    expect(screen.getByTestId("fc-note-weather").textContent).toBe("Temperature, humidity and rainfall are the forecast for 4 Nov 2026.");
+    expect(screen.getByTestId("field-conditions").textContent).not.toMatch(/Open-Meteo|SoilGrids|saved 23 Oct/);
     expect(priceService.weatherContext).not.toHaveBeenCalled();
     expect(priceService.soilContext).not.toHaveBeenCalled();
   });

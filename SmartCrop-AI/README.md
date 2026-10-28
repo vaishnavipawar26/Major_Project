@@ -1263,6 +1263,10 @@ Rules the app follows:
   "typical" weather exists only for market towns, so it is used only for older requests without a growing location).
 * A growing location that cannot be found makes all factors "unavailable"; the selling market is never used in its place. Requests without
   a growing location (older clients, predictions saved before the field existed) still use the selling market's town, labelled as such.
+* Soil comes from SoilGrids. Its REST service (`rest.isric.org`) is sometimes down for days, so when it cannot be reached the same maps are
+  read through ISRIC's map service (`maps.isric.org`, WCS). Soil group names are checked against that group's own probability map before they
+  are shown. If neither service answers, soil shows "Unavailable"; nothing is guessed. A soil answer missing pH or type is cached for one
+  hour, a complete one for 30 days.
 * A failed or empty provider answer is never stored and never shown as a value. Missing values are shown as "Unavailable", never 0.
 * Market coordinates come from `dataset/crop_price/market_locations.csv` plus the reviewed second pass in
   `market_locations_extra.csv` (`python -m scripts.geocode_unmapped_markets`). Markets with no or ambiguous coordinates say so.

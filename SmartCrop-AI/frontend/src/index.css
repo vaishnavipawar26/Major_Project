@@ -2020,15 +2020,9 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .price-form .form-section > .field { max-width: 22rem; }
 .forecast-start-line { margin: 0.5rem 0 0; }
 /* Graph 1: the expected price in words above the chart, a compact legend and short axis captions */
-.g1-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.75rem; margin: 0 0 0.6rem; padding: 0.7rem 0.9rem; background: var(--brand-soft); border-radius: 12px; }
-.g1-headline-label { flex-basis: 100%; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--brand); }
-.g1-headline-price { font-size: 1.6rem; font-weight: 800; color: var(--brand-strong); line-height: 1.15; }
-.g1-headline-price .unit { font-size: 0.9rem; font-weight: 600; color: var(--text-2); }
-.g1-headline-price.is-none { font-size: 1.15rem; color: var(--text-2); }
-.g1-headline-text { flex-basis: 100%; font-size: 0.95rem; color: var(--text); }
-.g1-legend { margin: 0 0 0.15rem; }
-.g1-axis-caption { font-size: 0.78rem; color: var(--muted); line-height: 1.2; }
-.g1-axis-caption.is-x { text-align: center; margin-top: -2px; }
+.fc-why { margin: 0.5rem 0 0; padding-left: 1.1rem; line-height: 1.5; }
+.fc-why li { margin-bottom: 0.2rem; }
+.g1-intro { margin: 0 0 0.4rem; font-size: 1rem; line-height: 1.45; color: var(--text); }
 /* growing location: search box, suggestion list and the confirmed place */
 .growing-field { max-width: 34rem; }
 .loc-panel { margin-top: 0.35rem; }

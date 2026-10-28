@@ -1,8 +1,7 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { useNarrow } from "../../hooks/useNarrow";
 import { useT } from "../../i18n/LanguageContext";
-import { fmtDate, fmtDateTime } from "../../utils/format";
-import { fmtCoords } from "./GrowingLocationField";
+import { fmtDate } from "../../utils/format";
 
 const BRAND = "var(--brand)";
 /**
@@ -103,24 +102,22 @@ export default function FieldConditionsOverview({ weather, soil, growing = null 
     { id: "soil", label: t("fc.soil"), kind: "cat", status: soilStatus, span: 100, range: null, pct: null, valueText: soilStatus === "ok" ? sd.soil_type : missing(soilStatus) },
     { id: "location", label: t("fc.location"), kind: "cat", status: locStatus, span: 100, range: null, pct: null, valueText: locText },
   ];
-  // where each group of values came from, in plain words: what it is, for which date, from which source, and whether it was just fetched
-  // or saved earlier. When nothing trustworthy exists, a friendly reason instead of an error message.
-  const served = (d) => (d.served_from === "cache" && d.retrieved_at ? t("fc.prov.cache", { when: fmtDateTime(d.retrieved_at) })
-    : d.served_from === "stored_history" ? t("fc.prov.history") : t("fc.prov.live"));
+  // What the farmer needs to know about the data, in plain words and without naming any provider: the date the weather is for, that soil
+  // values are regional estimates, and, when nothing trustworthy exists, a friendly reason instead of an error message.
   const reasonText = (r) => t(`fc.reason.${r || "no_data"}`);
-  const weatherLine = wxLoading ? null : wxOk
-    ? t(`fc.prov.weather.${w.status}`, { date: fmtDate(w.date), source: w.source, served: served(w) })
-      + (w.status === "typical" && w.reason === "service_unreachable" ? ` ${t("fc.reason.typicalBecauseDown")}` : "")
-    : t("fc.prov.weatherNone", { why: reasonText(w?.reason || (weather?.state === "error" ? "service_unreachable" : null)) });
-  const soilLine = soilLoading ? null : soilOk
-    ? t("fc.prov.soil", { scope: t(`fc.scope.${sd.place_kind === "growing_location" ? "growing." : ""}${sd.ph_scope || "town_centre"}`, { km: sd.ph_area_km ?? 2 }), served: served(sd) })
+  const weatherNote = wxLoading ? null : wxOk
+    ? t(`fc.note.weather.${w.status}`, { date: fmtDate(w.date) }) + (w.status === "typical" && w.reason === "service_unreachable" ? ` ${t("fc.reason.typicalBecauseDown")}` : "")
+    : t("fc.note.weatherNone", { why: reasonText(w?.reason || (weather?.state === "error" ? "service_unreachable" : null)) });
+  const soilReason = sd?.reason || (soil?.state === "error" ? "service_unreachable" : null);
+  const soilWhy = soilReason === "service_unreachable" ? t("fc.reason.soilUnreachable") : reasonText(soilReason);
+  const soilNote = soilLoading ? null : soilOk
+    ? t("fc.note.soil", { scope: t(`fc.scope.${sd.place_kind === "growing_location" ? "growing." : ""}${sd.ph_scope || "town_centre"}`, { km: sd.ph_area_km ?? 2 }) })
       + (sd.ph == null ? ` ${t(`fc.reason.ph.${sd.ph_reason || "not_in_map"}`)}` : "")
-    : t("fc.prov.soilNone", { why: reasonText(sd?.reason || (soil?.state === "error" ? "service_unreachable" : null)) });
-  const locationLine = gOk
-    ? t("fc.prov.location", { place: g.value, coords: g.latitude != null ? fmtCoords(g.latitude, g.longitude) : "", source: g.source || t("fc.prov.locationSearch") })
-    : g ? t("fc.prov.locationNone", { place: g.entered || "", why: reasonText(g.reason) })
+    : t("fc.note.soilNone", { why: soilWhy });
+  const locationNote = gOk ? t("fc.note.location", { place: g.value })
+    : g ? t("fc.note.locationNone", { place: g.entered || "", why: reasonText(g.reason) })
       : locStatus === "loading" ? null : t("fc.srcLocationShort");
-  const sources = [["location", locationLine], ["weather", weatherLine], ["soil", soilLine]].filter(([, line]) => line);
+  const notes = [["location", locationNote], ["weather", weatherNote], ["soil", soilNote]].filter(([, line]) => line);
 
   return (
     <div data-testid="field-conditions">
@@ -135,8 +132,11 @@ export default function FieldConditionsOverview({ weather, soil, growing = null 
         </ResponsiveContainer>
       </div>
       <p className="muted small" style={{ margin: "0.1rem 0 0" }} data-testid="fc-scale-note">{t("fc.scaleNote")}</p>
-      <ul className="muted small" style={{ margin: "0.3rem 0 0", paddingLeft: "1.1rem" }} data-testid="fc-sources">
-        {sources.map(([id, line]) => <li key={id} data-testid={`fc-src-${id}`}>{line}</li>)}
+      <ul className="small fc-why" data-testid="fc-why">
+        {rows.map((r) => <li key={r.id} data-testid={`fc-why-${r.id}`}><strong>{r.label}:</strong> {t(`fc.why.${r.id}`)}</li>)}
+      </ul>
+      <ul className="muted small" style={{ margin: "0.3rem 0 0", paddingLeft: "1.1rem" }} data-testid="fc-notes">
+        {notes.map(([id, line]) => <li key={id} data-testid={`fc-note-${id}`}>{line}</li>)}
       </ul>
       <p className="small" style={{ margin: "0.5rem 0 0", padding: "0.6rem 0.8rem", background: "#f1f0e3", borderRadius: 12, lineHeight: 1.5 }} data-testid="fc-note">{t("fc.note")}</p>
     </div>

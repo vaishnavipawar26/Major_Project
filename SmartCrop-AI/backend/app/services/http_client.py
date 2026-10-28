@@ -45,7 +45,17 @@ def _verify() -> ssl.SSLContext | bool:
         return True
 
 
-def get_json(url: str, params: dict, timeout: float, attempts: int = 2, pause: float = 0.6) -> tuple[dict | None, str | None]:
+def get_json(url: str, params: dict | list, timeout: float, attempts: int = 2, pause: float = 0.6) -> tuple[dict | None, str | None]:
+    """GET returning (parsed JSON, None) or (None, reason)."""
+    return _get(url, params, timeout, attempts, pause, lambda r: r.json())
+
+
+def get_bytes(url: str, params: dict | list, timeout: float, attempts: int = 2, pause: float = 0.6) -> tuple[bytes | None, str | None]:
+    """GET returning (response body, None) or (None, reason), with the same retries and per-host back-off as get_json."""
+    return _get(url, params, timeout, attempts, pause, lambda r: r.content)
+
+
+def _get(url: str, params, timeout: float, attempts: int, pause: float, parse) -> tuple:
     host = urlsplit(url).netloc
     if _down_until.get(host, 0.0) > time.monotonic():
         return None, "backoff"
@@ -60,7 +70,7 @@ def get_json(url: str, params: dict, timeout: float, attempts: int = 2, pause: f
                 return None, "rejected"
             else:
                 _down_until.pop(host, None)
-                return r.json(), None
+                return parse(r), None
         except httpx.TimeoutException:
             reason = "timeout"
             _down_until[host] = time.monotonic() + BACKOFF_SECONDS   # other requests skip this host while this one retries
@@ -68,7 +78,7 @@ def get_json(url: str, params: dict, timeout: float, attempts: int = 2, pause: f
             reason = "network"
             _down_until[host] = time.monotonic() + BACKOFF_SECONDS
             log.warning("%s unreachable: %s", url, type(exc).__name__)
-        except ValueError:                       # not JSON
+        except ValueError:                       # not the expected format
             return None, "bad_response"
         if i + 1 < attempts:
             _pause(pause * (i + 1))

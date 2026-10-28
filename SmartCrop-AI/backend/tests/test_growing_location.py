@@ -279,3 +279,109 @@ def test_choosing_a_popular_place_uses_its_coordinates_for_weather_and_soil(monk
     asked = {(round(p["latitude"], 4), round(p["longitude"], 4)) for u, p in calls if "open-meteo" in u}
     assert asked == {CITIES["Satara"]}
     assert f["growing_location"]["value"] == "Satara, Maharashtra, India" and f["market"] == "APMC Pune"
+
+
+# ------------------------------------------------------------------------------------------------ soil through the ISRIC map service
+def _tiff(values):
+    """A map image as the ISRIC map service returns it: a small grid of integers (synthetic test values)."""
+    import io
+    import numpy as np
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.fromarray(np.array(values, dtype=np.int32)).save(buf, format="TIFF")
+    return buf.getvalue()
+
+
+def soil_via_map_service(calls, centre_ph=((68, 69), (69, 70)), ring_ph=((0, 71), (70, 0)), wrb_code=29, probability=36, rest_down=True, map_down=False):
+    """REST soil service down (as it has been for days); the map service answers with synthetic grids. pH is stored x 10, empty cells as 0."""
+    def get(url, params=None, timeout=None, verify=None):
+        calls.append((url, params))
+        if "rest.isric.org" in url:
+            if rest_down:
+                raise http_client.httpx.ConnectTimeout("rest soil service down")
+            return _resp({"wrb_class_name": "Cambisols"})
+        if "maps.isric.org" in url:
+            if map_down:
+                raise http_client.httpx.ConnectTimeout("map service down")
+            q = dict(params) if not isinstance(params, list) else {k: v for k, v in params if k != "SUBSET"}
+            subsets = [v for k, v in params if k == "SUBSET"]
+            wide = any(abs(float(v.split("(")[1].split(",")[1].rstrip(")")) - float(v.split("(")[1].split(",")[0])) > 0.02 for v in subsets)
+            cov = q["COVERAGEID"]
+            if cov.startswith("phh2o"):
+                grid = ring_ph if wide else centre_ph
+            elif cov == "MostProbable":
+                grid = [[wrb_code] * 2] * 2
+            else:
+                grid = [[probability] * 2] * 2
+            r = _resp(None)
+            r.content = _tiff(grid)
+            return r
+        raise AssertionError(url)
+    return get
+
+
+def test_soil_comes_from_the_map_service_when_the_rest_service_is_down(monkeypatch):
+    calls = []
+    monkeypatch.setattr(http_client.httpx, "get", soil_via_map_service(calls))
+    s = soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})
+    assert (s["status"], s["ph"], s["soil_type"], s["ph_scope"], s["served_from"]) == ("estimate", 6.9, "Vertisols", "town_centre", "live")   # median of 68,69,69,70
+    assert "map service" in s["source"]
+    asked = {(round(float(v.split("(")[1].split(",")[0]) + 0.003, 3)) for u, p in calls if "maps.isric.org" in u for k, v in p if k == "SUBSET" and v.startswith("lat")}
+    assert asked == {round(NASHIK["latitude"], 3)}                          # the growing location's coordinates, not the market's
+    assert _rows(record_type="soil") == 1
+    again = soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})  # stored: no new request to either service
+    assert again["served_from"] == "cache" and (again["ph"], again["soil_type"]) == (6.9, "Vertisols")
+
+
+def test_built_up_land_reads_ph_from_the_farmland_around_and_says_so(monkeypatch):
+    monkeypatch.setattr(http_client.httpx, "get", soil_via_map_service([], centre_ph=((0, 0), (0, 0))))
+    s = soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})
+    assert (s["ph"], s["ph_scope"]) == (7.0, "surrounding_area")           # median of 71 and 70; the empty 0 cells are ignored
+
+
+def test_empty_cells_are_never_shown_as_a_ph_or_a_soil_type(monkeypatch):
+    monkeypatch.setattr(http_client.httpx, "get", soil_via_map_service([], centre_ph=((0, 0), (0, 0)), ring_ph=((0, 0), (0, 0)), probability=0))
+    s = soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})
+    assert (s["status"], s["ph"], s["soil_type"]) == ("unavailable", None, None)
+    assert _rows(record_type="soil") == 0
+
+
+def test_a_soil_group_name_is_only_used_when_its_own_probability_map_agrees(monkeypatch):
+    monkeypatch.setattr(http_client.httpx, "get", soil_via_map_service([], wrb_code=99))      # a code outside the known groups
+    assert soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})["soil_type"] is None
+    http_client._down_until.clear()
+    monkeypatch.setattr(http_client.httpx, "get", soil_via_map_service([], wrb_code=5, probability=0))
+    assert soil_context("APMC Pune", {**NASHIK, "label": "Other place", "latitude": 19.5, "longitude": 74.0})["soil_type"] is None
+
+
+def test_both_soil_services_down_is_unavailable_and_nothing_is_stored(monkeypatch):
+    monkeypatch.setattr(http_client.httpx, "get", soil_via_map_service([], map_down=True))
+    s = soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})
+    assert (s["status"], s["reason"], s["ph"], s["soil_type"]) == ("unavailable", "service_unreachable", None, None)
+    assert _rows(record_type="soil") == 0
+
+
+def test_a_soil_answer_missing_a_value_is_kept_for_an_hour_not_a_month(monkeypatch):
+    # the map image for pH is unreadable (a transient error page) while the soil group is fine
+    base = soil_via_map_service([])
+
+    def get(url, params=None, timeout=None, verify=None):
+        if "maps.isric.org" in url and any(v == "phh2o_0-5cm_mean" for k, v in params if k == "COVERAGEID"):
+            r = _resp(None)
+            r.content = b"<html>temporary error page</html>"      # not a map image
+            return r
+        return base(url, params, timeout, verify)
+    monkeypatch.setattr(http_client.httpx, "get", get)
+    s = soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})
+    assert (s["ph"], s["soil_type"]) == (None, "Vertisols")
+    with SessionLocal() as db:
+        row = db.execute(select(EnvironmentalRecord).where(EnvironmentalRecord.record_type == "soil")).scalar_one()
+        assert row.expires_at - row.retrieved_at <= dt.timedelta(hours=1, minutes=1)
+
+
+def test_a_complete_soil_answer_is_kept_for_a_month(monkeypatch):
+    monkeypatch.setattr(http_client.httpx, "get", soil_via_map_service([]))
+    soil_context("APMC Pune", {**NASHIK, "label": NASHIK["name"]})
+    with SessionLocal() as db:
+        row = db.execute(select(EnvironmentalRecord).where(EnvironmentalRecord.record_type == "soil")).scalar_one()
+        assert row.expires_at - row.retrieved_at >= dt.timedelta(days=29)

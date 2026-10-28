@@ -24,6 +24,7 @@ Stored records are keyed by coordinates and date, so two growing locations never
 """
 from __future__ import annotations
 
+import io
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -31,13 +32,14 @@ from concurrent.futures import TimeoutError as FutureTimeout
 from datetime import date, timedelta
 from functools import lru_cache
 
+import numpy as np
 import pandas as pd
 
 from app.config.settings import get_settings
 from app.ml.common import paths
 from app.services import environment_store as store
 from app.services import geocoding_service
-from app.services.http_client import get_json
+from app.services.http_client import get_bytes, get_json
 
 log = logging.getLogger("smartcrop.price_weather")
 
@@ -56,6 +58,7 @@ STATE_SERIES = "All markets (state median)"
 TTL_FORECAST = timedelta(hours=3)
 TTL_RECENT = timedelta(hours=6)
 TTL_SOIL = timedelta(days=30)
+TTL_SOIL_PARTIAL = timedelta(hours=1)   # a soil answer missing pH or type is asked for again soon; a complete one is kept 30 days
 UNREACHABLE = {"timeout", "network", "rate_limited", "server_error", "rejected", "bad_response", "unknown", "backoff"}
 FACTOR_BUDGET_SECONDS = 8.0   # the prediction response never waits longer than this for environmental data
 
@@ -229,7 +232,18 @@ def weather_context(market: str, day: date, place: dict | None = None) -> dict:
 # source names it. Shown as background only: map estimates for the market's area, not measurements from any farm.
 SOILGRIDS_PROPS = "https://rest.isric.org/soilgrids/v2.0/properties/query"
 SOILGRIDS_CLASS = "https://rest.isric.org/soilgrids/v2.0/classification/query"
-SOIL_TIMEOUT = 6.0
+SOIL_TIMEOUT = 4.0           # one attempt: if the REST service is down, the map service below is the second chance
+# The same SoilGrids maps are also served by ISRIC's map service (WCS). It is used when the REST service above cannot be reached, which
+# happens for days at a time: values are read from a small window of the map around the point, in the same units as the REST service.
+WCS_URL = "https://maps.isric.org/mapserv"
+WCS_TIMEOUT = 8.0
+WCS_WINDOW_DEG = 0.003      # about 300 m each way: a few 250 m map cells around the point
+WCS_SOURCE = "SoilGrids (ISRIC), regional soil map, via the ISRIC map service"
+# World Reference Base soil groups in the order SoilGrids numbers them (alphabetical; the "MostProbable" map stores the number). Every name is
+# checked against that group's own probability map before it is shown, so a changed numbering can never put a wrong name on screen.
+WRB_CLASSES = ("Acrisols Albeluvisols Alisols Andosols Arenosols Calcisols Cambisols Chernozems Cryosols Durisols Ferralsols Fluvisols Gleysols "
+               "Gypsisols Histosols Kastanozems Leptosols Lixisols Luvisols Nitisols Phaeozems Planosols Plinthosols Podzols Regosols Solonchaks "
+               "Solonetz Stagnosols Umbrisols Vertisols").split()
 SOIL_SOURCE = "SoilGrids (ISRIC), regional soil map"
 SOIL_NOTE = "These are regional soil-map estimates for this area, not measurements from your farm."
 # SoilGrids leaves built-up land empty, and a market's coordinates are its town centre, so the centre often has no pH. The map is then read
@@ -240,7 +254,7 @@ RING_KM = 2
 
 def _soil_ph_at(lat: float, lon: float, depth: str) -> tuple[float | None, str | None]:
     """Soil pH (water) at one depth, or (None, reason). A missing map value (for example a built-up area) is 'no_data', not a failure."""
-    data, err = get_json(SOILGRIDS_PROPS, {"lon": lon, "lat": lat, "property": "phh2o", "depth": depth, "value": "mean"}, SOIL_TIMEOUT)
+    data, err = get_json(SOILGRIDS_PROPS, {"lon": lon, "lat": lat, "property": "phh2o", "depth": depth, "value": "mean"}, SOIL_TIMEOUT, attempts=1)
     if err:
         return None, err
     try:
@@ -256,15 +270,59 @@ def _soil_ph_at(lat: float, lon: float, depth: str) -> tuple[float | None, str |
 
 def _soil_class(lat: float, lon: float) -> tuple[str | None, str | None]:
     """Most likely soil class (World Reference Base group), or (None, reason)."""
-    data, err = get_json(SOILGRIDS_CLASS, {"lon": lon, "lat": lat, "number_classes": 1}, SOIL_TIMEOUT)
+    data, err = get_json(SOILGRIDS_CLASS, {"lon": lon, "lat": lat, "number_classes": 1}, SOIL_TIMEOUT, attempts=1)
     if err:
         return None, err
     name = data.get("wrb_class_name") if isinstance(data, dict) else None
     return (str(name), None) if name else (None, "no_data")
 
 
+def _wcs_window(mapname: str, coverage: str, lat: float, lon: float, half: float) -> tuple[np.ndarray | None, str | None]:
+    """The map cells of one SoilGrids layer in a small window around the point (integers as stored by the map), or (None, reason)."""
+    from PIL import Image    # Pillow is already a dependency of the backend
+    params = [("map", f"/map/{mapname}.map"), ("SERVICE", "WCS"), ("VERSION", "2.0.1"), ("REQUEST", "GetCoverage"), ("COVERAGEID", coverage),
+              ("FORMAT", "image/tiff"), ("SUBSETTINGCRS", "http://www.opengis.net/def/crs/EPSG/0/4326"),
+              ("OUTPUTCRS", "http://www.opengis.net/def/crs/EPSG/0/4326"),
+              ("SUBSET", f"long({lon - half:.5f},{lon + half:.5f})"), ("SUBSET", f"lat({lat - half:.5f},{lat + half:.5f})")]
+    body, err = get_bytes(WCS_URL, params, WCS_TIMEOUT, attempts=1)
+    if err:
+        return None, err
+    try:
+        return np.array(Image.open(io.BytesIO(body))), None
+    except Exception:       # not a map image (an error page)
+        return None, "bad_response"
+
+
+def _wcs_ph(lat: float, lon: float) -> tuple[float | None, str | None, str | None]:
+    """(pH, scope, reason) from the map service: the cells around the point, or, when those are empty (built-up land), the farmland about
+    RING_KM km around it, labelled as the surrounding area. Empty cells are stored as 0, which is never a pH."""
+    for half, scope in ((WCS_WINDOW_DEG, "town_centre"), (RING_DEG, "surrounding_area")):
+        cells, err = _wcs_window("phh2o", "phh2o_0-5cm_mean", lat, lon, half)
+        if err:
+            return None, None, err
+        vals = cells[(cells >= 20) & (cells <= 110)] / 10.0            # pH x 10 in the map; 2.0-11.0 is a plausible soil pH
+        if vals.size:
+            return round(float(np.median(vals)), 1), scope, None
+    return None, None, "no_data"
+
+
+def _wcs_class(lat: float, lon: float) -> tuple[str | None, str | None]:
+    """(soil group name, reason): the most probable group, confirmed by that group's own probability map being above zero here."""
+    cells, err = _wcs_window("wrb", "MostProbable", lat, lon, WCS_WINDOW_DEG)
+    if err:
+        return None, err
+    code = int(np.median(cells))
+    if not 0 <= code < len(WRB_CLASSES):
+        return None, "no_data"
+    name = WRB_CLASSES[code]
+    prob, err = _wcs_window("wrb", name, lat, lon, WCS_WINDOW_DEG)
+    if err:
+        return None, err
+    return (name, None) if prob.size and float(np.median(prob)) > 0 else (None, "no_data")
+
+
 def _soil_out(out: dict, e: dict, served_from: str, ph_reason: str | None) -> dict:
-    return {**out, "ph": e["soil_ph"], "soil_type": e["soil_type"], "ph_scope": e["soil_ph_scope"], "status": "estimate",
+    return {**out, "ph": e["soil_ph"], "soil_type": e["soil_type"], "ph_scope": e["soil_ph_scope"], "status": "estimate", "source": e["source"],
             "served_from": served_from, "retrieved_at": e["retrieved_at"],
             "ph_reason": None if e["soil_ph"] is not None else ph_reason}
 
@@ -308,9 +366,29 @@ def soil_context(market: str, place: dict | None = None) -> dict:
             ph = round(vals[mid] if len(vals) % 2 else (vals[mid - 1] + vals[mid]) / 2, 1)
             ph_scope = "surrounding_area"
 
+    source = SOIL_SOURCE
+    need_ph, need_cls = ph is None and ph_err in UNREACHABLE, cls is None and cls_err in UNREACHABLE
+    if need_ph or need_cls:         # the REST service could not be reached: ask the same maps through ISRIC's map service
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            ph_f = pool.submit(_wcs_ph, lat, lon) if need_ph else None
+            cls_f = pool.submit(_wcs_class, lat, lon) if need_cls else None
+            if ph_f:
+                w_ph, w_scope, w_err = ph_f.result()
+                if w_ph is not None:
+                    ph, ph_scope, ph_err, source = w_ph, w_scope, None, WCS_SOURCE
+                else:
+                    ph_err = w_err
+            if cls_f:
+                w_cls, w_cerr = cls_f.result()
+                if w_cls is not None:
+                    cls, cls_err, source = w_cls, None, WCS_SOURCE
+                else:
+                    cls_err = w_cerr
+
     if ph is not None or cls is not None:
+        incomplete = ph is None or cls is None      # a missing value is asked for again within the hour: it may only have been a service hiccup
         e = store.put("soil", "soil_estimate", market, name, lat, lon, "static", None,
-                      {"soil_ph": ph, "soil_ph_scope": ph_scope, "soil_type": cls}, SOIL_SOURCE, TTL_SOIL)
+                      {"soil_ph": ph, "soil_ph_scope": ph_scope, "soil_type": cls}, source, TTL_SOIL_PARTIAL if incomplete else TTL_SOIL)
         return _soil_out(out, e, "live", "not_in_map" if ph_err == "no_data" else "service_unreachable")
     if stored:          # the provider failed: an earlier valid estimate for the same place, labelled with its retrieval time
         return _soil_out(out, stored, "cache", "not_in_map")
