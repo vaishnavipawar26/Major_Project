@@ -366,3 +366,28 @@ forecaster could mark it validated.
 weather features, same folds and pairs): Brinjal 860 / 857, Cabbage 263 / 261, Cauliflower 507 / 496 (-2.2 %), Onion 375 / 377, Potato
 187 / 195 (+4.3 % worse), Tomato 684 / 662 (-3.2 %), Wheat 119 / 122 (+2.5 % worse). The effect changes sign between crops (and between
 quarters), so it is not a stable relationship the model can be said to have learned; weather stays out of the deployed model.
+
+---
+
+## Crop-specific models for the four unvalidated crops (experiment of 2026-10-28)
+
+`backend/scripts/experiment_hard_crops.py` (full tables: `dataset/reports/hard_crops_experiment.md`, `hard_crops_projection.json`) tested
+crop- and horizon-band-specific XGBoost models (squared error, pseudo-Huber, and the same with the predicted change halved) and a seasonal-median
+rule against "no change" for Onion, Potato, Tomato and Wheat, on three chronological splits (train targets before 2024-07-01 / 2025-01-01 /
+2025-07-01; score the following half-year of origins). No newer price data exists in the repository (records end 2025-12-31).
+
+* **Onion:** every candidate is worse than no change at 8-60 days in the test half-year (the seasonal rule much worse). Not deployed.
+* **Potato:** the halved model clears +2 % in all three splits against no change at 1-30 days, but under the projection scenario (the one the app uses
+  while records end in 2025) fold C is +0.0 to +0.2 % and fold A is -6 to +1.4 %. Not deployed.
+* **Tomato:** a second search (`scripts/experiment_forecast_v2.py`, `dataset/reports/forecast_v2_experiment.md`: halved, quartered, learned-factor,
+  ridge) found 31-60 days clears +2 % in all six scores (three splits, both scenarios) under every candidate family; the best, XGBoost scaled by a
+  factor learned from the training data only (0.71 on all data), scores +15 / +13 / +20 % real-origin and +45 / +13 / +28 % projection (folds C / A / test T).
+  Deployed for 31-60 days only; 1-30 days stay unvalidated. Its 80 % range covers about 65 % of outcomes (shown as measured). The evidence is about
+  2.5 seasons.
+* **Wheat 1-7 and 8-14 days:** +3.8 / +7.0 % (real origin, test) and +3.2 / +3.1 % (projection, test) with folds C and A also above +2 %. Deployed through
+  `scripts/train_crop_band_models.py` -> `trained_models/price_prediction/crop_band_models.joblib`. Wheat 15-60 days stays unvalidated (15-30 days:
+  +0.7 % in the projection test). Error ranges are 88-90 % covered after a fresh report but only 29-38 % in projection, so the app hides them there.
+* The 2 % margin, the folds and `crop_policy.json` were not changed; the deployed cells overlay the policy and carry their own evidence.
+* **Searched again with learned shrinkage, ridge and 15-60 day bands (v2):** Wheat 15-30 days misses in the projection test (+1 %), Wheat 31-60 days
+  is negative in the 2025 test half-year for every candidate, Onion and Potato have no candidate that clears all six scores. Wheat therefore stays
+  validated for 1-14 days only. No data later than 2025-12-31 exists, so a longer horizon needs a 2026 extension of the mandi prices.

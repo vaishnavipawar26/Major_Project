@@ -463,6 +463,7 @@ details > summary { cursor: pointer; font-weight: 600; color: var(--brand); padd
 .sell-card.good .sell-badge { background: var(--brand-soft); border-color: var(--brand-line); color: var(--brand-strong); }
 .sell-badge svg { flex-shrink: 0; }
 .sell-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; }
+.sell-facts { margin-top: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .sell-summary.is-short { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 560px; }
 .sell-cell { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; padding: 0.7rem 0.85rem; border-radius: 10px;
   border: 1px solid var(--border); background: var(--surface-2); }
@@ -484,6 +485,7 @@ details > summary { cursor: pointer; font-weight: 600; color: var(--brand); padd
 .sell-store h3 { color: var(--brand-strong); }
 .sell-store h3 svg { color: var(--leaf); flex-shrink: 0; }
 .sell-store .sell-store-general { margin-top: 0.45rem; font-size: 0.84rem; color: var(--text-2); }
+.sa-panel { width: 100%; display: grid; gap: 0.35rem; }
 .sell-store-tag { font-weight: 700; color: var(--forest); }
 .sell-store .calc { margin-top: 0.6rem; background: var(--surface); }
 .sell-note { display: flex; align-items: flex-start; gap: 0.4rem; margin: 0; font-size: 0.84rem; color: var(--text-2); }
@@ -527,7 +529,7 @@ details > summary { cursor: pointer; font-weight: 600; color: var(--brand); padd
   .sell-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .factor-cards { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .sell-summary, .sell-summary.is-short { grid-template-columns: minmax(0, 1fr); max-width: none; }
 }
 

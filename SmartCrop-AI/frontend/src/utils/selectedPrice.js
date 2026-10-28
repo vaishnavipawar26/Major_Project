@@ -2,7 +2,7 @@
 // "Your planned date" tile of Smart Selling all read it from here, so the three can never disagree.
 //   forecast allowed -> the model's estimate for that date (with its likely range)
 //   forecast blocked -> last year's price on that date, inflation adjusted like the rest of the chart (no range, and
-//                       it is a past price, never an expected one)
+//                       it is a past price, never an expected one); else the latest real report, labelled with its own date
 import { priceOnDate } from "./priceChart";
 import { isContextOnly } from "./priceView";
 
@@ -16,9 +16,15 @@ export function selectedPrice(f) {
     const t = f.target;
     return t ? { price: t.predicted_price, low: t.lower, high: t.upper, source: "forecast", averaged: false } : null;
   }
-  const p = priceOnDate(referenceRows(f), f.target_date);
-  return p ? { price: p.price, low: null, high: null, source: "reference", averaged: p.averaged } : null;
+  const rows = referenceRows(f);
+  const p = priceOnDate(rows, f.target_date) || priceOnDate(rows, f.target_date, WIDE_DAYS);
+  if (p) return { price: p.price, low: null, high: null, source: "reference", averaged: p.averaged };
+  // nothing reported near that day of the year: the latest real report, shown as exactly that (never as an estimate for the date)
+  const l = f.latest_recorded;
+  return l && Number.isFinite(l.price) ? { price: l.price, low: null, high: null, source: "latest", date: l.date, averaged: false } : null;
 }
+
+const WIDE_DAYS = 21;
 
 /** How far past estimates were usually off (rupees per quintal), or null. */
 export const typicalMiss = (f) => f?.range_info?.typical_miss_inr ?? f?.target?.model_mae ?? null;

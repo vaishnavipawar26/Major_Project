@@ -346,7 +346,7 @@ def _push_sentence(group: str, direction: str) -> str:
 def build_factor(group: str, s: float, x: dict, ctx: dict, commodity: str, price: float,
                  origin_month: int, target_month: int, horizon: int, projected: bool,
                  calibration: dict | None) -> dict:
-    direction = "up" if s > 0 else "down"
+    direction = "up" if round(s, 5) > 0 else "down"   # the sign the page shows (shap_value is rounded to 5 places)
     strength = strength_of(abs(s), group, calibration)
     items, observed, trend = _evidence(group, x, ctx, commodity, price, origin_month,
                                        target_month, horizon)
@@ -442,7 +442,7 @@ def build_reasons(factors: list[dict], ctx: dict, limit: int = MAX_REASONS) -> l
         s = f["shap_value"]
         if key == "recent_week":
             s = sum(g["shap_value"] for g in factors if g["factor"] in ("recent_week", "recent_month"))
-        direction = "up" if s > 0 else "down"
+        direction = "up" if round(s, 5) > 0 else "down"   # the sign the page shows (shap_value is rounded to 5 places)
         sea = ctx.get("seasonal") or {}
         rs = sea.get("ratios") or []
         seasonal_ok = sea.get("years", 0) >= 2 and (not rs or sum(1 for r in rs if (r > 1) == (sea.get("ratio", 1) > 1)) / len(rs) >= 0.67)

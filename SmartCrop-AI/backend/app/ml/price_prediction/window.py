@@ -1,4 +1,4 @@
-"""The 30-day selling window of a forecast: one entry per day, the planned date's price and the best other date.
+"""The 30-day selling window of a forecast: one entry per day (60 calendar days after the forecast start), the planned date's price and the best other date.
 
 Everything is read from the daily path the forecaster already produced (``chart_path``: one model prediction per day, each from data
 known at the forecast origin). Nothing is interpolated or invented. A day whose prediction is missing, not a positive finite number, or
@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from datetime import date, timedelta
 
-WINDOW_DAYS = 30
+WINDOW_DAYS = 60   # convention: the forecast start date is day 0; the window is the 60 calendar days AFTER it (start+1 .. start+60)
 
 VALIDATED = "validated"
 NOT_VALIDATED = "not_validated"
@@ -27,12 +27,34 @@ def _status(point: dict | None) -> str:
     return VALIDATED if point.get("beats_baseline") else NOT_VALIDATED
 
 
-def _day(d: date, point: dict | None, n: int) -> dict:
+def _reason(point: dict | None, d: date, f: dict) -> str | None:
+    """Why this day has no validated price (None when it is validated). Backend wording, one reason per day."""
+    st = _status(point)
+    if st == VALIDATED:
+        return None
+    if st == NOT_VALIDATED:
+        return (point.get("validation_reason")
+                or "Past tests did not show the model beating the 'price stays the same' forecast for this crop at this distance.")
+    origin, mh = f.get("forecast_origin_date"), f.get("max_horizon_days")
+    if origin and mh and (d - date.fromisoformat(origin)).days > mh:
+        return (f"The model forecasts at most {mh} days after the market's latest report ({date.fromisoformat(origin):%d %b %Y}); "
+                "this date is further away, so no prediction exists for it.")
+    return "The model produced no usable price for this date."
+
+
+def _day(d: date, point: dict | None, n: int, f: dict | None = None) -> dict:
     status = _status(point)
     ok = status != UNAVAILABLE
+    f = f or {}
+    src, ser = f.get("source") or {}, f.get("series") or {}
     return {"date": d.isoformat(), "day": n, "status": status,
             "predicted_price": point["predicted_price"] if ok else None,
-            "lower": point.get("lower") if ok else None, "upper": point.get("upper") if ok else None}
+            "lower": point.get("lower") if ok else None, "upper": point.get("upper") if ok else None,
+            "crop": ser.get("commodity"), "market": src.get("used_market") or ser.get("market"),
+            # the three kinds the page must keep apart: a validated forecast, an experimental (unvalidated) estimate, no prediction
+            "series": {VALIDATED: "validated", NOT_VALIDATED: "experimental", UNAVAILABLE: "unavailable"}[status],
+            "model": point.get("model") if ok else None, "horizon_days": point.get("horizon_days") if ok else None,
+            "reason": _reason(point, d, f)}
 
 
 def _deadline(planned: dict | None, hold_days: int | None) -> str | None:
@@ -120,12 +142,12 @@ def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None,
     start = date.fromisoformat(f["input_date"])
     planned_date = date.fromisoformat(f["target_date"])
     by_date = {p["date"]: p for p in (f.get("chart_path") or f.get("path") or [])}
-    entries = [_day(start + timedelta(days=n), by_date.get((start + timedelta(days=n)).isoformat()), n) for n in range(1, days + 1)]
+    entries = [_day(start + timedelta(days=n), by_date.get((start + timedelta(days=n)).isoformat()), n, f) for n in range(1, days + 1)]
     end = start + timedelta(days=days)
     inside = start < planned_date <= end
 
     # the planned date always reads the same daily prediction as the chart; outside the window it is still shown but never compared
-    pd_entry = _day(planned_date, by_date.get(planned_date.isoformat()), (planned_date - start).days)
+    pd_entry = _day(planned_date, by_date.get(planned_date.isoformat()), (planned_date - start).days, f)
     planned = {"date": planned_date.isoformat(), "status": pd_entry["status"], "price": pd_entry["predicted_price"],
                "lower": pd_entry["lower"], "upper": pd_entry["upper"], "in_window": inside}
 
@@ -137,11 +159,25 @@ def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None,
 
     ref = f.get("current_price")
     ref = ref if _valid_price(ref) else None
-    last = valid[-1] if valid else None
+    first, last = (valid[0], valid[-1]) if valid else (None, None)
     change = None
-    if ref is not None and last is not None:
-        change = {"to_date": last["date"], "pct": round((last["predicted_price"] - ref) / ref * 100, 2),
-                  "is_window_end": last["day"] == days}
+    # change over the window = last validated daily price against the FIRST validated daily price (two comparable forecasts)
+    if first is not None and last is not None and first is not last:
+        diff = last["predicted_price"] - first["predicted_price"]
+        change = {"from_date": first["date"], "from_price": first["predicted_price"], "to_date": last["date"], "to_price": last["predicted_price"],
+                  "abs": round(diff, 2), "pct": round(diff / first["predicted_price"] * 100, 2), "is_window_end": last["day"] == days}
+
+    proj = f.get("projection")
+    src = f.get("source") or {}
+    # the starting reference price: a real report, or (when records end before the forecast start) that report moved forward with the app's
+    # documented yearly price-level assumption. `adjusted` says which, so the page never shows an adjusted number as a reported price.
+    reference = None
+    if ref is not None:
+        reference = {"price": ref, "market": src.get("used_market"), "adjusted": bool(proj),
+                     "reported_price": proj["reference_price"] if proj else ref,
+                     "reported_date": proj["reference_origin_date"] if proj else f.get("forecast_origin_date"),
+                     "adjustment_pct_per_year": proj["inflation_annual_pct"] if proj else None,
+                     "years": proj["years_ahead"] if proj else 0}
 
     outside = {"code": "outside_window", "reason": "planned_outside_window", "date": None, "price": None, "diff": None,
                "diff_pct": None, "wait_days": None, "deadline": None, "days_left": None, "highest": None}
@@ -164,9 +200,11 @@ def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None,
                   "validated_up_to_days": f.get("last_validated_days"), "method": (f.get("source") or {}).get("method"),
                   "source_kind": (f.get("source") or {}).get("kind")}
     return {"days": days, "hold_days": hold_days, "validation": validation, "experimental": experimental, "start_date": start.isoformat(), "end_date": end.isoformat(), "reference_price": ref,
-            "reference_date": f.get("forecast_origin_date"), "entries": entries, "planned": planned,
+            "reference_date": f.get("forecast_origin_date"), "reference": reference, "entries": entries, "planned": planned,
             "highest": ({"date": highest["date"], "price": highest["predicted_price"]} if highest else None),
             "change": change, "comparison": comparison,
+            "counts": {"validated": len(valid), "experimental": sum(d["status"] == NOT_VALIDATED for d in entries),
+                       "unavailable": sum(d["status"] == UNAVAILABLE for d in entries)},
             "validated_days": len(valid), "unvalidated_days": sum(d["status"] == NOT_VALIDATED for d in entries),
             "unavailable_days": sum(d["status"] == UNAVAILABLE for d in entries),
             "storage": ({**storage, "plans": plans_out} if storage else None)}

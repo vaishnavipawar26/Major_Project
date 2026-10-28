@@ -670,7 +670,7 @@ const en = {
   "price.sell.diff": "Potential difference",
   "price.sell.recTag": "Recommended",
   "price.sell.alt": "Best alternative date",
-  "price.sell.subtitle": "Your planned date compared with the best predicted date in the next 30 days.",
+  "price.sell.subtitle": "Your planned date compared with the best predicted date in the next 60 days.",
   "price.sell.planned": "Your planned date",
   "price.sell.daysBefore": "Days before your planned date",
   "price.sell.whyTitle": "Why this date?",

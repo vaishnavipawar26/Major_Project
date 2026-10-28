@@ -40,7 +40,8 @@ def test_onion_is_context_only_in_every_band(policy):
 
 
 def test_wheat_is_context_only_in_every_band(policy):
-    """Wheat 1-7 (+1.8%) and 8-14 (+0.1%) beat no-change in the real-origin backtest, but by less than the +2% margin."""
+    """In the pooled model's backtest Wheat 1-7 (+1.8%) and 8-14 (+0.1%) beat no-change by less than the +2% margin (crop_policy.json is unchanged;
+    the crop-specific Wheat 1-7 / 8-14 models that cleared the margin overlay it in the forecaster, see test_crop_band_models.py)."""
     assert [mode(policy, "Wheat", b) for b in BANDS] == ["context_only"] * 4
     assert "below the +2% margin" in " ".join(policy["cells"]["Wheat|1-7"]["reasons"])
 
@@ -72,7 +73,8 @@ def fc(client):
 
 def test_forecaster_applies_the_policy(fc):
     assert fc.policy_for("Onion", 14)["mode"] == "context_only"
-    assert fc.policy_for("Wheat", 7)["mode"] == "context_only" and fc.policy_for("Cabbage", 20)["mode"] == "model"
+    assert fc.policy_for("Wheat", 7)["mode"] == "model" and "Crop-specific" in fc.policy_for("Wheat", 7)["reasons"][0]   # validated crop model
+    assert fc.policy_for("Wheat", 20)["mode"] == "model" and fc.policy_for("Wheat", 40)["mode"] == "context_only" and fc.policy_for("Cabbage", 20)["mode"] == "model"
     assert fc.policy_for("Tomato", 3)["band"] == "1-7"
 
 
@@ -86,7 +88,7 @@ def _explain(client, user, crop, days, market=STATE_MARKET, variety=None):
 
 def test_api_explanations_follow_the_policy(client, user, monkeypatch):
     monkeypatch.setattr(freshness, "gate_mode", lambda: "auto")
-    for crop, days, expect_ctx in (("Onion", 14, True), ("Wheat", 7, True), ("Wheat", 30, True), ("Cauliflower", 12, False), ("Cabbage", 10, False)):
+    for crop, days, expect_ctx in (("Onion", 14, True), ("Wheat", 7, False), ("Wheat", 40, True), ("Cauliflower", 12, False), ("Cabbage", 10, False)):
         r = _explain(client, user, crop, days)
         assert r.status_code == 200, (crop, days, r.text)
         e = r.json()["explanations"][0]["v3"]

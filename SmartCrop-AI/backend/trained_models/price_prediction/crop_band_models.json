@@ -1,0 +1,887 @@
+{
+ "version": "202610281813",
+ "trained_at": "2026-10-28T18:13:51+00:00",
+ "features": [
+  "log_price",
+  "lag_1_change",
+  "lag_3_change",
+  "lag_7_change",
+  "lag_14_change",
+  "lag_30_change",
+  "roll_mean_7_gap",
+  "roll_mean_14_gap",
+  "roll_mean_30_gap",
+  "volatility_30",
+  "momentum_7_30",
+  "pct_change_7",
+  "spread_ratio",
+  "log_arrivals",
+  "arrivals_vs_30d",
+  "state_price_gap",
+  "state_change_7",
+  "month",
+  "week_of_year",
+  "day_of_week",
+  "season_code",
+  "doy_sin",
+  "doy_cos",
+  "market_code",
+  "variety_code",
+  "horizon_days",
+  "target_doy_sin",
+  "target_doy_cos"
+ ],
+ "margin_pct": 2.0,
+ "projection_level": 1.05,
+ "data_end": "2025-12-31",
+ "rule": "adopted only if skill >= +2% vs baseline in folds C, A and test T, in both the real-origin and the projection scenario, under each of three sampling seeds",
+ "rejected": [
+  {
+   "crop": "Tomato",
+   "band": "31-45",
+   "family": "yoy_xgb",
+   "weakest_score_by_seed": [
+    0.73,
+    5.42,
+    0.0
+   ]
+  }
+ ],
+ "cells": {
+  "Wheat|1-7": {
+   "crop": "Wheat",
+   "band": "1-7",
+   "h_lo": 1,
+   "h_hi": 7,
+   "family": "xgb",
+   "features": [
+    "log_price",
+    "lag_1_change",
+    "lag_3_change",
+    "lag_7_change",
+    "lag_14_change",
+    "lag_30_change",
+    "roll_mean_7_gap",
+    "roll_mean_14_gap",
+    "roll_mean_30_gap",
+    "volatility_30",
+    "momentum_7_30",
+    "pct_change_7",
+    "spread_ratio",
+    "log_arrivals",
+    "arrivals_vs_30d",
+    "state_price_gap",
+    "state_change_7",
+    "month",
+    "week_of_year",
+    "day_of_week",
+    "season_code",
+    "doy_sin",
+    "doy_cos",
+    "market_code",
+    "variety_code",
+    "horizon_days",
+    "target_doy_sin",
+    "target_doy_cos"
+   ],
+   "shrink": 0.5,
+   "shrink_rule": 0.5,
+   "q10": -0.05133996619842946,
+   "q90": 0.044080329500138744,
+   "median_abs": 0.016426015412434936,
+   "final_train_pairs": 90124,
+   "splits": {
+    "C": {
+     "train_pairs": 44091,
+     "shrink": 0.5,
+     "real_origin": {
+      "n": 14495,
+      "model_mae": 90.2,
+      "no_change_mae": 97.0,
+      "skill_pct": 7.02,
+      "baseline": "no change",
+      "wape_pct": 3.26,
+      "baseline_wape_pct": 3.5
+     },
+     "projection": {
+      "n": 12299,
+      "model_mae": 171.0,
+      "start_price_mae": 181.8,
+      "no_change_mae": 181.8,
+      "skill_pct": 5.95,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 6.19,
+      "baseline_wape_pct": 6.59
+     }
+    },
+    "A": {
+     "train_pairs": 58496,
+     "shrink": 0.5,
+     "real_origin": {
+      "n": 17177,
+      "model_mae": 82.3,
+      "no_change_mae": 85.8,
+      "skill_pct": 4.14,
+      "baseline": "no change",
+      "wape_pct": 3.0,
+      "baseline_wape_pct": 3.13
+     },
+     "projection": {
+      "n": 12008,
+      "model_mae": 200.7,
+      "start_price_mae": 215.0,
+      "no_change_mae": 215.0,
+      "skill_pct": 6.67,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 7.37,
+      "baseline_wape_pct": 7.9
+     }
+    },
+    "T": {
+     "train_pairs": 75648,
+     "shrink": 0.5,
+     "real_origin": {
+      "n": 14021,
+      "model_mae": 56.9,
+      "no_change_mae": 59.1,
+      "skill_pct": 3.71,
+      "baseline": "no change",
+      "wape_pct": 2.12,
+      "baseline_wape_pct": 2.21,
+      "coverage_pct": 88.1
+     },
+     "projection": {
+      "n": 12062,
+      "model_mae": 282.7,
+      "start_price_mae": 291.8,
+      "no_change_mae": 291.8,
+      "skill_pct": 3.12,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 10.68,
+      "baseline_wape_pct": 11.02,
+      "coverage_pct": 29.0
+     }
+    }
+   },
+   "weakest_skill_by_seed": [
+    3.12,
+    2.99,
+    3.08
+   ]
+  },
+  "Wheat|8-14": {
+   "crop": "Wheat",
+   "band": "8-14",
+   "h_lo": 8,
+   "h_hi": 14,
+   "family": "ma_ridge",
+   "features": [
+    "roll_mean_7_gap",
+    "roll_mean_14_gap",
+    "roll_mean_30_gap",
+    "lag_30_change",
+    "momentum_7_30",
+    "state_price_gap"
+   ],
+   "shrink": 1.0,
+   "shrink_rule": "learned",
+   "q10": -0.0758504830300808,
+   "q90": 0.0452236570417881,
+   "median_abs": 0.025509494822472334,
+   "final_train_pairs": 85096,
+   "splits": {
+    "C": {
+     "train_pairs": 41315,
+     "shrink": 1.0,
+     "real_origin": {
+      "n": 13717,
+      "model_mae": 107.2,
+      "no_change_mae": 122.9,
+      "skill_pct": 12.75,
+      "baseline": "no change",
+      "wape_pct": 3.85,
+      "baseline_wape_pct": 4.42
+     },
+     "projection": {
+      "n": 12241,
+      "model_mae": 175.3,
+      "start_price_mae": 186.8,
+      "no_change_mae": 186.8,
+      "skill_pct": 6.15,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 6.31,
+      "baseline_wape_pct": 6.73
+     }
+    },
+    "A": {
+     "train_pairs": 54853,
+     "shrink": 1.0,
+     "real_origin": {
+      "n": 16481,
+      "model_mae": 107.8,
+      "no_change_mae": 114.0,
+      "skill_pct": 5.42,
+      "baseline": "no change",
+      "wape_pct": 3.95,
+      "baseline_wape_pct": 4.18
+     },
+     "projection": {
+      "n": 11906,
+      "model_mae": 182.7,
+      "start_price_mae": 213.0,
+      "no_change_mae": 213.0,
+      "skill_pct": 14.22,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 6.74,
+      "baseline_wape_pct": 7.85
+     }
+    },
+    "T": {
+     "train_pairs": 71033,
+     "shrink": 0.9269,
+     "real_origin": {
+      "n": 12701,
+      "model_mae": 72.1,
+      "no_change_mae": 77.7,
+      "skill_pct": 7.19,
+      "baseline": "no change",
+      "wape_pct": 2.69,
+      "baseline_wape_pct": 2.9,
+      "coverage_pct": 88.2
+     },
+     "projection": {
+      "n": 11593,
+      "model_mae": 263.7,
+      "start_price_mae": 286.4,
+      "no_change_mae": 286.4,
+      "skill_pct": 7.94,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 9.96,
+      "baseline_wape_pct": 10.81,
+      "coverage_pct": 43.5
+     }
+    }
+   },
+   "weakest_skill_by_seed": [
+    5.42,
+    5.96,
+    5.7
+   ]
+  },
+  "Wheat|15-21": {
+   "crop": "Wheat",
+   "band": "15-21",
+   "h_lo": 15,
+   "h_hi": 21,
+   "family": "ma_ridge",
+   "features": [
+    "roll_mean_7_gap",
+    "roll_mean_14_gap",
+    "roll_mean_30_gap",
+    "lag_30_change",
+    "momentum_7_30",
+    "state_price_gap"
+   ],
+   "shrink": 1.0,
+   "shrink_rule": "learned",
+   "q10": -0.08973915781825781,
+   "q90": 0.04348086938261986,
+   "median_abs": 0.027675111312419176,
+   "final_train_pairs": 83796,
+   "splits": {
+    "C": {
+     "train_pairs": 40257,
+     "shrink": 1.0,
+     "real_origin": {
+      "n": 13684,
+      "model_mae": 116.6,
+      "no_change_mae": 132.6,
+      "skill_pct": 12.03,
+      "baseline": "no change",
+      "wape_pct": 4.18,
+      "baseline_wape_pct": 4.75
+     },
+     "projection": {
+      "n": 12305,
+      "model_mae": 181.7,
+      "start_price_mae": 195.2,
+      "no_change_mae": 195.2,
+      "skill_pct": 6.87,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 6.51,
+      "baseline_wape_pct": 6.99
+     }
+    },
+    "A": {
+     "train_pairs": 53668,
+     "shrink": 1.0,
+     "real_origin": {
+      "n": 16426,
+      "model_mae": 117.2,
+      "no_change_mae": 125.3,
+      "skill_pct": 6.46,
+      "baseline": "no change",
+      "wape_pct": 4.31,
+      "baseline_wape_pct": 4.61
+     },
+     "projection": {
+      "n": 11919,
+      "model_mae": 178.7,
+      "start_price_mae": 206.9,
+      "no_change_mae": 206.9,
+      "skill_pct": 13.63,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 6.62,
+      "baseline_wape_pct": 7.67
+     }
+    },
+    "T": {
+     "train_pairs": 69639,
+     "shrink": 0.9788,
+     "real_origin": {
+      "n": 12185,
+      "model_mae": 77.8,
+      "no_change_mae": 83.1,
+      "skill_pct": 6.34,
+      "baseline": "no change",
+      "wape_pct": 2.9,
+      "baseline_wape_pct": 3.1,
+      "coverage_pct": 86.7
+     },
+     "projection": {
+      "n": 10870,
+      "model_mae": 255.7,
+      "start_price_mae": 279.1,
+      "no_change_mae": 279.1,
+      "skill_pct": 8.38,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 9.65,
+      "baseline_wape_pct": 10.53,
+      "coverage_pct": 50.8
+     }
+    }
+   },
+   "weakest_skill_by_seed": [
+    6.34,
+    5.64,
+    6.47
+   ]
+  },
+  "Wheat|22-30": {
+   "crop": "Wheat",
+   "band": "22-30",
+   "h_lo": 22,
+   "h_hi": 30,
+   "family": "ma_ridge",
+   "features": [
+    "roll_mean_7_gap",
+    "roll_mean_14_gap",
+    "roll_mean_30_gap",
+    "lag_30_change",
+    "momentum_7_30",
+    "state_price_gap"
+   ],
+   "shrink": 1.0,
+   "shrink_rule": "learned",
+   "q10": -0.10043347626924515,
+   "q90": 0.03935486078262329,
+   "median_abs": 0.0309300497174263,
+   "final_train_pairs": 82332,
+   "splits": {
+    "C": {
+     "train_pairs": 38944,
+     "shrink": 1.0,
+     "real_origin": {
+      "n": 13786,
+      "model_mae": 129.6,
+      "no_change_mae": 143.8,
+      "skill_pct": 9.82,
+      "baseline": "no change",
+      "wape_pct": 4.62,
+      "baseline_wape_pct": 5.12
+     },
+     "projection": {
+      "n": 12361,
+      "model_mae": 189.7,
+      "start_price_mae": 206.0,
+      "no_change_mae": 206.0,
+      "skill_pct": 7.92,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 6.76,
+      "baseline_wape_pct": 7.34
+     }
+    },
+    "A": {
+     "train_pairs": 52485,
+     "shrink": 1.0,
+     "real_origin": {
+      "n": 16251,
+      "model_mae": 127.6,
+      "no_change_mae": 134.1,
+      "skill_pct": 4.85,
+      "baseline": "no change",
+      "wape_pct": 4.71,
+      "baseline_wape_pct": 4.95
+     },
+     "projection": {
+      "n": 11841,
+      "model_mae": 178.1,
+      "start_price_mae": 204.0,
+      "no_change_mae": 204.0,
+      "skill_pct": 12.7,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 6.64,
+      "baseline_wape_pct": 7.61
+     }
+    },
+    "T": {
+     "train_pairs": 68130,
+     "shrink": 1.0,
+     "real_origin": {
+      "n": 11400,
+      "model_mae": 84.9,
+      "no_change_mae": 91.1,
+      "skill_pct": 6.82,
+      "baseline": "no change",
+      "wape_pct": 3.16,
+      "baseline_wape_pct": 3.39,
+      "coverage_pct": 83.1
+     },
+     "projection": {
+      "n": 10092,
+      "model_mae": 249.1,
+      "start_price_mae": 274.0,
+      "no_change_mae": 274.0,
+      "skill_pct": 9.11,
+      "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+      "wape_pct": 9.38,
+      "baseline_wape_pct": 10.33,
+      "coverage_pct": 57.5
+     }
+    }
+   },
+   "weakest_skill_by_seed": [
+    4.85,
+    4.87,
+    4.38
+   ]
+  }
+ },
+ "table": [
+  {
+   "crop": "Wheat",
+   "band": "1-7",
+   "family": "xgb",
+   "split": "C",
+   "train_pairs": 44091,
+   "shrink": 0.5,
+   "real_origin": {
+    "n": 14495,
+    "model_mae": 90.2,
+    "no_change_mae": 97.0,
+    "skill_pct": 7.02,
+    "baseline": "no change",
+    "wape_pct": 3.26,
+    "baseline_wape_pct": 3.5
+   },
+   "projection": {
+    "n": 12299,
+    "model_mae": 171.0,
+    "start_price_mae": 181.8,
+    "no_change_mae": 181.8,
+    "skill_pct": 5.95,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 6.19,
+    "baseline_wape_pct": 6.59
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "1-7",
+   "family": "xgb",
+   "split": "A",
+   "train_pairs": 58496,
+   "shrink": 0.5,
+   "real_origin": {
+    "n": 17177,
+    "model_mae": 82.3,
+    "no_change_mae": 85.8,
+    "skill_pct": 4.14,
+    "baseline": "no change",
+    "wape_pct": 3.0,
+    "baseline_wape_pct": 3.13
+   },
+   "projection": {
+    "n": 12008,
+    "model_mae": 200.7,
+    "start_price_mae": 215.0,
+    "no_change_mae": 215.0,
+    "skill_pct": 6.67,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 7.37,
+    "baseline_wape_pct": 7.9
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "1-7",
+   "family": "xgb",
+   "split": "T",
+   "train_pairs": 75648,
+   "shrink": 0.5,
+   "real_origin": {
+    "n": 14021,
+    "model_mae": 56.9,
+    "no_change_mae": 59.1,
+    "skill_pct": 3.71,
+    "baseline": "no change",
+    "wape_pct": 2.12,
+    "baseline_wape_pct": 2.21,
+    "coverage_pct": 88.1
+   },
+   "projection": {
+    "n": 12062,
+    "model_mae": 282.7,
+    "start_price_mae": 291.8,
+    "no_change_mae": 291.8,
+    "skill_pct": 3.12,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 10.68,
+    "baseline_wape_pct": 11.02,
+    "coverage_pct": 29.0
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "8-14",
+   "family": "ma_ridge",
+   "split": "C",
+   "train_pairs": 41315,
+   "shrink": 1.0,
+   "real_origin": {
+    "n": 13717,
+    "model_mae": 107.2,
+    "no_change_mae": 122.9,
+    "skill_pct": 12.75,
+    "baseline": "no change",
+    "wape_pct": 3.85,
+    "baseline_wape_pct": 4.42
+   },
+   "projection": {
+    "n": 12241,
+    "model_mae": 175.3,
+    "start_price_mae": 186.8,
+    "no_change_mae": 186.8,
+    "skill_pct": 6.15,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 6.31,
+    "baseline_wape_pct": 6.73
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "8-14",
+   "family": "ma_ridge",
+   "split": "A",
+   "train_pairs": 54853,
+   "shrink": 1.0,
+   "real_origin": {
+    "n": 16481,
+    "model_mae": 107.8,
+    "no_change_mae": 114.0,
+    "skill_pct": 5.42,
+    "baseline": "no change",
+    "wape_pct": 3.95,
+    "baseline_wape_pct": 4.18
+   },
+   "projection": {
+    "n": 11906,
+    "model_mae": 182.7,
+    "start_price_mae": 213.0,
+    "no_change_mae": 213.0,
+    "skill_pct": 14.22,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 6.74,
+    "baseline_wape_pct": 7.85
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "8-14",
+   "family": "ma_ridge",
+   "split": "T",
+   "train_pairs": 71033,
+   "shrink": 0.9269,
+   "real_origin": {
+    "n": 12701,
+    "model_mae": 72.1,
+    "no_change_mae": 77.7,
+    "skill_pct": 7.19,
+    "baseline": "no change",
+    "wape_pct": 2.69,
+    "baseline_wape_pct": 2.9,
+    "coverage_pct": 88.2
+   },
+   "projection": {
+    "n": 11593,
+    "model_mae": 263.7,
+    "start_price_mae": 286.4,
+    "no_change_mae": 286.4,
+    "skill_pct": 7.94,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 9.96,
+    "baseline_wape_pct": 10.81,
+    "coverage_pct": 43.5
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "15-21",
+   "family": "ma_ridge",
+   "split": "C",
+   "train_pairs": 40257,
+   "shrink": 1.0,
+   "real_origin": {
+    "n": 13684,
+    "model_mae": 116.6,
+    "no_change_mae": 132.6,
+    "skill_pct": 12.03,
+    "baseline": "no change",
+    "wape_pct": 4.18,
+    "baseline_wape_pct": 4.75
+   },
+   "projection": {
+    "n": 12305,
+    "model_mae": 181.7,
+    "start_price_mae": 195.2,
+    "no_change_mae": 195.2,
+    "skill_pct": 6.87,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 6.51,
+    "baseline_wape_pct": 6.99
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "15-21",
+   "family": "ma_ridge",
+   "split": "A",
+   "train_pairs": 53668,
+   "shrink": 1.0,
+   "real_origin": {
+    "n": 16426,
+    "model_mae": 117.2,
+    "no_change_mae": 125.3,
+    "skill_pct": 6.46,
+    "baseline": "no change",
+    "wape_pct": 4.31,
+    "baseline_wape_pct": 4.61
+   },
+   "projection": {
+    "n": 11919,
+    "model_mae": 178.7,
+    "start_price_mae": 206.9,
+    "no_change_mae": 206.9,
+    "skill_pct": 13.63,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 6.62,
+    "baseline_wape_pct": 7.67
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "15-21",
+   "family": "ma_ridge",
+   "split": "T",
+   "train_pairs": 69639,
+   "shrink": 0.9788,
+   "real_origin": {
+    "n": 12185,
+    "model_mae": 77.8,
+    "no_change_mae": 83.1,
+    "skill_pct": 6.34,
+    "baseline": "no change",
+    "wape_pct": 2.9,
+    "baseline_wape_pct": 3.1,
+    "coverage_pct": 86.7
+   },
+   "projection": {
+    "n": 10870,
+    "model_mae": 255.7,
+    "start_price_mae": 279.1,
+    "no_change_mae": 279.1,
+    "skill_pct": 8.38,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 9.65,
+    "baseline_wape_pct": 10.53,
+    "coverage_pct": 50.8
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "22-30",
+   "family": "ma_ridge",
+   "split": "C",
+   "train_pairs": 38944,
+   "shrink": 1.0,
+   "real_origin": {
+    "n": 13786,
+    "model_mae": 129.6,
+    "no_change_mae": 143.8,
+    "skill_pct": 9.82,
+    "baseline": "no change",
+    "wape_pct": 4.62,
+    "baseline_wape_pct": 5.12
+   },
+   "projection": {
+    "n": 12361,
+    "model_mae": 189.7,
+    "start_price_mae": 206.0,
+    "no_change_mae": 206.0,
+    "skill_pct": 7.92,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 6.76,
+    "baseline_wape_pct": 7.34
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "22-30",
+   "family": "ma_ridge",
+   "split": "A",
+   "train_pairs": 52485,
+   "shrink": 1.0,
+   "real_origin": {
+    "n": 16251,
+    "model_mae": 127.6,
+    "no_change_mae": 134.1,
+    "skill_pct": 4.85,
+    "baseline": "no change",
+    "wape_pct": 4.71,
+    "baseline_wape_pct": 4.95
+   },
+   "projection": {
+    "n": 11841,
+    "model_mae": 178.1,
+    "start_price_mae": 204.0,
+    "no_change_mae": 204.0,
+    "skill_pct": 12.7,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 6.64,
+    "baseline_wape_pct": 7.61
+   }
+  },
+  {
+   "crop": "Wheat",
+   "band": "22-30",
+   "family": "ma_ridge",
+   "split": "T",
+   "train_pairs": 68130,
+   "shrink": 1.0,
+   "real_origin": {
+    "n": 11400,
+    "model_mae": 84.9,
+    "no_change_mae": 91.1,
+    "skill_pct": 6.82,
+    "baseline": "no change",
+    "wape_pct": 3.16,
+    "baseline_wape_pct": 3.39,
+    "coverage_pct": 83.1
+   },
+   "projection": {
+    "n": 10092,
+    "model_mae": 249.1,
+    "start_price_mae": 274.0,
+    "no_change_mae": 274.0,
+    "skill_pct": 9.11,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 9.38,
+    "baseline_wape_pct": 10.33,
+    "coverage_pct": 57.5
+   }
+  },
+  {
+   "crop": "Tomato",
+   "band": "31-45",
+   "family": "yoy_xgb",
+   "split": "C",
+   "train_pairs": 24218,
+   "shrink": 0.6859,
+   "real_origin": {
+    "n": 10317,
+    "model_mae": 1163.6,
+    "no_change_mae": 1311.4,
+    "skill_pct": 11.27,
+    "baseline": "no change",
+    "wape_pct": 57.89,
+    "baseline_wape_pct": 65.24
+   },
+   "projection": {
+    "n": 8843,
+    "model_mae": 1389.4,
+    "start_price_mae": 2405.5,
+    "no_change_mae": 2405.5,
+    "skill_pct": 42.24,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 67.38,
+    "baseline_wape_pct": 116.65
+   }
+  },
+  {
+   "crop": "Tomato",
+   "band": "31-45",
+   "family": "yoy_xgb",
+   "split": "A",
+   "train_pairs": 34307,
+   "shrink": 0.0197,
+   "real_origin": {
+    "n": 11105,
+    "model_mae": 481.1,
+    "no_change_mae": 484.7,
+    "skill_pct": 0.73,
+    "baseline": "no change",
+    "wape_pct": 34.79,
+    "baseline_wape_pct": 35.05
+   },
+   "projection": {
+    "n": 8809,
+    "model_mae": 704.0,
+    "start_price_mae": 709.4,
+    "no_change_mae": 709.4,
+    "skill_pct": 0.77,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 51.88,
+    "baseline_wape_pct": 52.29
+   }
+  },
+  {
+   "crop": "Tomato",
+   "band": "31-45",
+   "family": "yoy_xgb",
+   "split": "T",
+   "train_pairs": 45223,
+   "shrink": 0.376,
+   "real_origin": {
+    "n": 7976,
+    "model_mae": 792.6,
+    "no_change_mae": 941.1,
+    "skill_pct": 15.79,
+    "baseline": "no change",
+    "wape_pct": 38.51,
+    "baseline_wape_pct": 45.72,
+    "coverage_pct": 70.3
+   },
+   "projection": {
+    "n": 7782,
+    "model_mae": 837.6,
+    "start_price_mae": 1109.2,
+    "no_change_mae": 1109.2,
+    "skill_pct": 24.48,
+    "baseline": "starting price (reference-year price x 1.05, model ratio = 1)",
+    "wape_pct": 40.08,
+    "baseline_wape_pct": 53.07,
+    "coverage_pct": 59.2
+   }
+  }
+ ]
+}

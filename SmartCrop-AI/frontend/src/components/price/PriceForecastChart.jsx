@@ -3,7 +3,7 @@ import { Area, CartesianGrid, ComposedChart, Line, ReferenceArea, ReferenceDot, 
 import { useNarrow } from "../../hooks/useNarrow";
 import { useT } from "../../i18n/LanguageContext";
 import { chartModel, isoOf, ts } from "../../utils/forecastWindow";
-import { fmtDate, pct, rupees, shortDate } from "../../utils/format";
+import { fmtDate, pct, rupees, shortDate, signedRupees } from "../../utils/format";
 import { rangeView } from "../../utils/priceView";
 import { activePlan } from "../../utils/storagePlan";
 import HistoricalPriceChart from "./HistoricalPriceChart";
@@ -27,6 +27,31 @@ function Stat({ label, value, sub, testid }) {
   );
 }
 
+/** The four summary cards. A value that cannot be calculated from validated daily predictions says "Unavailable" and why; never a dash. */
+function Stats({ win, forecast, t }) {
+  const peak = win.highest;
+  const change = win.change;
+  const why = t(win.validation?.mode === "context_only" ? "pfc.stat.whyPolicy" : "pfc.stat.whyNone");
+  const planned = win.planned;
+  const plannedWhy = planned.status === "unavailable" ? t("pfc.stat.whyNoDay") : t("pfc.stat.whyNone");
+  const na = t("pfc.stat.unavailable");
+  const r = win.reference;
+  const startSub = win.reference_price == null ? why
+    : r ? (r.adjusted ? t("pfc.stat.startAdjusted", { raw: Math.round(r.reported_price).toLocaleString("en-IN"), date: fmtDate(r.reported_date), market: r.market || forecast.series?.market, years: r.years, pct: r.adjustment_pct_per_year })
+      : t("pfc.stat.startReported", { date: fmtDate(r.reported_date), market: r.market || forecast.series?.market }))
+      : win.reference_date ? fmtDate(win.reference_date) : null;
+  return (
+    <div className="pf-stats">
+      <Stat testid="pf-start" label={t("pfc.stat.start")} value={win.reference_price != null ? rupees(win.reference_price) : na} sub={startSub} />
+      <Stat testid="pf-planned" label={t("pfc.stat.planned")} value={planned.status === "validated" ? rupees(planned.price) : na}
+        sub={planned.status === "validated" ? fmtDate(planned.date) : `${fmtDate(planned.date)} · ${plannedWhy}`} />
+      <Stat testid="pf-high" label={t("pfc.stat.high")} value={peak ? rupees(peak.price) : na} sub={peak ? fmtDate(peak.date) : why} />
+      <Stat testid="pf-change" label={t("pfc.stat.change")} value={change ? pct(change.pct, 1) : na}
+        sub={change ? t("pfc.stat.changeFrom", { from: shortDate(change.from_date), to: shortDate(change.to_date), abs: `${change.abs > 0 ? "+" : ""}${signedRupees(change.abs)}` }) : why} />
+    </div>
+  );
+}
+
 function Tip({ active, payload, t, crop, market }) {
   if (!active || !payload?.length) return null;
   const r = payload[0].payload;
@@ -45,14 +70,14 @@ function Tip({ active, payload, t, crop, market }) {
   );
 }
 
-function Legend({ t, showActual, showRange, hasBest, showExperimental, hasValidated, hasRec, hasLimit }) {
+function Legend({ t, hasPlanned, showActual, showRange, hasBest, showExperimental, hasValidated, hasRec, hasLimit }) {
   return (
     <div className="legend pf-legend" data-testid="pf-legend">
       {showActual && <span><span className="swatch-line" style={{ borderColor: ACTUAL, borderTopWidth: 3 }} />{t("pfc.legend.actual")}</span>}
       {hasValidated && <span><span className="swatch-dash" style={{ borderColor: PREDICTED, borderTopWidth: 3 }} />{t("pfc.legend.predicted")}</span>}
       {showExperimental && <span><span className="swatch-line" style={{ borderColor: EXPERIMENTAL, borderTopStyle: "dotted", borderTopWidth: 3 }} />{t("pfc.legend.experimental")}</span>}
       {showRange && <span><span className="swatch" style={{ background: PREDICTED, opacity: 0.22 }} />{t("pfc.legend.range")}</span>}
-      <span><span className="pf-dot" style={{ background: PLANNED }} />{t("pfc.legend.planned")}</span>
+      {hasPlanned && <span><span className="pf-dot" style={{ background: PLANNED }} />{t("pfc.legend.planned")}</span>}
       {hasBest && <span><span className="pf-dot pf-star" style={{ background: BEST }} />{t("pfc.legend.best")}</span>}
       {hasRec && <span><span className="pf-dot" style={{ background: RECOMMENDED }} />{t("pfc.legend.recommended")}</span>}
       {hasLimit && <span><span className="swatch-dash" style={{ borderColor: LIMIT, borderTopWidth: 2 }} />{t("pfc.legend.limit")}</span>}
@@ -61,7 +86,7 @@ function Legend({ t, showActual, showRange, hasBest, showExperimental, hasValida
 }
 
 /**
- * The daily price forecast for the next 30 days: real reported prices (solid, only when recent enough to share the axis), the model's
+ * The daily price forecast for the next 60 days: real reported prices (solid, only when recent enough to share the axis), the model's
  * validated daily predictions (dashed), the farmer's planned date and the highest predicted date. `win` is the API's `window`.
  * Days without a validated prediction are left empty; the notes below the chart say how many.
  */
@@ -74,7 +99,7 @@ export default function PriceForecastChart({ forecast, crop, market, storageKey 
 
   const range = rangeView(forecast);
   const showRange = range.kind === "measured" || range.kind === "unmeasured";
-  const model = chartModel(win, forecast.observed, { showRange, showExperimental: showExp });
+  const model = chartModel(win, forecast.observed, { showRange, showExperimental: showExp, tickDays: narrow ? 14 : 7 });
   const hasExperimental = win.entries.some((e) => e.status === "not_validated" && Number.isFinite(e.predicted_price));
   const experimentalRows = model.rows.filter((r) => r.experimental != null);
   const predicted = model.rows.filter((r) => r.predicted != null && r.kind !== "start");
@@ -99,6 +124,7 @@ export default function PriceForecastChart({ forecast, crop, market, storageKey 
     const v = win.validation || {};
     return (
       <div data-testid="pf-chart">
+        <Stats win={win} forecast={forecast} t={t} />
         <p className="pf-none" data-testid="pf-none"><strong>{t("pfc.none.title", { crop, market })}</strong> {t(v.mode === "context_only" ? "pfc.none.policy" : "pfc.none.generic", { crop })}</p>
         <HistoricalPriceChart observed={forecast.observed} crop={crop} market={market} />
         {!model.latestActual && <p className="muted small">{t("pfc.noActual")}</p>}
@@ -110,27 +136,15 @@ export default function PriceForecastChart({ forecast, crop, market, storageKey 
   const ys = model.rows.flatMap((r) => [r.actual, r.predicted, r.experimental]).filter((v) => v != null);
   const { domain: yDomain, ticks: yTicks } = priceAxis(Math.min(...ys), Math.max(...ys));
   const [x0, x1] = model.domain;
-  const change = win.change;
   const startTs = ts(win.start_date);
   const tickLabel = (v) => shortDate(isoOf(v));
   const sameDay = planned && peak && planned.date === peak.date;
   const peakIsRec = Boolean(rec && peak && rec.date === peak.date);
   const showPeak = peak && !sameDay && !peakIsRec;
-  const rangeText = showRange && planned?.lower != null
-    ? t(range.kind === "measured" ? "pfc.rangeMeasured" : "pfc.rangeUnmeasured", { low: rupees(planned.lower), high: rupees(planned.upper), pct: range.pct })
-    : null;
 
   return (
     <div data-testid="pf-chart">
-      <div className="pf-stats">
-        <Stat testid="pf-start" label={t("pfc.stat.start")} value={win.reference_price != null ? rupees(win.reference_price) : "—"}
-          sub={forecast.projection ? t("pfc.stat.startFrom", { date: fmtDate(forecast.projection.reference_origin_date), pct: forecast.projection.inflation_annual_pct }) : win.reference_date ? fmtDate(win.reference_date) : null} />
-        <Stat testid="pf-planned" label={t("pfc.stat.planned")} value={win.planned.price != null ? rupees(win.planned.price) : "—"}
-          sub={fmtDate(win.planned.date)} />
-        <Stat testid="pf-high" label={t("pfc.stat.high")} value={peak ? rupees(peak.price) : "—"} sub={peak ? fmtDate(peak.date) : null} />
-        <Stat testid="pf-change" label={t("pfc.stat.change")} value={change ? pct(change.pct, 1) : "—"}
-          sub={change ? t(change.is_window_end ? "pfc.stat.changeTo" : "pfc.stat.changeToLast", { date: shortDate(change.to_date) }) : null} />
-      </div>
+      <Stats win={win} forecast={forecast} t={t} />
       <p className="pf-axis-note muted small">{t("pfc.axisNote")}</p>
 
       <div style={{ width: "100%", height: narrow ? 260 : 340 }} role="img" aria-label={t("pfc.title")}>
@@ -174,23 +188,9 @@ export default function PriceForecastChart({ forecast, crop, market, storageKey 
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-      <Legend t={t} showActual={model.showActual} showRange={showRange} hasBest={showPeak} hasRec={Boolean(rec)} hasLimit={Boolean(limit)} showExperimental={showExp && experimentalRows.length > 0} hasValidated={predicted.length > 0} />
+      <Legend t={t} hasPlanned={Boolean(planned)} showActual={model.showActual} showRange={showRange} hasBest={showPeak} hasRec={Boolean(rec)} hasLimit={Boolean(limit)} showExperimental={showExp && experimentalRows.length > 0} hasValidated={predicted.length > 0} />
       {toggle}
       {expWarning}
-
-      <div className="muted small pf-notes" data-testid="pf-notes">
-        {rangeText && <p data-testid="pf-range">{rangeText}</p>}
-        {!model.showActual && model.latestActual && (
-          <p data-testid="pf-stale">{t("pfc.staleActual", { price: rupees(model.latestActual.price), date: fmtDate(model.latestActual.date) })}</p>
-        )}
-        {!model.latestActual && <p data-testid="pf-noactual">{t("pfc.noActual")}</p>}
-        {peak && cmp?.highest && cmp.highest.within_storage === false && (
-          <p data-testid="pf-beyond">{t("pfc.beyond", { date: fmtDate(peak.date), price: rupees(peak.price) })}</p>
-        )}
-        {win.unvalidated_days + win.unavailable_days > 0 && (
-          <p data-testid="pf-missing">{t("pfc.missingDays", { n: win.unvalidated_days + win.unavailable_days })}</p>
-        )}
-      </div>
     </div>
   );
 }

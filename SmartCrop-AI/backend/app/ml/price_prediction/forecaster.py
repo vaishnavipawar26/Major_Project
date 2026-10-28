@@ -123,6 +123,19 @@ class PriceForecaster:
             if self.soil_table is None:
                 raise ModelSchemaError("The model was trained with soil features but dataset/soil/market_soil.csv is missing; "
                                        "rebuild it (scripts.build_market_soil).")
+        # crop- and horizon-band-specific models (scripts/train_crop_band_models.py): each is used only inside the cell it was validated for
+        cb = d / "crop_band_models.joblib"
+        self.crop_band = joblib.load(cb) if cb.exists() else None
+        self._band_explainers: dict = {}
+        if self.crop_band:
+            for key, cell in self.crop_band["cells"].items():
+                if cell["family"] not in ("xgb", "ma_ridge"):
+                    raise ModelSchemaError(f"crop_band_models.joblib cell {key} uses model family {cell['family']!r}, which this forecaster cannot serve.")
+                if not set(cell["features"]) <= set(self.feature_columns):
+                    raise ModelSchemaError(f"crop_band_models.joblib cell {key} needs inputs the production model does not have; retrain it.")
+        if self.crop_band and list(self.crop_band["features"]) != [c for c in self.feature_columns if c != "commodity_code"]:
+            raise ModelSchemaError("crop_band_models.joblib was trained on different input columns than the production model; retrain it with "
+                                   "scripts.train_crop_band_models.")
         cal = d / "explanation_calibration.json"
         self.calibration = json.loads(cal.read_text(encoding="utf-8")) if cal.exists() else None
         self.max_horizon = int(self.meta["max_horizon"])
@@ -478,17 +491,35 @@ class PriceForecaster:
         origins = pd.DataFrame([origin] * len(HORIZONS))
         X = with_pair_features(origins, np.asarray(HORIZONS))[self.feature_columns]
         preds = self._predict(X)
+        band_preds = {}   # crop-specific models: predictions for all horizons, used only where the cell exists
+        if self.crop_band:
+            for cell in self.crop_band["cells"].values():
+                if cell["crop"] == ref.commodity:
+                    band_preds[cell["band"]] = cell["shrink"] * cell["model"].predict(X[cell["features"]])
 
         tp = series.set_index("Date")["price"].ffill(limit=TARGET_FFILL_LIMIT)
         validated = set(self.validated_horizons(ref.commodity))
         path = []
         for h, pred in zip(HORIZONS, map(float, preds)):
-            iv = self._interval(h, ref.commodity)
+            own = self.band_cell(ref.commodity, h) if band_preds else None
+            if own is not None:
+                pred = float(band_preds[own["band"]][h - 1])
+                iv = {"q10": own["q10"], "q90": own["q90"], "median_abs": own["median_abs"]}
+                real = own["splits"]["T"]["real_origin"]
+                model_mae, base_mae = real["model_mae"], real["no_change_mae"]
+            else:
+                iv = self._interval(h, ref.commodity)
+                model_mae, base_mae = self.reliability(h, ref.commodity)
             band = iv["median_abs"]
-            model_mae, base_mae = self.reliability(h, ref.commodity)
             d = origin_date + timedelta(days=h)
             actual = None if projected else tp.get(pd.Timestamp(d))
+            mode = self.policy_for(ref.commodity, h)
             path.append({
+                "model": (self.band_model_name(own) if own is not None
+                          else _algorithm_name(self.meta, self.horizon_models[h])),
+                "validation_reason": (None if own is not None or (h in validated and mode["mode"] == "model") else
+                                      (mode["reasons"][0] if h in validated else
+                                       "Cross-validation: the model did not beat 'price stays the same' for this crop at exactly this distance.")),
                 "horizon_days": h, "date": d.isoformat(),
                 "predicted_price": round(p0 * math.exp(pred), 2),
                 "lower": round(p0 * math.exp(pred + iv["q10"]), 2),
@@ -498,7 +529,7 @@ class PriceForecaster:
                 "direction": "Stable" if abs(pred) < band else
                              ("Increasing" if pred > 0 else "Decreasing"),
                 "actual_price": None if actual is None or pd.isna(actual) else round(float(actual), 2),
-                "beats_baseline": h in validated and self.policy_for(ref.commodity, h)["mode"] == "model",
+                "beats_baseline": own is not None or (h in validated and mode["mode"] == "model"),
                 "model_mae": round(model_mae, 1), "baseline_mae": round(base_mae, 1),
                 "_band": band,
             })
@@ -564,7 +595,7 @@ class PriceForecaster:
             "earlier_years": self._earlier_years(series, target_date),
             "reference_after": self._reference_after(series, ctx, ref_origin_date, chart_h, projected),
             "chart_path": path, "chart_end_date": path[chart_h - 1]["date"],
-            "model": {"version": self.version, "algorithm": self._algorithm(target_h),
+            "model": {"version": self.version, "algorithm": path[target_h - 1]["model"],
                       "approach": self.meta.get("approach", ""),
                       "data_end": self.data_end.isoformat()},
             "projection": {"reference_origin_date": ref_origin_date.isoformat(),
@@ -756,11 +787,35 @@ class PriceForecaster:
             return None
         return {p["date"]: p["predicted_price"] for p in o["path"]}
 
+    def band_cell(self, crop: str, h: int) -> dict | None:
+        """The crop-specific model cell that serves this crop at this distance, or None (the pooled model serves it)."""
+        if not self.crop_band:
+            return None
+        for cell in self.crop_band["cells"].values():   # a cell covers its own horizon range, which need not be one of the policy's four bands
+            if cell["crop"] == crop and cell["h_lo"] <= h <= cell["h_hi"]:
+                return cell
+        return None
+
+    @staticmethod
+    def band_model_name(c: dict) -> str:
+        kind = {"xgb": "xgboost", "ma_ridge": "moving-average regression"}[c["family"]]
+        return f"{kind} ({c['crop']}, {c['band']}-day crop model)"
+
+    def _band_evidence(self, c: dict) -> str:
+        t = c["splits"]
+        return (f"Crop-specific {c['band']}-day model ({'moving-average regression' if c['family'] == 'ma_ridge' else 'XGBoost'}), validated on three chronological splits at +2% or more over its baseline: real-origin "
+                f"{t['C']['real_origin']['skill_pct']:+.1f}% / {t['A']['real_origin']['skill_pct']:+.1f}% / {t['T']['real_origin']['skill_pct']:+.1f}% "
+                f"vs no-change, projection {t['C']['projection']['skill_pct']:+.1f}% / {t['A']['projection']['skill_pct']:+.1f}% / "
+                f"{t['T']['projection']['skill_pct']:+.1f}% vs the starting price (folds C / A / test T).")
+
     def policy_for(self, crop: str, h: int, cell: dict | None = None) -> dict:
         """{"mode": "model" | "context_only", "band", "reasons"} for a crop and horizon (crop_policy.json, built by
         scripts/build_crop_policy.py). Without a policy file: context-only when the backtest cell, or else the
         cross-validated "beats no-change" flag, says the model does not beat its baseline."""
         band = v3x.band_name(h)
+        own = self.band_cell(crop, h)
+        if own is not None:   # a validated crop-specific model replaces the pooled model's policy for this cell
+            return {"mode": "model", "band": band, "reasons": [self._band_evidence(own)]}
         pol = self.crop_policy.get("cells", {}).get(f"{crop}|{band}")
         if pol is not None:
             return {"mode": pol["mode"], "band": band, "reasons": pol["reasons"]}
@@ -819,6 +874,14 @@ class PriceForecaster:
         return [{"date": d.date().isoformat(), "price": round(float(p), 2)} for d, p in zip(o["Date"], o["price"])]
 
     def reliability_cell(self, crop: str, h: int, projected: bool) -> tuple[dict | None, str | None]:
+        own = self.band_cell(crop, h)
+        if own is not None:
+            sc = "projection" if projected else "real_origin"
+            m = own["splits"]["T"][sc]
+            return ({"beats_baseline": True, "range_coverage_pct": m["coverage_pct"], "n": m["n"], "mae": m["model_mae"],
+                     "baseline": m["baseline"], "baseline_mae": m["no_change_mae"], "wape_pct": m["wape_pct"],
+                     "baseline_wape_pct": m["baseline_wape_pct"], "skill_vs_baseline_pct": m["skill_pct"],
+                     "n_meaningful_moves": 0, "direction_acc_pct": None, "up_share_of_moves_pct": None}, sc)
         t = self.reliability_table
         if not t:
             return None, None
@@ -968,26 +1031,45 @@ class PriceForecaster:
         for h in horizons:
             c = self.horizon_models[h]
             row = X.iloc[[h - 1]]
-            explainer = self.explainers[c]
-            sv = np.asarray(explainer.shap_values(row))[0]
-            base = float(np.atleast_1d(explainer.expected_value)[0])
-            if self.rate_form[c]:  # the model explains the daily rate; the forecast is h x rate
-                sv, base = sv * h, base * h
+            own = self.band_cell(commodity, h)
+            if own is not None:   # the crop-specific model that produced this day's price is the one explained
+                if own["family"] == "ma_ridge":   # linear model: exact contributions, baseline = intercept
+                    contrib, b0 = own["model"].contributions(row)
+                    sv = np.array([contrib.get(f, 0.0) * own["shrink"] for f in self.feature_columns])
+                    base = b0 * own["shrink"]
+                else:
+                    key = f"{own['crop']}|{own['band']}"
+                    if key not in self._band_explainers:
+                        self._band_explainers[key] = shap.TreeExplainer(own["model"])
+                    explainer = self._band_explainers[key]
+                    part = np.asarray(explainer.shap_values(row[own["features"]]))[0] * own["shrink"]
+                    sv = np.array([part[own["features"].index(f)] if f in own["features"] else 0.0 for f in self.feature_columns])
+                    base = float(np.atleast_1d(explainer.expected_value)[0]) * own["shrink"]
+            else:
+                explainer = self.explainers[c]
+                sv = np.asarray(explainer.shap_values(row))[0]
+                base = float(np.atleast_1d(explainer.expected_value)[0])
+                if self.rate_form[c]:  # the model explains the daily rate; the forecast is h x rate
+                    sv, base = sv * h, base * h
             values = {**origin[FEATURE_COLUMNS].to_dict(), **row.iloc[0].to_dict()}
             target = origin_date + timedelta(days=h)
-            model_mae, base_mae = self.reliability(h, commodity)
+            if own is not None:
+                real = own["splits"]["T"]["real_origin"]
+                model_mae, base_mae = real["model_mae"], real["no_change_mae"]
+            else:
+                model_mae, base_mae = self.reliability(h, commodity)
             ctx = {**{k: v for k, v in evidence.items() if not k.startswith("_")},
                    "data_end": self.meta["data_end"],
                    "reliability": {"model_mae": round(model_mae, 1), "baseline_mae": round(base_mae, 1),
-                                   "validated": h in set(self.validated_horizons(commodity))},
+                                   "validated": own is not None or h in set(self.validated_horizons(commodity))},
                    "seasonal": self._seasonal_evidence(evidence, h)}
             weather_status = "not_used"
             if self.uses_weather:
                 weather_status = ("used" if all(pd.notna(values.get(f)) for f in WEATHER_FEATURES)
                                   else "unavailable")
-            model_out = float(self._predict(row)[0])
+            model_out = float(own["shrink"] * own["model"].predict(row[own["features"]])[0]) if own is not None else float(self._predict(row)[0])
             entry = {"horizon_days": h, "date": target.isoformat(),
-                     "algorithm": self._algorithm(h),   # the model that actually produced (and is explained for) this horizon
+                     "algorithm": path[h - 1]["model"],   # the model that actually produced (and is explained for) this horizon
                      **explain_price(sv, base, values, self.feature_columns,
                                      origin_date.month, p0, commodity, horizon=h,
                                      target_month=target.month, projected=projected,

@@ -116,14 +116,18 @@ export default function PriceResult() {
           <div className="market-card" style={{ alignItems: "center" }}>
             <CropArt crop={series.commodity} size={72} decorative className="hero-crop-art" />
             <div style={{ minWidth: 0 }}>
-              <span className="stat-label" data-testid="price-label">{tr(ctxOnly ? (fromEarlier ? "price.result.refPriceOn" : "price.result.reportedOn") : "price.result.priceOn", { date: fmtDate(fromEarlier ? ref.sourceDate : forecast.target_date) })}</span>
+              <span className="stat-label" data-testid="price-label">{selected.source === "latest" ? tr("price.result.latestOn", { date: fmtDate(selected.date) })
+                : tr(ctxOnly ? (fromEarlier ? "price.result.refPriceOn" : "price.result.reportedOn") : "price.result.priceOn", { date: fmtDate(ctxOnly && fromEarlier ? ref.sourceDate : forecast.target_date) })}</span>
               <div className="hero-price" data-testid="hero-price">{rupees(selected.price)}<span className="unit"> {tr("unit.perQuintal")}</span></div>
-              {ctxOnly && fromEarlier && (
+              {ctxOnly && (
+                <div className="stat-sub" data-testid="no-forecast-note">{tr(selected.source === "latest" ? "price.result.noForecastLatest" : "price.result.noForecast", { date: fmtDate(forecast.target_date) })}</div>
+              )}
+              {ctxOnly && fromEarlier && selected.source === "reference" && (
                 <div className="stat-sub" data-testid="ref-note">{tr(ref.inflationPct != null ? "price.result.refNoteInfl" : "price.result.refNote",
                   { source: fmtDate(ref.sourceDate), date: fmtDate(forecast.target_date), pct: ref.inflationPct })}</div>
               )}
               <div className="stat-sub" data-testid="summary-line"><strong>{crop}</strong> · {marketName} · {tr("price.form.date")}: <strong>{fmtDate(forecast.target_date)}</strong></div>
-              {latest && (
+              {latest && selected.source !== "latest" && (
                 <div className="stat-sub" data-testid="latest-actual">{tr("res.latestActual", { price: rupees(latest.price), date: fmtDate(latest.date) })}</div>
               )}
               {!ctxOnly && (range.kind === "measured" || range.kind === "unmeasured") && (
@@ -133,7 +137,7 @@ export default function PriceResult() {
           </div>
         ) : (
           <>
-            <p className="hero-nodir" data-testid="no-price">{ctxOnly && fromEarlier ? tr("price.result.noRefPrice", { source: fmtDate(ref.sourceDate), date: fmtDate(forecast.target_date) }) : tr("price.result.noPrice")}</p>
+            <p className="hero-nodir" data-testid="no-price">{ctxOnly ? tr("price.result.noRefPrice", { date: fmtDate(forecast.target_date) }) : tr("price.result.noPrice")}</p>
             <div className="stat-sub" data-testid="summary-line"><strong>{crop}</strong> · {marketName} · {tr("price.form.date")}: <strong>{fmtDate(forecast.target_date)}</strong></div>
             {latest && <div className="stat-sub" data-testid="latest-actual">{tr("res.latestActual", { price: rupees(latest.price), date: fmtDate(latest.date) })}</div>}
           </>
@@ -145,7 +149,7 @@ export default function PriceResult() {
       </ResultStep>
 
       <ResultStep n={3} id="step-sell" title={tr("price.sell.title")} subtitle={tr("price.sell.subtitle")} className="sell-step">
-        <SellingRecommendation win={forecast.window} storage={advice.storage} crop={crop} storageKey={storageKey} onStorageChange={setStorageKey} />
+        <SellingRecommendation win={forecast.window} storage={advice.storage} crop={crop} storageKey={storageKey} />
       </ResultStep>
 
       <div className="card" style={{ margin: "1rem 0", padding: "1.1rem", textAlign: "center" }} data-testid="explain-card">
