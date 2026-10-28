@@ -1,6 +1,7 @@
 import datetime as dt
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -10,11 +11,11 @@ from app.ml.price_prediction.monthly_forecaster import (MonthlyForecastError,
                                                        MonthlyPriceForecaster)
 from app.ml.registry import require_monthly, require_price
 from app.models.user import User
-from app.schemas.price_prediction import (MonthlyForecastRequest, MonthlyForecastResponse,
+from app.schemas.price_prediction import (GrowingLocation, MonthlyForecastRequest, MonthlyForecastResponse,
                                           PriceExplainResponse, PriceForecastResponse,
                                           PriceOptionsResponse, PricePredictionResponse,
                                           PriceRequest)
-from app.services import price_service, price_weather_service
+from app.services import geocoding_service, price_service, price_weather_service
 
 router = APIRouter(prefix="/api/price-prediction", tags=["Price prediction"],
                    dependencies=[Depends(get_current_user)])
@@ -69,15 +70,58 @@ def monthly_forecast(body: MonthlyForecastRequest,
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
 
+@router.get("/locations")
+def locations(q: str = Query(min_length=2, max_length=150)) -> dict:
+    """Places matching a typed growing location ("Nashik, Maharashtra, India"), best first, so the farmer can pick the right one. An empty
+    list means nothing matched; 503 means the location service could not be reached."""
+    places, err = geocoding_service.search(q)
+    if err == "too_short":
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Type at least 2 letters of the place name.")
+    if err:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "The location search could not be reached. Please try again.")
+    return {"query": q, "results": places, "source": geocoding_service.SOURCE}
+
+
+@router.get("/locations/popular")
+def popular_locations() -> dict:
+    """Places offered before the farmer types anything: the project's Maharashtra cities with their verified coordinates. No network call,
+    so the list is there even while the location search service is down."""
+    return {"results": geocoding_service.popular(), "source": geocoding_service.CITY_SOURCE}
+
+
+def _growing(growing_location: str | None, latitude: float | None, longitude: float | None) -> dict | None:
+    """The growing location given as query parameters, resolved like the one in a prediction request; 422 if it cannot be found."""
+    if not growing_location:
+        return None
+    try:
+        given = GrowingLocation(name=growing_location, latitude=latitude, longitude=longitude)
+    except ValidationError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Give latitude and longitude together, or neither.") from exc
+    place, reason = price_weather_service.resolve_growing(given.model_dump())
+    if place is None and reason == "location_not_found":
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "The growing location could not be found.")
+    if place is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "The location search could not be reached. Please try again.")
+    return place
+
+
+_GROWING = Query(default=None, min_length=2, max_length=100, description="Where the crop is grown; weather/soil are looked up there")
+_LAT = Query(default=None, ge=-90, le=90)
+_LON = Query(default=None, ge=-180, le=180)
+
+
 @router.get("/weather-context")
-def weather_context(market: str = Query(min_length=2, max_length=150), target_date: dt.date = Query()) -> dict:
-    """Background weather for the market and date (observed, forecast, typical or unavailable). The price model does
-    not use it; it is shown to farmers as context only."""
-    return price_weather_service.weather_context(market, target_date)
+def weather_context(market: str = Query(min_length=2, max_length=150), target_date: dt.date = Query(),
+                    growing_location: str | None = _GROWING, latitude: float | None = _LAT, longitude: float | None = _LON) -> dict:
+    """Background weather for the growing location (or, without one, the market) and date (observed, forecast, typical or unavailable).
+    The price model does not use it; it is shown to farmers as context only."""
+    return price_weather_service.weather_context(market, target_date, _growing(growing_location, latitude, longitude))
 
 
 @router.get("/soil-context")
-def soil_context(market: str = Query(min_length=2, max_length=150)) -> dict:
-    """Regional soil-map estimate (pH and soil class) for the market's area. Background information only: the price model does not use
-    it, a failed lookup returns status "unavailable", and it never affects a price prediction."""
-    return price_weather_service.soil_context(market)
+def soil_context(market: str = Query(min_length=2, max_length=150),
+                 growing_location: str | None = _GROWING, latitude: float | None = _LAT, longitude: float | None = _LON) -> dict:
+    """Regional soil-map estimate (pH and soil class) for the growing location's area (or, without one, the market's). Background
+    information only: the price model does not use it, a failed lookup returns status "unavailable", and it never affects a price
+    prediction."""
+    return price_weather_service.soil_context(market, _growing(growing_location, latitude, longitude))

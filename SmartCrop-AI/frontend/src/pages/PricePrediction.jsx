@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, ShoppingBasket } from "lucide-react";
+import { CalendarDays, MapPin, ShoppingBasket } from "lucide-react";
 import Alert from "../components/Alert";
 import FormField from "../components/FormField";
 import LockedState from "../components/LockedState";
 import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import SproutSpinner from "../components/SproutSpinner";
+import GrowingLocationField from "../components/price/GrowingLocationField";
 import marketPhoto from "../assets/photos/market.webp";
 import { useAsync } from "../hooks/useAsync";
 import { useT } from "../i18n/LanguageContext";
@@ -15,7 +16,7 @@ import { priceService } from "../services/priceService";
 import { addDays, cropName, fmtDate } from "../utils/format";
 
 export const LAST_PRICE_REQUEST_KEY = "smartcrop_last_price_request";
-const FIELD_ORDER = ["commodity", "market", "target_date"];
+const FIELD_ORDER = ["commodity", "market", "growing_location", "target_date"];
 
 /** Move keyboard focus (and the screen) to the first field with an error. */
 const focusFirstError = (errs) => {
@@ -29,6 +30,8 @@ export default function PricePrediction() {
   const navigate = useNavigate();
   const { data: opts, loading, error, reload } = useAsync(() => priceService.options(), []);
   const [form, setForm] = useState({ commodity: "", market: "", target_date: "" });
+  // where the crop is grown (separate from the selling market): the typed text and the place picked from the location search
+  const [growing, setGrowing] = useState({ text: "", place: null, down: false });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +41,13 @@ export default function PricePrediction() {
   const minTarget = opts ? addDays(opts.today, 1) : "";
   const maxTarget = opts ? addDays(opts.today, opts.max_horizon_days) : "";
   const dateOk = Boolean(form.target_date) && form.target_date >= minTarget && form.target_date <= maxTarget;
-  const complete = Boolean(commodity && market && dateOk);
+  // a place picked from the search; only while the search service is down can typed text be sent as it is (it is looked up again later)
+  const growingOk = Boolean(growing.place) || (growing.down && growing.text.trim().length >= 2);
+  const complete = Boolean(commodity && market && dateOk && growingOk);
+  // a place chosen after a failed submit clears that field's error (and the error count above the form)
+  useEffect(() => {
+    if (growingOk) setErrors((e) => { if (!e.growing_location) return e; const { growing_location: _, ...rest } = e; return rest; });
+  }, [growingOk]);
 
   // choosing a crop resets the market: each crop has its own list
   const onCommodity = (e) => setForm((f) => ({ ...f, commodity: e.target.value, market: "" }));
@@ -48,6 +57,8 @@ export default function PricePrediction() {
     const errs = {};
     if (!form.commodity) errs.commodity = t("price.form.errCrop");
     if (!form.market) errs.market = t("price.form.errMarket");
+    if (!growing.text.trim()) errs.growing_location = t("price.form.errGrowing");
+    else if (!growingOk) errs.growing_location = t("price.form.errGrowingPick");
     if (!form.target_date) errs.target_date = t("price.form.errDate");
     else if (form.target_date < minTarget || form.target_date > maxTarget)
       errs.target_date = t("price.form.errDateRange", { min: fmtDate(minTarget), max: fmtDate(maxTarget) });
@@ -57,6 +68,9 @@ export default function PricePrediction() {
     const req = {
       state: commodity.states[0] || "Maharashtra", market: form.market, commodity: form.commodity,
       variety: market.default_variety, target_date: form.target_date,
+      growing_location: growing.place
+        ? { name: growing.place.label, latitude: growing.place.latitude, longitude: growing.place.longitude }
+        : { name: growing.text.trim() },
     };
     setSubmitting(true);
     setApiError(null);
@@ -107,6 +121,11 @@ export default function PricePrediction() {
               </select>
             </FormField>
           </div>
+        </div>
+
+        <div className="form-section">
+          <h2 className="section-title form-step"><MapPin size={19} aria-hidden="true" />{t("price.form.stepWhere")}</h2>
+          <GrowingLocationField value={growing} onChange={setGrowing} error={errors.growing_location} />
         </div>
 
         <div className="form-section">

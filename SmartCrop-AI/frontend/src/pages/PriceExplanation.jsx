@@ -37,7 +37,8 @@ function useExplanationSource() {
     setSaved(null); setError(null);
     historyService.priceItem(id).then((p) => live && setSaved({
       req: { state: p.state, market: p.market, commodity: p.commodity, variety: p.variety,
-        as_of: p.input_date, target_date: addDays(p.input_date, p.horizon_days) },
+        as_of: p.input_date, target_date: addDays(p.input_date, p.horizon_days),
+        ...(p.growing_location ? { growing_location: p.growing_location } : {}) },
     })).catch((e) => live && setError(errorMessage(e)));
     return () => { live = false; };
   }, [fromState, id]);
@@ -157,7 +158,7 @@ export default function PriceExplanation() {
   const location = useLocation();
   const { req, explain: passed, which: passedWhich, id, error: srcError, missing } = useExplanationSource();
   const [explain, setExplain] = useState(passed);
-  const fieldConditions = useFieldConditions(explain?.series?.market, explain?.target_date);   // the market the forecast actually used
+  const fieldConditions = useFieldConditions(explain?.series?.market, explain?.target_date, null, req?.growing_location);   // the growing location (else the market the forecast used)
   const [error, setError] = useState(null);
   const [which, setWhich] = useState(passedWhich);
   const [attempt, setAttempt] = useState(0);

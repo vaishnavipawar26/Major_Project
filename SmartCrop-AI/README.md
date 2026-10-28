@@ -1246,6 +1246,78 @@ python -m scripts.train_recommendation_model
 python -m scripts.score_sensitivity
 ```
 
+### 12.9 Environmental factors on the price page (weather, soil, growing location)
+
+The price result shows six environmental factors next to the prediction: temperature, humidity, rainfall, soil pH, soil type and growing
+location. **They are context only. The price model does not use them** (its 29 inputs are prices, arrivals, the calendar and crop/market
+codes); the SHAP chart therefore never lists them.
+
+| Factor | Source | For which place and date |
+|---|---|---|
+| Temperature (°C, daily mean), humidity (%, daily mean), rainfall (mm, total for that day) | Open-Meteo: historical archive for past days, forecast for today up to 15 days ahead | The growing location's coordinates and the selling date (calendar day in Asia/Kolkata) |
+| Soil pH (pH in water, 0-5 cm) and soil type (WRB reference soil group) | SoilGrids 2.0 (ISRIC, CC BY 4.0), a 250 m soil map | The growing location; if that point is built-up and has no value, the median of four points about 2 km around it, labelled as such |
+| Growing location | Typed by the farmer on the price form (village, town or district, e.g. "Nashik, Maharashtra, India") and chosen from the Open-Meteo geocoding search (GeoNames places) | Separate from the selling market, which still drives the price prediction |
+
+Rules the app follows:
+* A selling date more than 15 days ahead has no forecast, so weather for the growing location is "unavailable" (the project's stored
+  "typical" weather exists only for market towns, so it is used only for older requests without a growing location).
+* A growing location that cannot be found makes all factors "unavailable"; the selling market is never used in its place. Requests without
+  a growing location (older clients, predictions saved before the field existed) still use the selling market's town, labelled as such.
+* A failed or empty provider answer is never stored and never shown as a value. Missing values are shown as "Unavailable", never 0.
+* Market coordinates come from `dataset/crop_price/market_locations.csv` plus the reviewed second pass in
+  `market_locations_extra.csv` (`python -m scripts.geocode_unmapped_markets`). Markets with no or ambiguous coordinates say so.
+
+**Where the values are stored.** Valid answers are saved in the MySQL table `environmental_records` (migration `0005`), one row per place
+(latitude/longitude), day and type (observed / forecast / soil estimate), with the source and retrieval time. Two growing locations therefore
+never share a row just because they sell at the same market. The chosen growing location's label is saved in the existing
+`price_predictions.growing_location` column (migration `0004`), so re-opening a prediction from History looks up the same place; no new
+migration is needed. The same place and day are then answered from the
+database for every user and after a restart; forecasts are refreshed after 3 hours, soil after 30 days, a past day's record never changes.
+If a provider is down, an earlier stored answer is used and labelled with its retrieval time.
+
+**After pulling these changes** (every team member, once), from `backend/` with the virtual environment active:
+
+```powershell
+pip install -r requirements.txt      # only if requirements changed; truststore is used for HTTPS on networks with TLS inspection
+alembic upgrade head                 # creates environmental_records; existing tables and rows are not touched
+```
+
+The backend needs internet access to Open-Meteo and SoilGrids. No API key is required (`OPEN_METEO_API_KEY` is optional, for commercial use).
+
+**Two ways a team can work:**
+
+* **Setup A, separate local databases (what this repository is set up for).** Each member runs their own backend and MySQL. GitHub shares
+  the code, migrations and dataset files, not database rows. Each member's `environmental_records` fills up on its own the first time a
+  market and date are looked up; the values are the same for everyone because they come from the same public sources.
+* **Setup B, one shared deployed database.** All members use one deployed backend connected to one MySQL server; they then reuse the same
+  stored records. This repository contains no deployment yet. To set one up: run the backend on a server, point `DATABASE_URL` in that
+  server's `backend/.env` at the shared MySQL, run `alembic upgrade head` there once, add the frontend's address to `CORS_ORIGINS`, and set
+  `VITE_API_URL` in `frontend/.env` to the backend's address. The frontend never connects to MySQL directly, and credentials stay in `.env`
+  files that are never committed.
+
+**API.** `POST /api/price-prediction/predict` and `POST /api/price-prediction/trend` return an extra `environmental_factors` object (all
+earlier fields are unchanged). The request takes an optional `growing_location` (`{"name": "Nashik, Maharashtra, India", "latitude": 19.9973,
+"longitude": 73.791}`, or just the label, which is then searched again); the web form always sends it. `GET /api/price-prediction/locations?q=...`
+returns matching places for the form. `GET /api/price-prediction/weather-context?market=...&target_date=YYYY-MM-DD` and
+`GET /api/price-prediction/soil-context?market=...` return the weather and soil parts on their own (add `growing_location`, `latitude` and
+`longitude` for a growing location). Example for a crop grown in Nashik and sold at APMC Pune (shortened; soil was unavailable because
+SoilGrids was down at the time):
+
+```json
+"environmental_factors": {
+  "selling_date": "2026-11-02", "market": "APMC Pune", "used_by_price_model": false,
+  "location": {"name": "Nashik, Maharashtra, India", "latitude": 19.9973, "longitude": 73.791, "kind": "growing_location"},
+  "temperature": {"value": 22.5, "unit": "°C", "data_type": "forecast", "measure": "daily mean", "date": "2026-11-02",
+                  "source": "Open-Meteo weather forecast", "served_from": "live", "available": true},
+  "humidity": {"value": 89, "unit": "%", "data_type": "forecast", "available": true},
+  "rainfall": {"value": 12.0, "unit": "mm", "period": "daily total", "data_type": "forecast", "available": true},
+  "soil_ph": {"value": null, "available": false, "reason": "service_unreachable"},
+  "soil_type": {"value": null, "available": false, "reason": "service_unreachable"},
+  "growing_location": {"value": "Nashik, Maharashtra, India", "available": true, "data_type": "chosen_by_farmer",
+                       "source": "Open-Meteo geocoding (GeoNames)", "latitude": 19.9973, "longitude": 73.791}
+}
+```
+
 ---
 
 ## 13. How to use

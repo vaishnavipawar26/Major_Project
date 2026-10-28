@@ -1,7 +1,8 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { useNarrow } from "../../hooks/useNarrow";
 import { useT } from "../../i18n/LanguageContext";
-import { fmtDate } from "../../utils/format";
+import { fmtDate, fmtDateTime } from "../../utils/format";
+import { fmtCoords } from "./GrowingLocationField";
 
 const BRAND = "var(--brand)";
 /**
@@ -57,14 +58,22 @@ function RowLabel({ x, y, payload, rows }) {
   );
 }
 
+/** The growing location to show: the prediction's own ``growing_location`` factor, else the place the weather or soil answer was for. */
+function growingInfo(growing, w, sd) {
+  if (growing) return growing;
+  const d = [w, sd].find((x) => x?.place_kind === "growing_location" && x.place);
+  return d ? { available: true, value: d.place, latitude: d.latitude, longitude: d.longitude, source: null } : null;
+}
+
 /**
  * "Field Conditions": ONE horizontal bar chart with a row per condition (temperature, humidity, rainfall, soil pH, soil type, growing location).
- * Temperature, humidity and rainfall come from the weather service for the selling market and date (recorded, forecast or typical); soil pH and
- * soil type are regional SoilGrids estimates, not field measurements; growing location cannot be found without crop-origin data. Numbers use their
- * own scale, soil type is a category label, and anything missing is a dashed "Unavailable" row, never 0. The conditions are shown for context only:
- * the price model does not use them, and nothing here is a SHAP value, a score, a correlation or a price effect.
+ * Temperature, humidity and rainfall come from the weather service for the farmer's growing location and the selling date (recorded, forecast
+ * or, for older requests at a market, typical); soil pH and soil type are regional SoilGrids estimates, not field measurements. Requests made
+ * before the growing location existed use the selling market's town and say so. Numbers use their own scale, soil type is a category label,
+ * and anything missing is a dashed "Unavailable" row, never 0. The conditions are shown for context only: the price model does not use them,
+ * and nothing here is a SHAP value, a score, a correlation or a price effect.
  */
-export default function FieldConditionsOverview({ weather, soil }) {
+export default function FieldConditionsOverview({ weather, soil, growing = null }) {
   const t = useT();
   const narrow = useNarrow();
   const w = weather?.data;
@@ -78,6 +87,11 @@ export default function FieldConditionsOverview({ weather, soil }) {
   const soilStatus = soilOk && sd.soil_type ? "ok" : soilLoading ? "loading" : "unavailable";
   const missing = (status) => (status === "loading" ? "…" : t("fc.unavailable"));
   const range = (id) => `${RANGES[id][0]}–${RANGES[id][1]}${RANGES[id][2] ? ` ${RANGES[id][2]}` : ""}`;
+  const g = growingInfo(growing, w, sd);
+  const gOk = Boolean(g?.available && g.value);
+  const gShort = gOk ? String(g.value).split(",")[0] : null;     // the place name itself; the full label is in the source line below
+  const locStatus = gOk ? "ok" : (wxLoading || soilLoading) && !g ? "loading" : "unavailable";
+  const locText = gOk ? gShort : locStatus === "loading" ? "…" : g || narrow ? t("fc.unavailable") : t("fc.locationValue");
 
   const num = (id, label, status, v, text) => ({ id, label, kind: "num", status, span: 100, range: range(id),
     pct: status === "ok" ? clampPct(id, v) : null, valueText: status === "ok" ? text : missing(status) });
@@ -87,13 +101,26 @@ export default function FieldConditionsOverview({ weather, soil }) {
     num("rainfall", t("fc.rainfall"), wxStatus, w?.rainfall_mm, `${w?.rainfall_mm} mm`),
     num("ph", t("fc.ph"), phStatus, sd?.ph, `${sd?.ph}`),
     { id: "soil", label: t("fc.soil"), kind: "cat", status: soilStatus, span: 100, range: null, pct: null, valueText: soilStatus === "ok" ? sd.soil_type : missing(soilStatus) },
-    { id: "location", label: t("fc.location"), kind: "cat", status: "unavailable", span: 100, range: null, pct: null, valueText: narrow ? t("fc.unavailable") : t("fc.locationValue") },
+    { id: "location", label: t("fc.location"), kind: "cat", status: locStatus, span: 100, range: null, pct: null, valueText: locText },
   ];
-  const sources = [
-    wxOk && t("fc.srcWeatherShort", { kind: t(`fc.kind.${w.status}`) }),
-    (phStatus === "ok" || soilStatus === "ok") && t("fc.srcSoilShort"),
-    t("fc.srcLocationShort"),
-  ].filter(Boolean);
+  // where each group of values came from, in plain words: what it is, for which date, from which source, and whether it was just fetched
+  // or saved earlier. When nothing trustworthy exists, a friendly reason instead of an error message.
+  const served = (d) => (d.served_from === "cache" && d.retrieved_at ? t("fc.prov.cache", { when: fmtDateTime(d.retrieved_at) })
+    : d.served_from === "stored_history" ? t("fc.prov.history") : t("fc.prov.live"));
+  const reasonText = (r) => t(`fc.reason.${r || "no_data"}`);
+  const weatherLine = wxLoading ? null : wxOk
+    ? t(`fc.prov.weather.${w.status}`, { date: fmtDate(w.date), source: w.source, served: served(w) })
+      + (w.status === "typical" && w.reason === "service_unreachable" ? ` ${t("fc.reason.typicalBecauseDown")}` : "")
+    : t("fc.prov.weatherNone", { why: reasonText(w?.reason || (weather?.state === "error" ? "service_unreachable" : null)) });
+  const soilLine = soilLoading ? null : soilOk
+    ? t("fc.prov.soil", { scope: t(`fc.scope.${sd.place_kind === "growing_location" ? "growing." : ""}${sd.ph_scope || "town_centre"}`, { km: sd.ph_area_km ?? 2 }), served: served(sd) })
+      + (sd.ph == null ? ` ${t(`fc.reason.ph.${sd.ph_reason || "not_in_map"}`)}` : "")
+    : t("fc.prov.soilNone", { why: reasonText(sd?.reason || (soil?.state === "error" ? "service_unreachable" : null)) });
+  const locationLine = gOk
+    ? t("fc.prov.location", { place: g.value, coords: g.latitude != null ? fmtCoords(g.latitude, g.longitude) : "", source: g.source || t("fc.prov.locationSearch") })
+    : g ? t("fc.prov.locationNone", { place: g.entered || "", why: reasonText(g.reason) })
+      : locStatus === "loading" ? null : t("fc.srcLocationShort");
+  const sources = [["location", locationLine], ["weather", weatherLine], ["soil", soilLine]].filter(([, line]) => line);
 
   return (
     <div data-testid="field-conditions">
@@ -108,7 +135,9 @@ export default function FieldConditionsOverview({ weather, soil }) {
         </ResponsiveContainer>
       </div>
       <p className="muted small" style={{ margin: "0.1rem 0 0" }} data-testid="fc-scale-note">{t("fc.scaleNote")}</p>
-      <p className="muted small" style={{ margin: "0.3rem 0 0" }} data-testid="fc-sources">{sources.join(" ")}</p>
+      <ul className="muted small" style={{ margin: "0.3rem 0 0", paddingLeft: "1.1rem" }} data-testid="fc-sources">
+        {sources.map(([id, line]) => <li key={id} data-testid={`fc-src-${id}`}>{line}</li>)}
+      </ul>
       <p className="small" style={{ margin: "0.5rem 0 0", padding: "0.6rem 0.8rem", background: "#f1f0e3", borderRadius: 12, lineHeight: 1.5 }} data-testid="fc-note">{t("fc.note")}</p>
     </div>
   );

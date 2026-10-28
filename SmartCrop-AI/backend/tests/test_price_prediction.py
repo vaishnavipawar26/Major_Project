@@ -239,8 +239,9 @@ def test_model_crop_keeps_the_full_advice_and_reports_range_coverage(client, use
     assert b["latest_recorded"]["date"] <= b["dates"]["latest_data_date"]
 
 
-def test_field_conditions_sent_by_a_client_are_ignored_and_never_saved(client, user):
-    """Soil pH, soil type and growing location are no longer collected from the farmer: if a client still sends them, nothing is stored."""
+def test_field_values_sent_by_a_client_are_ignored_and_only_the_growing_location_is_saved(client, user):
+    """Soil pH and soil type are never collected from the farmer: if a client still sends them, nothing is stored. The growing location is
+    a form field: its label is saved (so a re-opened prediction looks up the same place) and the price is unchanged."""
     from sqlalchemy import text
     from app.database.connection import engine
     plain = client.post("/api/price-prediction/predict", headers=user["headers"], json=STATE_REQ).json()
@@ -250,4 +251,32 @@ def test_field_conditions_sent_by_a_client_are_ignored_and_never_saved(client, u
     with engine.connect() as c:
         row = c.execute(text("select ph, soil_type, growing_location, temperature, humidity, rainfall from price_predictions where id = :i"),
                         {"i": sent["id"]}).one()
-    assert tuple(row) == (None, None, None, None, None, None)   # the six columns stay empty (NULL), never 0
+    assert tuple(row) == (None, None, "Nashik", None, None, None)   # the measurement columns stay empty (NULL), never 0
+
+
+def test_predict_and_trend_keep_every_existing_field_and_add_the_six_environmental_factors(client, user):
+    """Backward compatible: all earlier fields are still there; environmental_factors is added, marked as not used by the model.
+    Tests run offline (conftest.py), so the providers are 'down' here and the factors must be unavailable or estimates, never 0."""
+    required = {"series", "input_date", "forecast_origin_date", "target_date", "target_horizon_days", "current_price", "target", "path",
+                "advice", "history", "model", "source", "dates", "disclaimer", "observed", "chart_path"}
+    for path in ("predict", "trend"):
+        r = client.post(f"/api/price-prediction/{path}", headers=user["headers"], json=STATE_REQ)
+        assert r.status_code in (200, 201), r.text
+        body = r.json()
+        assert required <= set(body)
+        env = body["environmental_factors"]
+        assert set(env) >= {"temperature", "humidity", "rainfall", "soil_ph", "soil_type", "growing_location", "selling_date", "used_by_price_model"}
+        assert env["used_by_price_model"] is False and env["selling_date"] == STATE_REQ["target_date"]
+        assert env["growing_location"]["available"] is False                 # the form gives the selling market, not where the crop grew
+        assert env["soil_ph"]["value"] is None and env["soil_type"]["value"] is None   # the soil service is unreachable in tests
+        for k in ("temperature", "humidity", "rainfall"):
+            assert env[k]["value"] is None or env[k]["data_type"] == "typical"
+
+
+def test_environmental_factors_never_change_the_predicted_price(client, user, monkeypatch):
+    from app.services import price_service
+    plain = client.post("/api/price-prediction/trend", headers=user["headers"], json=STATE_REQ).json()
+    monkeypatch.setattr(price_service, "environmental_factors", lambda market, day, growing=None: {"temperature": {"value": 99}})
+    other = client.post("/api/price-prediction/trend", headers=user["headers"], json=STATE_REQ).json()
+    assert other["target"]["predicted_price"] == plain["target"]["predicted_price"]
+    assert [p["predicted_price"] for p in other["path"]] == [p["predicted_price"] for p in plain["path"]]

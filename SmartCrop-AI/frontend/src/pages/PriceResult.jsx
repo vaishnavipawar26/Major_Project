@@ -51,7 +51,8 @@ function useResultSource() {
       fromHistory: true,
       saved: p,
       req: { state: p.state, market: p.market, commodity: p.commodity, variety: p.variety,
-        as_of: p.input_date, target_date: addDays(p.input_date, p.horizon_days) },
+        as_of: p.input_date, target_date: addDays(p.input_date, p.horizon_days),
+        ...(p.growing_location ? { growing_location: p.growing_location } : {}) },
     })).catch((e) => setError(errorMessage(e)));
   }, [id, source]);
   return { source, error, missing: !source && !id };
@@ -156,7 +157,8 @@ export default function PriceResult() {
     priceService.explain(source.req).then(setExplain).catch(() => {});
   }, [source]);
 
-  const { weather, soil } = useFieldConditions(forecast?.series?.market, forecast?.target_date);
+  const { weather, soil } = useFieldConditions(forecast?.series?.market, forecast?.target_date, forecast?.environmental_factors,
+    source?.req?.growing_location);
 
   const backLinks = (
     <div className="row">
@@ -234,7 +236,7 @@ export default function PriceResult() {
       </ResultStep>
 
       <ResultStep n={4} id="step-conditions" title={tr("fc.title")}>
-        <FieldConditionsOverview weather={weather} soil={soil} />
+        <FieldConditionsOverview weather={weather} soil={soil} growing={forecast.environmental_factors?.growing_location} />
       </ResultStep>
 
       <ResultStep n={5} id="step-sell" title={tr("price.sell.title")} subtitle={tr("price.sell.subtitle")} className="sell-step">

@@ -256,8 +256,8 @@ describe("the six condition explanations on the Explain My Prediction page", () 
     expect(box.querySelectorAll("li")).toHaveLength(6);
     expect(box.textContent).toContain("Brinjal");
     expect(box.textContent).toContain("not necessarily where the crop was grown");
-    expect(priceService.weatherContext).toHaveBeenCalledWith("Pune", "2026-11-11");
-    expect(priceService.soilContext).toHaveBeenCalledWith("Pune");
+    expect(priceService.weatherContext).toHaveBeenCalledWith("Pune", "2026-11-11", null);
+    expect(priceService.soilContext).toHaveBeenCalledWith("Pune", null);
   });
   it("says there is not enough information when nothing could be retrieved, and never claims a price effect", async () => {
     renderAt(withState());

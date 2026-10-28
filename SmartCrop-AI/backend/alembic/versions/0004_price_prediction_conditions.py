@@ -4,8 +4,7 @@ Revision ID: 0004_price_conditions
 Revises: 0003_budget_plan
 Create Date: 2026-10-27
 
-PROPOSED, NOT APPLIED. This file lives in alembic/proposed/ on purpose: the app refuses to start while a migration file in
-alembic/versions/ is not applied. After approval it is copied to alembic/versions/ and applied with `alembic upgrade head`.
+Approved and applied on 2026-10-27 (first written as a proposal in alembic/proposed/).
 
 Six nullable columns on price_predictions. Existing rows keep NULL (= not recorded); nothing is rewritten, nothing is dropped.
 Units are written into the column comments:

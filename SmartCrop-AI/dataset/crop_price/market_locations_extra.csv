@@ -1,0 +1,20 @@
+market,query,matched_name,admin1,latitude,longitude,status,variant,source,review_note,retrieved_at
+APMC Ahilyanagar,Ahilyanagar,Ahilyanagar,Maharashtra,19.0952,74.7496,mapped,,project city_coordinates.csv,,2026-10-28T01:39:37+00:00
+APMC Ahmedpur,Ahmedpur,Ahmadpur,Maharashtra,18.70622,76.93731,mapped,Ahmadpur,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Akkalkot,Akkalkot,Akalkot,Maharashtra,17.52532,76.20611,mapped,Akalkot,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Buldhana,Buldhana,Buldāna,Maharashtra,20.52933,76.18457,mapped,Buldana,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Dharashiv,Dharashiv,Dharashiv,Maharashtra,18.186,76.0419,mapped,,project city_coordinates.csv,,2026-10-28T01:39:37+00:00
+APMC Dound,Dound,Daund,Maharashtra,18.46515,74.58375,mapped,Daund,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Manora,Manora,Manor,Maharashtra,19.7244,72.90966,rejected,Manor,open-meteo geocoding (variant pass),matched Manor (Palghar district); Manora is a different town in Washim district,2026-10-28T01:39:37+00:00
+APMC Morshi,Morshi,Morsi,Maharashtra,21.3403,78.01258,mapped,Morsi,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Sailu,Sailu,Selu,Maharashtra,19.45512,76.44073,mapped,Selu,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Satara,Satara,Satara,Maharashtra,17.6805,74.0183,mapped,,project city_coordinates.csv,,2026-10-28T01:39:37+00:00
+APMC Shirur,Shirur,Sirūr,Maharashtra,18.8276,74.37475,mapped,Sirur,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Sonpeth,Sonpeth,Sonpet,Maharashtra,19.02594,76.47394,mapped,Sonpet,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Vai,Vai,Wai,Maharashtra,17.95276,73.89058,mapped,Wai,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Vani,Vani,Wani,Maharashtra,20.05507,78.95313,rejected,Wani,open-meteo geocoding (variant pass),"ambiguous: Wani (Yavatmal) and Vani (Dindori, Nashik) are both market towns",2026-10-28T01:39:37+00:00
+APMC Varora,Varora,Warora,Maharashtra,20.22885,79.00277,mapped,Warora,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Varud,Varud,Warud,Maharashtra,21.47101,78.26965,mapped,Warud,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+APMC Yawal,Yawal,Yāval,Maharashtra,21.16772,75.69762,mapped,Yaval,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+Buldhana(Dhad),Buldhana,Buldāna,Maharashtra,20.52933,76.18457,mapped,Buldana,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00
+Varud(Rajura Bazar),Varud,Warud,Maharashtra,21.47101,78.26965,mapped,Warud,open-meteo geocoding (variant pass),,2026-10-28T01:39:37+00:00

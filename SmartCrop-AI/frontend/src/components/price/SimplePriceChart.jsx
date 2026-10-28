@@ -5,7 +5,9 @@ import { fmtDate, rupees } from "../../utils/format";
 
 const DAY = 86400000;
 const GAP_DAYS = 10;   // a longer wait between two real reports is shown as a break, never as a joined line
-const SHOW_DAYS = 120; // how much real history is drawn
+// How much real history is drawn. 120 days took about four fifths of the width, leaving the expected price and the selling date squeezed
+// into a thin strip at the right edge; 60 days still shows the recent trend.
+export const SHOW_DAYS = 60;
 const ts = (iso) => Date.parse(`${iso}T00:00:00Z`);
 const iso = (ms) => new Date(ms).toISOString().slice(0, 10);
 
@@ -79,8 +81,51 @@ function axisTicks(rows, targetDate, narrow) {
 }
 
 /**
- * Graph 1: real historical prices, the model's expected prices (only when the forecast is allowed) and the farmer's selling date.
- * `forecast` is the /trend or /predict response; nothing is drawn that the response does not contain.
+ * Price axis: a range only slightly wider than the prices drawn (so the line fills the plot instead of floating in a wide padded band),
+ * with evenly spaced round ticks (₹50, 100, 200, 250, 500 … apart) inside it.
+ */
+export function priceAxis(lo, hi) {
+  const pad = Math.max((hi - lo) * 0.06, 10);
+  const from = Math.max(0, Math.floor(lo - pad)), to = Math.ceil(hi + pad);
+  const raw = (to - from) / 3;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const steps = [0.5, 1, 2, 2.5, 5, 10].map((m) => m * mag);
+  const at = (step) => { const out = []; for (let v = Math.ceil(from / step) * step; v <= to; v += step) out.push(Math.round(v)); return out; };
+  let i = steps.findIndex((s) => s >= raw);
+  while (i > 0 && at(steps[i]).length < 3) i -= 1;     // at least three labels
+  return { domain: [from, to], ticks: at(steps[i]) };
+}
+
+/** "Expected ₹1,379" above the selling-date point: drawn only at the one row that has the selected price. */
+function SelLabel({ x, y, value, text }) {
+  if (value == null || x == null) return null;
+  return <text x={x} y={y - 13} textAnchor="middle" fontSize={12.5} fontWeight={700} fill="var(--brand)" data-testid="expected-point-label">{text}</text>;
+}
+
+/** The expected price in words and numbers, above the graph: the API's own value for the selling date, or a plain "not available". */
+function Headline({ t, show, selected, crop, date }) {
+  return (
+    <div className="g1-headline" data-testid="g1-headline">
+      <span className="g1-headline-label">{t("pc.expectedTitle")}</span>
+      {show ? (
+        <>
+          <span className="g1-headline-price" data-testid="g1-price">{rupees(selected.price)}<span className="unit"> {t("unit.perQuintal")}</span></span>
+          <span className="g1-headline-text" data-testid="g1-sentence">{t("pc.expectedSentence", { crop, price: rupees(selected.price), date: fmtDate(date) })}</span>
+        </>
+      ) : (
+        <>
+          <span className="g1-headline-price is-none" data-testid="g1-price">{t("pc.expectedNone")}</span>
+          <span className="g1-headline-text" data-testid="g1-sentence">{t("pc.expectedNoneSentence", { crop, date: fmtDate(date) })}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Graph 1: the expected price for the selling date in words, then real historical prices, the model's expected prices (only when the
+ * forecast is allowed) and the farmer's selling date. `forecast` is the /trend or /predict response; nothing is drawn or written that the
+ * response does not contain.
  */
 export default function SimplePriceChart({ forecast, ctxOnly, selected, crop, market }) {
   const t = useT();
@@ -92,9 +137,10 @@ export default function SimplePriceChart({ forecast, ctxOnly, selected, crop, ma
   const showSel = !ctxOnly && selected?.source === "forecast";
   const rows = chartRows({ observed, expected, selected: showSel ? selected.price : null, targetDate: forecast.target_date });
   const latest = observed.at(-1);
+  const headline = <Headline t={t} show={showSel} selected={selected} crop={crop} date={forecast.target_date} />;
 
   if (!observed.length && !expected.length) {
-    return <p className="muted small" data-testid="no-history">{t("price.chart.noHistory", { crop, market })}</p>;
+    return <>{headline}<p className="muted small" data-testid="no-history">{t("price.chart.noHistory", { crop, market })}</p></>;
   }
   const ticks = axisTicks(rows, forecast.target_date, narrow);
   const labels = new Map(ticks.map((tk) => [tk.x, fmtDate(iso(tk.real), { day: "numeric", month: "short", year: "2-digit" })]));
@@ -103,35 +149,39 @@ export default function SimplePriceChart({ forecast, ctxOnly, selected, crop, ma
   const lo = Math.min(...xs), hi = Math.max(...xs);
   const pad = Math.max(2 * DAY, (hi - lo) * 0.03);
   const ys = rows.flatMap((r) => [r.hist, r.exp, r.sel]).filter((v) => v != null);
-  const ylo = Math.min(...ys), yhi = Math.max(...ys), ypad = Math.max((yhi - ylo) * 0.12, 20);
+  const { domain: yDomain, ticks: yTicks } = priceAxis(Math.min(...ys), Math.max(...ys));
   const gap = rows.gap;
+  const selText = showSel ? `${t("pc.expectedShort")} ${rupees(selected.price)}` : "";
 
   return (
     <div data-testid="simple-chart">
-      <div className="legend" style={{ marginBottom: 6 }} data-testid="chart-legend">
+      {headline}
+      <div className="legend g1-legend" data-testid="chart-legend">
         <span><span className="swatch-line" style={{ borderColor: "var(--text-2)" }} />{t("pc.legendHist")}</span>
-        <span><span className="swatch-dot" style={{ background: "var(--text-2)" }} />{t("pc.legendLatest")}</span>
         {expected.length > 0 && <span><span className="swatch-dash" style={{ borderColor: "var(--brand)" }} />{t("pc.legendExpected")}</span>}
       </div>
-      <div style={{ width: "100%", height: narrow ? 230 : 290 }} role="img" aria-label={t("pc.title")}>
+      <div className="g1-axis-caption" aria-hidden="true">{t("pc.axisPrice")}</div>
+      <div style={{ width: "100%", height: narrow ? 210 : 240 }} role="img" aria-label={t("pc.title")}>
         <ResponsiveContainer>
-          <LineChart data={rows} margin={{ top: 14, right: 16, bottom: 4, left: 0 }}>
+          <LineChart data={rows} margin={{ top: showSel ? 22 : 10, right: narrow ? 30 : 22, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--grid)" vertical={false} />
             <XAxis dataKey="x" type="number" domain={[lo - pad, hi + pad]} ticks={ticks.map((tk) => tk.x)} interval={0} tickLine={false}
-              tickFormatter={(v) => labels.get(v) ?? ""} stroke="var(--axis)" tick={{ fill: "var(--muted)", fontSize: 12 }} />
-            <YAxis domain={[Math.max(0, Math.floor(ylo - ypad)), Math.ceil(yhi + ypad)]} width={narrow ? 52 : 60} tickCount={4} tickLine={false} axisLine={false}
+              tickFormatter={(v) => labels.get(v) ?? ""} stroke="var(--axis)" tick={{ fill: "var(--muted)", fontSize: 12 }} height={24} />
+            <YAxis domain={yDomain} ticks={yTicks} interval={0} width={narrow ? 50 : 56} tickLine={false} axisLine={false}
               tickFormatter={(v) => rupees(v)} stroke="var(--axis)" tick={{ fill: "var(--muted)", fontSize: 12 }} />
             <Tooltip content={<Tip t={t} />} />
             {gap && <ReferenceArea x1={gap.from} x2={gap.to} fill="var(--grid)" fillOpacity={0.9} strokeOpacity={0}
               label={{ value: narrow ? "" : t("pc.gapLabel"), position: "insideBottom", fill: "var(--muted)", fontSize: 11 }} />}
-            <ReferenceLine x={targetX} stroke="#b45309" strokeDasharray="3 3" label={{ value: t("pc.marker"), position: narrow ? "insideTopRight" : "insideTopLeft", fill: "#b45309", fontSize: 11, offset: 4 }} />
+            <ReferenceLine x={targetX} stroke="#b45309" strokeDasharray="3 3" label={showSel ? undefined : { value: t("pc.marker"), position: narrow ? "insideTopRight" : "insideTopLeft", fill: "#b45309", fontSize: 11, offset: 4 }} />
             <Line dataKey="hist" stroke="var(--text-2)" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
-            <Line dataKey="exp" stroke="var(--brand)" strokeWidth={2.5} strokeDasharray="6 4" dot={{ r: 2.5, fill: "var(--brand)" }} connectNulls={false} isAnimationActive={false} />
-            <Line dataKey="last" stroke="none" dot={{ r: 6, fill: "var(--text-2)", stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 7 }} isAnimationActive={false} />
-            <Line dataKey="sel" stroke="var(--brand)" dot={{ r: 5, fill: "var(--brand)" }} activeDot={{ r: 6 }} isAnimationActive={false} />
+            <Line dataKey="exp" stroke="var(--brand)" strokeWidth={2.5} strokeDasharray="6 4" dot={false} connectNulls={false} isAnimationActive={false} />
+            <Line dataKey="last" stroke="none" dot={{ r: 5, fill: "var(--text-2)", stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={false} />
+            <Line dataKey="sel" stroke="none" dot={{ r: 7, fill: "var(--brand)", stroke: "#fff", strokeWidth: 2.5 }} activeDot={{ r: 8 }} isAnimationActive={false}
+              label={(p) => <SelLabel {...p} text={selText} />} />
           </LineChart>
         </ResponsiveContainer>
       </div>
+      <div className="g1-axis-caption is-x" aria-hidden="true">{t("pc.axisDate")}</div>
       <div className="muted small" data-testid="chart-notes">
         {latest && <p style={{ margin: "6px 0 0" }} data-testid="latest-note">{t(forecast.input_date && latest.date < forecast.input_date ? "pc.latestOld" : "pc.latestToday", { price: rupees(latest.price), date: fmtDate(latest.date) })}</p>}
         {!latest && <p style={{ margin: "6px 0 0" }}>{t("pc.noHistory")}</p>}

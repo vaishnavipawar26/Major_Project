@@ -81,3 +81,9 @@ desktop.ini
 # ---------------------------------------------------------------- experimental candidate models (kept on disk, not committed)
 backend/trained_models/candidate_v2/
 backend/trained_models/candidate_v3/
+
+# ---------------------------------------------------------------- database dumps (contain user records; never committed)
+backend/backup_before_budget.sql
+backend/backup_before_*.sql
+*.sql
+db_backups/

@@ -1,9 +1,31 @@
 import datetime as dt
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 Direction = Literal["Increasing", "Decreasing", "Stable"]
+
+
+class GrowingLocation(BaseModel):
+    """Where the crop is grown, as the farmer chose it from the location search. Used only to look up weather and soil for the result page;
+    never a price-model input. The selling market stays in ``market``."""
+    name: str = Field(min_length=2, max_length=100, description='Label of the chosen place, e.g. "Nashik, Maharashtra, India"')
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+
+    @field_validator("name")
+    @classmethod
+    def strip(cls, v: str) -> str:
+        v = " ".join(v.split())
+        if len(v) < 2:
+            raise ValueError("Enter where the crop is grown")
+        return v
+
+    @model_validator(mode="after")
+    def both_or_neither(self) -> "GrowingLocation":
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("latitude and longitude must be given together")
+        return self
 
 
 class PriceRequest(BaseModel):
@@ -16,6 +38,14 @@ class PriceRequest(BaseModel):
     as_of: dt.date | None = Field(default=None, description=(
         "Forecast start date. /predict always uses today; /trend and /explain accept an "
         "earlier date to re-open a saved prediction. Defaults to today."))
+    growing_location: GrowingLocation | None = Field(default=None, description=(
+        "Where the crop is grown (optional for older clients). Weather and soil on the result page are looked up for this place; "
+        "a plain label without coordinates is resolved again. Not a price-model input."))
+
+    @field_validator("growing_location", mode="before")
+    @classmethod
+    def label_only(cls, v):
+        return {"name": v} if isinstance(v, str) else v
 
     @field_validator("state", "market", "commodity", "variety")
     @classmethod
@@ -190,6 +220,10 @@ class PriceForecastResponse(BaseModel):
     chart_end_date: dt.date | None = None
     # prices the market really reported in the last months of the records (not filled, not inflation-adjusted)
     observed: list[PricePoint] = []
+    # the six environmental factors for the selling market's town and the selling date (temperature, humidity, rainfall, soil pH, soil
+    # type, growing location) with units, dates, sources and availability. Context only: NOT inputs to the price model. Optional, so
+    # older clients and saved responses keep working.
+    environmental_factors: dict | None = None
     model: ModelInfo
     projection: ProjectionInfo | None = None
     source: SourceInfo

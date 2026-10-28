@@ -8,6 +8,7 @@ from app.models.price_prediction import PricePrediction
 from app.models.user import User
 from app.schemas.price_prediction import PriceRequest
 from app.services.model_version_service import get_or_create_model_version
+from app.services.price_weather_service import environmental_factors
 
 PATH_KEYS = ("horizon_days", "date", "predicted_price", "lower", "upper", "change_pct",
              "direction", "beats_baseline")
@@ -70,15 +71,26 @@ def predict(db: Session, user: User, forecaster: PriceForecaster, req: PriceRequ
         predicted_low=t["lower"], predicted_high=t["upper"], predicted_direction=t["direction"],
         future_trend=[{k: p[k] for k in PATH_KEYS} for p in f["path"]],
         sell_hold_suggestion=f["advice"]["label"][:60],
+        # where the crop is grown, as chosen on the form (re-opening looks its weather and soil up again); never a model input
+        growing_location=req.growing_location.name[:100] if req.growing_location else None,
     )
     db.add(row)
     db.commit()
     db.refresh(row)
-    return {"id": row.id, **_forecast_fields(f)}
+    return {"id": row.id, **_forecast_fields(f), "environmental_factors": _environment(f, req)}
 
 
 def trend(forecaster: PriceForecaster, req: PriceRequest) -> dict:
-    return _forecast_fields(_run(forecaster, req, req.as_of or today(), explain=False))
+    f = _run(forecaster, req, req.as_of or today(), explain=False)
+    return {**_forecast_fields(f), "environmental_factors": _environment(f, req)}
+
+
+def _environment(f: dict, req: PriceRequest) -> dict:
+    """The six environmental factors for the farmer's growing location (or, without one, the market the forecast actually used) and the
+    selling date: context only, never model inputs. Looked up after the forecast, with a time limit, so it can never change or block the
+    prediction itself."""
+    growing = req.growing_location.model_dump() if req.growing_location else None
+    return environmental_factors(f["series"]["market"], req.target_date, growing)
 
 
 def explain(forecaster: PriceForecaster, req: PriceRequest) -> dict:

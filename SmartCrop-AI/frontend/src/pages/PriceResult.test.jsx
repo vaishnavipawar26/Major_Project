@@ -292,8 +292,8 @@ describe("Field Conditions on the result page", () => {
     await waitFor(() => expect(screen.getByTestId("fc-temperature-value").textContent).toBe("30.5 °C"));
     await waitFor(() => expect(screen.getByTestId("fc-ph-value").textContent).toBe("6.5"));
     expect(screen.getByTestId("fc-soil-value").textContent).toBe("Vertisols");
-    expect(priceService.weatherContext).toHaveBeenCalledWith("APMC Mumbai", PLANNED);
-    expect(priceService.soilContext).toHaveBeenCalledWith("APMC Mumbai");
+    expect(priceService.weatherContext).toHaveBeenCalledWith("APMC Mumbai", PLANNED, null);   // an older result: no growing location
+    expect(priceService.soilContext).toHaveBeenCalledWith("APMC Mumbai", null);
   });
   it("the long explanations are not on the result page: they live on the Explain My Prediction page", async () => {
     renderPage(forecast());
@@ -313,5 +313,33 @@ describe("Field Conditions on the result page", () => {
     renderPage(forecast());
     await screen.findByTestId("field-conditions");
     expect(document.getElementById("step-factors").closest("section").querySelector("[data-testid=field-conditions]")).toBeNull();
+  });
+});
+
+describe("environmental factors from the prediction response", () => {
+  it("uses the factors that came with the prediction and does not fetch them again", async () => {
+    const env = {
+      used_by_price_model: false,
+      weather: { status: "forecast", market: "APMC Mumbai", date: PLANNED, temperature_c: 27.4, rainfall_mm: 0.4, humidity_pct: 71, place: "Mumbai (town centre)",
+        source: "Open-Meteo weather forecast", served_from: "cache", retrieved_at: "2026-10-23T08:00:00+00:00" },
+      soil: { status: "estimate", ph: 6.9, soil_type: "Vertisols", ph_scope: "surrounding_area", ph_area_km: 2, served_from: "cache", retrieved_at: "2026-10-22T08:00:00+00:00" },
+    };
+    renderPage(forecast({ environmental_factors: env }));
+    await screen.findByTestId("field-conditions");
+    expect(screen.getByTestId("fc-temperature-value").textContent).toBe("27.4 °C");
+    expect(screen.getByTestId("fc-ph-value").textContent).toBe("6.9");
+    expect(screen.getByTestId("fc-src-weather").textContent).toContain("saved 23 Oct 2026");
+    expect(priceService.weatherContext).not.toHaveBeenCalled();
+    expect(priceService.soilContext).not.toHaveBeenCalled();
+  });
+  it("partial factors keep the valid values and mark only the missing ones unavailable", async () => {
+    const env = { weather: { status: "unavailable", reason: "service_unreachable", temperature_c: null },
+      soil: { status: "estimate", ph: null, soil_type: "Vertisols", ph_reason: "not_in_map", served_from: "live" } };
+    renderPage(forecast({ environmental_factors: env }));
+    await screen.findByTestId("field-conditions");
+    expect(screen.getByTestId("fc-temperature-value").textContent).toBe("Unavailable");
+    expect(screen.getByTestId("fc-ph-value").textContent).toBe("Unavailable");
+    expect(screen.getByTestId("fc-soil-value").textContent).toBe("Vertisols");
+    expect(screen.getByTestId("fc-location-value").textContent).toBe("Not provided");
   });
 });

@@ -22,6 +22,7 @@ class PriceHistoryItem(BaseModel):
     future_trend: list | None
     sell_hold_suggestion: str
     created_at: datetime
+    growing_location: str | None = None
     # added when the history is read (no database column): "model" / "context_only" for this crop and distance,
     # and the last price the series actually reported. The saved predicted_price is the model's own number.
     policy: dict | None = None

@@ -23,6 +23,20 @@ from app.database.connection import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def no_live_providers(monkeypatch):
+    """Tests never call Open-Meteo or SoilGrids: by default every outside HTTP request fails at once (like being offline) and retries do
+    not wait. A test that needs provider data replaces httpx.get with its own labelled fixture."""
+    from app.services import geocoding_service, http_client
+
+    def offline(*a, **k):
+        raise http_client.httpx.ConnectError("tests run offline")
+    monkeypatch.setattr(http_client.httpx, "get", offline)
+    monkeypatch.setattr(http_client, "_pause", lambda s: None)
+    http_client._down_until.clear()             # no back-off carried over from another test
+    geocoding_service._cache.clear()            # nor remembered location searches
+
+
 @pytest.fixture(scope="session")
 def client():
     Base.metadata.drop_all(engine)
