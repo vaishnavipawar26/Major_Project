@@ -220,6 +220,8 @@ class PriceForecastResponse(BaseModel):
     chart_end_date: dt.date | None = None
     # prices the market really reported in the last months of the records (not filled, not inflation-adjusted)
     observed: list[PricePoint] = []
+    # the next 30 days one by one, the planned date and the best other date (ml/price_prediction/window.py)
+    window: dict | None = None
     # the six environmental factors for the selling market's town and the selling date (temperature, humidity, rainfall, soil pH, soil
     # type, growing location) with units, dates, sources and availability. Context only: NOT inputs to the price model. Optional, so
     # older clients and saved responses keep working.
@@ -400,6 +402,8 @@ class PriceExplainResponse(BaseModel):
     projection: ProjectionInfo | None = None
     model: ModelInfo | None = None
     explanations: list[PriceExplanation]
+    # which kinds of input the loaded model really has (from its feature list); the page labels a factor "Used by the model" only from this
+    model_inputs: dict | None = None
     message: str | None = None
     source: SourceInfo | None = None
     horizon: dict | None = None

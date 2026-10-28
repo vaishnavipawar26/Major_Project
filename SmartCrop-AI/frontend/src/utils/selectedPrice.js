@@ -22,3 +22,21 @@ export function selectedPrice(f) {
 
 /** How far past estimates were usually off (rupees per quintal), or null. */
 export const typicalMiss = (f) => f?.range_info?.typical_miss_inr ?? f?.target?.model_mae ?? null;
+
+const shiftYears = (iso, years) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const out = new Date(Date.UTC(y + years, m - 1, d));
+  if (out.getUTCMonth() !== m - 1) out.setUTCDate(0);          // 29 Feb in a non-leap year -> 28 Feb
+  return out.toISOString().slice(0, 10);
+};
+
+/**
+ * Where a "reference" (historical) price really comes from. The backend moves earlier records forward whole years (and scales them to today's
+ * price level), so the dates it sends are in the planned year; the price itself was reported `years` earlier.
+ * { years, sourceDate, inflationPct } - years is 0 when the price is a real report of that very date.
+ */
+export function referenceInfo(f) {
+  const years = f?.dates?.years_shifted ?? f?.projection?.years_ahead ?? 0;
+  return { years, sourceDate: years > 0 && f?.target_date ? shiftYears(f.target_date, -years) : f?.target_date ?? null,
+    inflationPct: f?.projection?.inflation_annual_pct ?? null };
+}

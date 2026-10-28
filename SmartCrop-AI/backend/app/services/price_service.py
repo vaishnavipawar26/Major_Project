@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.ml.price_prediction.forecaster import ForecastError, PriceForecaster, SeriesRef
+from app.ml.price_prediction.window import build_window
 from app.models.price_prediction import PricePrediction
 from app.models.user import User
 from app.schemas.price_prediction import PriceRequest
@@ -42,7 +43,7 @@ def _forecast_fields(f: dict) -> dict:
                               "path", "last_validated_days", "validated_days",
                               "max_horizon_days", "advice", "policy", "range_info", "latest_recorded", "verdict", "horizon", "history", "history_is_reference",
                               "actual_after_origin", "model", "projection", "source", "dates",
-                              "disclaimer")} | {k: f.get(k, []) for k in ("earlier_years", "reference_after", "chart_path", "observed")} | {"chart_end_date": f.get("chart_end_date")}
+                              "disclaimer")} | {k: f.get(k, []) for k in ("earlier_years", "reference_after", "chart_path", "observed")} | {"chart_end_date": f.get("chart_end_date"), "window": build_window(f, hold_days=(f["advice"].get("storage") or {}).get("farm_hold_days"))}
 
 
 def predict(db: Session, user: User, forecaster: PriceForecaster, req: PriceRequest) -> dict:
@@ -100,5 +101,6 @@ def explain(forecaster: PriceForecaster, req: PriceRequest) -> dict:
             "projection": f["projection"], "model": f["model"], "explanations": f["explanations"],
             "horizon": f.get("horizon"), "latest_recorded": f.get("latest_recorded"),
             "source": f.get("source"),
+            "model_inputs": forecaster.model_inputs(),
             "message": None if f["explanations"] else
             "The model could not calculate an explanation for this forecast."}

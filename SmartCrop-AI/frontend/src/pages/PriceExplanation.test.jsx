@@ -6,11 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../services/priceService", () => ({ priceService: { explain: vi.fn(), weatherContext: vi.fn(), soilContext: vi.fn() } }));
 vi.mock("../services/historyService", () => ({ historyService: { priceItem: vi.fn() } }));
 vi.mock("../services/api", () => ({ errorMessage: (e) => e.message }));
+// jsdom has no layout: give recharts' container a fixed size
+vi.mock("recharts", async (importOriginal) => {
+  const actual = await importOriginal();
+  const { cloneElement } = await import("react");
+  return { ...actual, ResponsiveContainer: ({ children }) => <div>{cloneElement(children, { width: 900, height: 400 })}</div> };
+});
 
 import { historyService } from "../services/historyService";
 import { priceService } from "../services/priceService";
 import PriceExplanation from "./PriceExplanation";
-import { mainFactors, matchesRequest, reliabilityView } from "../utils/explanationView";
+import { matchesRequest } from "../utils/explanationView";
 
 const factor = (name, direction, strength, shap) => ({
   factor: name, title: `Title ${name}`, direction, strength, impact: strength === "small" ? "small" : direction === "up" ? "higher" : "lower",
@@ -64,129 +70,33 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+const withCharts = () => response({ explanations: [exp({ date: "2026-11-11", base_value: 0.01, technical: { ...exp().technical, model_output_log: 0.0953, reconstruction_ok: true },
+  charts: { local: { start_price: 2625, baseline_inr: 20, baseline_price: 2645, end_price: 2886, forecast_price: 2886, matches_forecast: true,
+    steps: [{ group: "season", title: "Seasonal pattern", help: "h", log_contribution: 0.05, inr: 150 }, { group: "price_level", title: "Current price level", help: "h", log_contribution: 0.03, inr: 90 }] } } })] });
+
+const OLD = /replays the same season|What the records show|Season: no usual rise|Recent prices|How far to trust this|AI's final explanation|Technical details|Your market vs|How the past tests|What Do These Conditions Mean|Advanced explanation|Pushing the Price|What This Means for You/;
+
 describe("PriceExplanation page", () => {
-  it("shows the passed explanation without calling the model again", () => {
-    renderAt(withState());
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Why is this price expected to rise or fall?");
-    expect(screen.getByText(/The model expects Brinjal prices to rise from ₹2,625 to ₹2,888/)).toBeTruthy();
-    expect(screen.getAllByText(/Title season/).length).toBeGreaterThan(0);
+  it("shows the approved view without calling the model again", () => {
+    renderAt(withState(withCharts()));
+    expect(screen.getByTestId("understand")).toBeTruthy();
+    expect(screen.getByTestId("influence-card")).toBeTruthy();
     expect(priceService.explain).not.toHaveBeenCalled();
+    expect(document.body.textContent).not.toMatch(OLD);
   });
 
-  it("shows up to three reasons with title, direction, one evidence sentence and one meaning sentence", () => {
-    renderAt(withState());
-    const main = screen.getByRole("heading", { name: "Main reasons behind this prediction" }).closest("section");
-    const cards = main.querySelectorAll("li.factor-card");
-    expect(cards).toHaveLength(3);
-    expect(cards[0].textContent).toContain("Title season");
-    expect(cards[0].textContent).toContain("Pushing the forecast higher");
-    expect(cards[0].textContent).toContain("evidence season. meaning season.");
-    expect(cards[1].textContent).toContain("Pushing the forecast lower");
-    expect(main.textContent).not.toMatch(/moderate|strong effect|small effect|log|SHAP|contribution/i);
-  });
-
-  it("combines the reasons in 'What this means for you' and states what data the forecast is based on", () => {
-    renderAt(withState());
-    const means = screen.getByRole("heading", { name: "What this means for you" }).closest("section");
-    expect(means.textContent).toContain("The forecast is higher mainly because of the seasonal pattern in earlier years.");
-    expect(screen.getByText(/No live market feed is connected/)).toBeTruthy();
-    expect(screen.getByText(/median across Maharashtra markets/)).toBeTruthy();
-  });
-
-  it("leaves out 'What this means' when the backend gave no summary, and notes when fewer than three reasons exist", () => {
-    renderAt(withState(response({ explanations: [exp({ what_it_means: null, reasons: exp().reasons.slice(0, 1) })] })));
-    expect(screen.queryByRole("heading", { name: "What this means for you" })).toBeNull();
-    expect(screen.getByText(/Only 1 reason\(s\) had both a clear model contribution/)).toBeTruthy();
-  });
-
-  it("says so when no reason has supporting evidence, instead of filling cards", () => {
-    renderAt(withState(response({ explanations: [exp({ reasons: [], what_it_means: null })] })));
-    expect(screen.getByText(/did not give enough supporting evidence/)).toBeTruthy();
-    expect(document.querySelector("li.factor-card")).toBeNull();
-  });
-
-  it("falls back to a short statement when the breakdown cannot be trusted", () => {
-    const e = exp(); e.technical = { ...e.technical, reconstruction_ok: false };
-    renderAt(withState(response({ explanations: [e] })));
-    expect(screen.getByText("The main model factors could not be explained reliably for this prediction.")).toBeTruthy();
-    expect(document.querySelector("li.factor-card")).toBeNull();
-  });
-
-  it("keeps technical diagnostics out of the farmer-facing view", () => {
-    renderAt(withState());
-    const farmer = document.body.cloneNode(true);
-    farmer.querySelector("[data-testid=expl-advanced]")?.remove();
-    expect(farmer.textContent).not.toMatch(/log_price|doy_sin|commodity_code|market_code|TreeExplainer|Base value|XGBoost|Random Forest/);
-  });
-
-  it("drops the long sections: market table, limitations list and small-factor list", () => {
-    renderAt(withState());
-    for (const h of ["Limits of this forecast", "Factors pointing the forecast higher", "Factors pointing the forecast lower"]) {
-      expect(screen.queryByRole("heading", { name: h })).toBeNull();
+  it("never shows the old replay / records / technical sections, even without a trusted forecast", () => {
+    // no breakdown at all (an older saved response), a breakdown that does not add up, and a crop with no forecast
+    const broken = exp(); broken.technical = { ...broken.technical, reconstruction_ok: false };
+    const noForecast = exp({ policy: { mode: "context_only" }, v3: { context_only: true } });
+    for (const r of [response(), response({ explanations: [broken] }), response({ explanations: [noForecast] })]) {
+      renderAt(withState(r));
+      expect(screen.getByTestId("no-price-status")).toBeTruthy();
+      expect(screen.getAllByTestId("influence-card").length).toBe(1);
+      expect(document.body.textContent).not.toMatch(OLD);
+      expect(document.querySelector("table, details")).toBeNull();
+      cleanup();
     }
-    expect(screen.queryByText(/Factors with a small effect/)).toBeNull();
-    expect(document.querySelector("table.xai-table")?.closest("details")).toBe(screen.getByTestId("expl-advanced"));   // tables live only in the collapsed technical area
-  });
-
-  it("shows the predicted price block and a one-sentence summary from the forecast's own numbers", () => {
-    renderAt(withState());
-    const box = screen.getByRole("heading", { name: "Predicted price" }).closest("section");
-    expect(box.textContent).toContain("₹2,625");
-    expect(box.textContent).toContain("₹2,888");
-    expect(box.textContent).toContain("+₹263 (+10%)");
-    expect(screen.getByText("The model expects Brinjal prices to rise from ₹2,625 to ₹2,888 per quintal by 11 November 2026.")).toBeTruthy();
-    expect(screen.getByText("Forecasts are estimates; actual market prices may differ.")).toBeTruthy();
-  });
-
-  it("uses fall and stable wording", () => {
-    const fall = { ...exp().summary, reference_price: 2888, predicted_price: 2625, change_abs: -263, change_pct: -9.1, direction: "lower" };
-    renderAt(withState(response({ explanations: [exp({ summary: fall })] })));
-    expect(screen.getByText(/prices to fall from ₹2,888 to ₹2,625 per quintal/)).toBeTruthy();
-    cleanup();
-    const flat = { ...exp().summary, predicted_price: 2630, change_abs: 5, change_pct: 0.2, direction: "about the same" };
-    renderAt(withState(response({ explanations: [exp({ summary: flat })] })));
-    expect(screen.getByText(/prices to remain relatively stable/)).toBeTruthy();
-  });
-
-  it("reads the expected change against the typical error, and the message follows the numbers", () => {
-    renderAt(withState());   // change ₹263 < typical error ₹300
-    expect(screen.getByText(/average absolute error of about ₹300 per quintal. The expected increase of ₹263 is smaller than that error, so the actual price could stay close/)).toBeTruthy();
-    cleanup();
-    renderAt(withState(response({ explanations: [exp({ summary: { ...exp().summary, change_abs: 900 } })] })));
-    expect(screen.getByText(/is larger than that error/)).toBeTruthy();
-    expect(screen.queryByText(/could stay close/)).toBeNull();
-  });
-
-  it("uses the real evaluation numbers and says so when test data is insufficient", () => {
-    const r = response({ explanations: [exp({ reliability: { basis: "b", model_mae: 300, baseline_mae: 350, beats_no_change: true, n_tests: 20, sufficient_data: false } })] });
-    renderAt(withState(r));
-    expect(screen.queryByText(/average absolute error/)).toBeNull();   // too few tests: no error figure is claimed
-    expect(screen.getByText(/Not enough historical test results/)).toBeTruthy();
-  });
-
-  it("does not invent reliability figures that do not exist", () => {
-    renderAt(withState(response({ explanations: [exp({ reliability: null })] })));
-    expect(screen.getByText(/No held-out evaluation results/)).toBeTruthy();
-    expect(screen.queryByText(/average absolute error/)).toBeNull();
-  });
-
-  it("keeps material data-quality warnings", () => {
-    const r = response({ explanations: [exp({ projected: true, data_completeness: { basis: "b", inputs_total: 10, inputs_missing: 2, missing: ["a", "b"] } })] });
-    renderAt(withState(r));
-    expect(screen.getByText(/after the latest price data/)).toBeTruthy();
-    expect(screen.getByText(/2 of 10 inputs were not available/)).toBeTruthy();
-  });
-
-  it("technical details start collapsed and show the reconstruction check", () => {
-    renderAt(withState());
-    const d = screen.getByTestId("expl-advanced");
-    expect(d.open).toBe(false);
-    d.open = true;
-    expect(d.open).toBe(true);
-    expect(d.textContent).toContain("Passed");
-    expect(d.textContent).toContain("log_price");
-    d.open = false;
-    expect(d.open).toBe(false);
   });
 
   it("with no state and no id shows a fallback and never fetches", () => {
@@ -198,9 +108,9 @@ describe("PriceExplanation page", () => {
 
   it("loads a saved prediction by id and fetches its explanation", async () => {
     historyService.priceItem.mockResolvedValue({ state: "Maharashtra", market: "Pune", commodity: "Brinjal", variety: null, input_date: "2026-10-16", horizon_days: 26 });
-    priceService.explain.mockResolvedValue(response());
+    priceService.explain.mockResolvedValue(withCharts());
     renderAt("/price-prediction/explanation?id=7");
-    await waitFor(() => expect(screen.getByText(/Title season/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId("influence-card")).toBeTruthy());
     expect(priceService.explain.mock.calls[0][0]).toMatchObject({ commodity: "Brinjal", target_date: "2026-11-11", as_of: "2026-10-16" });
   });
 
@@ -208,7 +118,7 @@ describe("PriceExplanation page", () => {
     priceService.explain.mockResolvedValue(response({ series: { commodity: "Onion", market: "Pune", state: "Maharashtra" } }));
     renderAt({ pathname: "/price-prediction/explanation", state: { req } });
     await waitFor(() => expect(screen.getByText(/does not match this prediction/)).toBeTruthy());
-    expect(screen.queryByText(/Title season/)).toBeNull();
+    expect(screen.queryByTestId("influence-card")).toBeNull();
   });
 
   it("shows an error with a way back when the request fails", async () => {
@@ -219,51 +129,101 @@ describe("PriceExplanation page", () => {
   });
 
   it("back button returns to the result page when there is no earlier history entry", () => {
-    renderAt(withState());
+    renderAt(withState(withCharts()));
     fireEvent.click(screen.getByRole("button", { name: /Back to prediction results/ }));
     expect(screen.getByText("result page")).toBeTruthy();
   });
-});
 
-describe("explanationView", () => {
   it("matchesRequest compares crop and target date", () => {
     expect(matchesRequest(req, response())).toBe(true);
     expect(matchesRequest({ ...req, target_date: "2026-12-01" }, response())).toBe(false);
     expect(matchesRequest(null, response())).toBe(false);
   });
-  it("mainFactors follows the backend's top picks and never exceeds three", () => {
-    expect(mainFactors(exp()).map((f) => f.factor)).toEqual(["season", "arrivals", "averages"]);
-    expect(mainFactors(exp({ main_factors: undefined })).map((f) => f.factor)).toEqual(["season", "arrivals", "averages"]);
-  });
-  it("mainFactors skips a factor that has no evidence", () => {
-    const e = exp(); e.factors[0].evidence_available = false;
-    expect(mainFactors(e).map((f) => f.factor)).toEqual(["arrivals", "averages"]);
-  });
-  it("reliabilityView only claims an error figure with enough tests", () => {
-    expect(reliabilityView(exp()).mae).toBe(300);
-    expect(reliabilityView(exp({ reliability: { model_mae: 300, baseline_mae: 350, beats_no_change: true, n_tests: 5, sufficient_data: false } })).mae).toBeNull();
-  });
 });
 
-describe("the six condition explanations on the Explain My Prediction page", () => {
-  it("shows them with the retrieved values and the selected crop, and reads the market and date the forecast used", async () => {
-    priceService.weatherContext.mockResolvedValue({ status: "forecast", market: "Pune", date: "2026-11-11", temperature_c: 31.4, rainfall_mm: 0, humidity_pct: 76, place: "Pune (town centre)" });
-    priceService.soilContext.mockResolvedValue({ status: "estimate", market: "Pune", ph: 6.8, soil_type: "Vertisols" });
-    renderAt(withState());
-    const box = await screen.findByTestId("condition-meanings");
-    await waitFor(() => expect(box.textContent).toContain("31.4 °C"));
-    await waitFor(() => expect(box.textContent).toContain("Vertisols"));
-    expect(box.querySelectorAll("li")).toHaveLength(6);
-    expect(box.textContent).toContain("Brinjal");
-    expect(box.textContent).toContain("not necessarily where the crop was grown");
-    expect(priceService.weatherContext).toHaveBeenCalledWith("Pune", "2026-11-11", null);
-    expect(priceService.soilContext).toHaveBeenCalledWith("Pune", null);
+describe("What Influences Your Predicted Price? card", () => {
+  it("appears exactly once, right below 'A. Your Predicted Price' and above the other sections, with this prediction's values", async () => {
+    priceService.weatherContext.mockResolvedValue({ status: "forecast", market: "Pune", date: "2026-11-11", temperature_c: 31.4, rainfall_mm: 0, humidity_pct: 76, place_kind: "growing_location", place: "Nashik, Maharashtra, India" });
+    priceService.soilContext.mockResolvedValue({ status: "estimate", ph: 6.9, soil_type: "Vertisols", ph_scope: "town_centre", place_kind: "growing_location", place: "Nashik, Maharashtra, India" });
+    renderAt(withState(withCharts()));
+    const card = await screen.findByTestId("influence-card");
+    expect(document.querySelectorAll("[data-testid=influence-card]").length).toBe(1);
+    expect(document.querySelectorAll("[data-testid=factor-influence] .recharts-wrapper").length).toBe(1);
+    const sections = Array.from(document.querySelectorAll("[data-testid=understand] > section"));
+    expect(sections[0].textContent).toContain("A. Your Predicted Price");
+    expect(sections[1]).toBe(card);
+    expect(sections.length).toBe(3);   // A, the card, why these factors matter
+    expect(document.body.textContent).not.toMatch(/Pushing the Price|What This Means for You|What Do These Conditions Mean|Technical details/);
+    expect(card.textContent).toContain("See how season, crop, market and growing conditions contribute to the prediction.");
+    expect(card.textContent).toContain("Highest target weight: Season and Crop & Selling Market — 25% each");
+    await screen.findByText(/31.4 °C/, { selector: ".fi-chip-value" });
+    expect(card.textContent).toContain("Vertisols");
+    expect(card.textContent).toContain("Pune");
+    expect(card.textContent).toContain("Nashik");
+    expect(card.textContent).not.toContain("design configuration");
   });
-  it("says there is not enough information when nothing could be retrieved, and never claims a price effect", async () => {
-    renderAt(withState());
-    const box = await screen.findByTestId("condition-meanings");
-    await waitFor(() => expect(box.textContent).toContain("not enough information"));
-    expect(box.textContent).not.toMatch(/\d+(\.\d)? ?(°C|mm)/);
-    expect(box.textContent).toContain("They do not change the predicted mandi price.");
+
+  it("shows Unavailable instead of inventing weather and soil values", async () => {
+    renderAt(withState(withCharts()));
+    const card = await screen.findByTestId("influence-card");
+    await screen.findAllByText(/Unavailable/, { selector: ".fi-chip-value" });
+    expect(card.textContent).not.toMatch(/°C|Vertisols/);
+  });
+
+  it("explains each factor from this prediction's own data", async () => {
+    priceService.weatherContext.mockResolvedValue({ status: "forecast", market: "Pune", date: "2026-11-11", temperature_c: 24.7, rainfall_mm: 0, humidity_pct: 76, place_kind: "growing_location", place: "Nashik, Maharashtra, India" });
+    priceService.soilContext.mockResolvedValue({ status: "estimate", ph: 6.8, soil_type: "Vertisols", ph_scope: "town_centre", place_kind: "growing_location", place: "Nashik, Maharashtra, India" });
+    renderAt(withState(withCharts()));
+    const why = await screen.findByTestId("why-factors");
+    await screen.findByText("24.7 °C", { selector: ".wf-value" });
+    const nbsp = (x) => x.replace(/\u00a0/g, " ");
+    const v = (id) => nbsp(screen.getByTestId(`wf-${id}-value`).textContent);
+    expect(v("season")).toBe("11 November 2026");
+    expect(v("market")).toBe("Brinjal · Pune");
+    expect(v("rainfall")).toBe("0 mm");
+    expect(v("humidity")).toBe("76%");
+    expect(v("soil")).toBe("Vertisols (regional estimate)");
+    expect(v("ph")).toBe("6.8 (regional estimate)");
+    expect(v("location")).toBe("Nashik");
+    expect(screen.getByTestId("wf-season").textContent).toContain("Used by the model");
+    expect(screen.getByTestId("wf-temperature").textContent).toContain("Context only");
+    expect(why.textContent).not.toMatch(/caused/i);
+    expect(screen.queryByTestId("why-changes")).toBeNull();
+  });
+
+  it("says Not available instead of inventing values, and does not call season a model input unless the explanation confirms it", async () => {
+    const r = withCharts();
+    r.explanations[0].charts.local.steps = r.explanations[0].charts.local.steps.filter((s) => s.group !== "season");
+    renderAt(withState(r));
+    await screen.findByTestId("why-factors");
+    await screen.findAllByText(/Not available/, { selector: ".wf-value" });
+    expect(screen.getByTestId("wf-temperature-value").textContent).toBe("Not available");
+    expect(screen.getByTestId("wf-season").textContent).toContain("Not confirmed");
+  });
+
+  it("labels weather and soil 'Used by the model' only when the API says the loaded model has those inputs", async () => {
+    priceService.weatherContext.mockResolvedValue({ status: "forecast", market: "Pune", date: "2026-11-11", temperature_c: 24.7, rainfall_mm: 0, humidity_pct: 76, place: "Pune" });
+    priceService.soilContext.mockResolvedValue({ status: "estimate", ph: 6.8, soil_type: "Vertisols", ph_scope: "town_centre" });
+    const inputs = { season: true, crop_market: true, temperature: true, rainfall: false, humidity: false, soil_type: false, soil_ph: true, growing_location: false };
+    renderAt(withState({ ...withCharts(), model_inputs: inputs }));
+    await screen.findByText("24.7 °C", { selector: ".wf-value" });
+    const status = (id) => screen.getByTestId(`wf-${id}`).querySelector(".wf-status").textContent;
+    expect(status("temperature")).toBe("Used by the model");
+    expect(status("ph")).toBe("Used by the model");
+    expect(status("rainfall")).toBe("Context only");
+    expect(status("humidity")).toBe("Context only");
+    expect(status("soil")).toBe("Regional estimate");
+    expect(status("location")).toBe("Location context");           // the growing location is never a model input
+    expect(screen.getByTestId("wf-temperature").textContent).toContain("not of your growing location");
+    expect(screen.getByTestId("wf-note").textContent).toContain("describe the selling market's town");
+  });
+
+  it("without model_inputs from the API nothing about weather or soil is called a model input", async () => {
+    priceService.weatherContext.mockResolvedValue({ status: "forecast", market: "Pune", date: "2026-11-11", temperature_c: 24.7, rainfall_mm: 0, humidity_pct: 76, place: "Pune" });
+    renderAt(withState(withCharts()));
+    await screen.findByText("24.7 °C", { selector: ".wf-value" });
+    for (const id of ["temperature", "rainfall", "humidity", "soil", "ph", "location"]) {
+      expect(screen.getByTestId(`wf-${id}`).querySelector(".wf-status").textContent).not.toBe("Used by the model");
+    }
   });
 });

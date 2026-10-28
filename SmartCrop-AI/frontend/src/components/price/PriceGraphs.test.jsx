@@ -10,7 +10,6 @@ vi.mock("recharts", async (importOriginal) => {
 
 import FactorBars, { axisTicks, orderRows } from "./FactorBars";
 import SimplePriceChart, { SHOW_DAYS, chartRows, makeScale, priceAxis } from "./SimplePriceChart";
-import ConditionMeanings, { phBand, tempBand } from "./ConditionMeanings";
 import FieldConditions from "./FieldConditionsOverview";
 import UnderstandPrediction from "./UnderstandPrediction";
 import { aboutPct, barRows, calculation, explanationOk, splitSteps } from "./factorModel";
@@ -205,27 +204,12 @@ describe("FactorBars (What Affects Your Crop Price?)", () => {
 describe("UnderstandPrediction (short farmer version)", () => {
   const view = (e = exp()) => render(<UnderstandPrediction exp={e} crop="Cabbage" targetDate="2026-11-02" />);
 
-  it("shows the predicted price, what pushes it higher, what pushes it lower, and what it means", () => {
-    view();
+  it("shows only the predicted price section, with the slot below it for the influence card", () => {
+    render(<UnderstandPrediction exp={exp()} crop="Cabbage" targetDate="2026-11-02" afterA={<section data-testid="slot">card</section>} />);
     expect(screen.getByTestId("u-price").textContent).toContain("₹1,041");
-    expect(screen.getByTestId("u-up-price_level").textContent).toContain("Strong push");
-    expect(screen.getByTestId("u-up-arrivals").textContent).toContain("Small push");
-    expect(screen.getByTestId("u-down-season").textContent).toContain("−0.020");
-    expect(screen.getByTestId("u-meaning").textContent).toContain("higher price than its starting estimate");
-    expect(screen.getByTestId("u-meaning").textContent).toContain("Check today's mandi price");
-    expect(screen.getByTestId("u-caution").textContent).toContain("does not prove");
-  });
-  it("has only the four short sections and no technical tables, base value, weather or soil", () => {
-    view();
     const t = screen.getByTestId("understand");
-    expect(t.querySelectorAll("h2")).toHaveLength(4);
-    expect(t.querySelector("table")).toBeNull();
-    expect(t.textContent).not.toMatch(/base value|log|temperature|rainfall|humidity|nitrogen|soil/i);
-  });
-  it("says so when nothing pushes the price one way", () => {
-    const only = local({ steps: [{ group: "season", title: "Seasonal pattern", help: "h", log_contribution: -0.02 }] });
-    view(exp({ charts: { local: only }, technical: { reconstruction_ok: true, model_output_log: -0.01 } }));
-    expect(screen.getByTestId("u-none-up")).toBeTruthy();
+    expect(Array.from(t.children).map((c) => c.getAttribute("data-testid") || c.querySelector("h2")?.id)).toEqual(["u-a", "slot"]);
+    expect(t.textContent).not.toMatch(/Pushing the Price|What This Means|push \(/i);
   });
 });
 
@@ -350,86 +334,6 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
     render(<><FactorBars exp={exp()} ctxOnly={false} crop="Cabbage" /><FieldConditions weather={wx} soil={soil} /></>);
     expect(screen.getByTestId("factor-bars").textContent).not.toMatch(/temperature|humidity|rainfall|soil|growing/i);
     expect(screen.getByTestId("field-conditions").closest("[data-testid=factor-bars]")).toBeNull();
-  });
-});
-
-describe("ConditionMeanings (What Do These Conditions Mean for Your Crop?)", () => {
-  const wx = (over = {}) => ({ state: "ok", data: { status: "forecast", date: "2026-11-02", temperature_c: 31.4, rainfall_mm: 1.5, humidity_pct: 76, place: "Pune (town centre)", ...over } });
-  const soil = (over = {}) => ({ state: "ok", data: { status: "estimate", ph: 6.8, soil_type: "Vertisols", ...over } });
-  const view = (weather = wx(), soilState = soil(), crop = "Cabbage") => render(<ConditionMeanings crop={crop} market="APMC Pune" weather={weather} soil={soilState} />);
-  const txt = (id) => screen.getByTestId(`cm-${id}`).textContent;
-
-  it("shows the title and six short explanations in order, directly using the retrieved values and the selected crop", () => {
-    view();
-    expect(screen.getByRole("heading", { name: "What Do These Conditions Mean for Your Crop?" })).toBeTruthy();
-    const ids = Array.from(screen.getByTestId("condition-meanings").querySelectorAll("li")).map((l) => l.getAttribute("data-testid"));
-    expect(ids).toEqual(["cm-temperature", "cm-humidity", "cm-rainfall", "cm-ph", "cm-soil", "cm-location"]);
-    expect(txt("temperature")).toContain("31.4 °C");
-    expect(txt("temperature")).toContain("hot");
-    expect(txt("temperature")).toContain("Forecast for 2 Nov 2026");
-    expect(txt("temperature")).toContain("Cabbage");
-    expect(txt("humidity")).toContain("76%");
-    expect(txt("rainfall")).toContain("1.5 mm");
-    expect(txt("ph")).toContain("6.8");
-    expect(txt("ph")).toContain("close to neutral");
-    expect(txt("soil")).toContain("Vertisols");
-  });
-  it("the wording follows the values: they are not always described the same way, or as good or bad", () => {
-    expect([tempBand(12), tempBand(26), tempBand(36)]).toEqual(["cool", "warm", "veryHot"]);
-    expect([phBand(5), phBand(6.5), phBand(8)]).toEqual(["acidic", "neutral", "alkaline"]);
-    view(wx({ temperature_c: 12, humidity_pct: 30, rainfall_mm: 0 }), soil({ ph: 8.1, soil_type: "Leptosols" }), "Onion");
-    expect(txt("temperature")).toContain("cool");
-    expect(txt("temperature")).toContain("Onion");
-    expect(txt("humidity")).toContain("dry");
-    expect(txt("humidity")).not.toContain("disease");
-    expect(txt("rainfall")).toContain("no rain");
-    expect(txt("ph")).toContain("alkaline");
-    expect(txt("soil")).toContain("thin, shallow soils");
-    cleanup();
-    view();
-    expect(txt("humidity")).toContain("high");
-    expect(txt("humidity")).toContain("diseases");
-    cleanup();
-    view(wx({ humidity_pct: 55 }));
-    expect(txt("humidity")).toContain("middle range");
-    expect(txt("humidity")).not.toContain("diseases");
-  });
-  it("unavailable weather and soil say there is not enough information, and never invent a value", () => {
-    view({ state: "ok", data: { status: "unavailable", temperature_c: null } }, { state: "ok", data: { status: "unavailable", ph: null, soil_type: null } });
-    for (const id of ["temperature", "humidity", "rainfall", "ph", "soil", "location"]) expect(txt(id)).toContain("not enough information");
-    expect(screen.getByTestId("condition-meanings").textContent).not.toMatch(/\d+(\.\d)? ?(°C|mm|%)/);
-    cleanup();
-    view({ state: "error", data: null }, { state: "error", data: null });
-    expect(txt("temperature")).toContain("not enough information");
-    expect(txt("ph")).toContain("not enough information");
-    cleanup();
-    view(wx(), soil({ ph: null }));                       // class known, pH missing: only the pH says so
-    expect(txt("ph")).toContain("not enough information");
-    expect(txt("soil")).toContain("Vertisols");
-  });
-  it("soil explanations say they are regional estimates, and an unlisted soil class gets no invented description", () => {
-    view(wx(), soil({ soil_type: "Podzols" }));
-    expect(txt("soil")).toContain("regional estimate");
-    expect(txt("ph")).toContain("regional estimate");
-    expect(txt("soil")).toContain("Podzols");
-    expect(txt("soil")).not.toMatch(/swell|thin|young|clay/);
-  });
-  it("growing location is always insufficient information and never assumes the selling market is the growing place", () => {
-    view();
-    expect(txt("location")).toContain("not enough information");
-    expect(txt("location")).toContain("no crop-origin data");
-    expect(txt("location")).toContain("APMC Pune");
-    expect(txt("location")).toContain("not necessarily where the crop was grown");
-  });
-  it("never says a condition raises or lowers the predicted price, and keeps each explanation short", () => {
-    view();
-    const lis = Array.from(screen.getByTestId("condition-meanings").querySelectorAll("li"));
-    for (const li of lis) {
-      expect(li.textContent).not.toMatch(/(rais|lower|increas|decreas|push|boost|reduc)\w*[^.]*price/i);
-      expect(li.textContent).not.toMatch(/%\s*(higher|lower)|score/i);
-      expect(li.querySelector("span").textContent.split(/[.!?](?:\s|$)/).filter(Boolean).length).toBeLessThanOrEqual(4);
-    }
-    expect(screen.getByTestId("condition-meanings").textContent).toContain("They do not change the predicted mandi price.");
   });
 });
 

@@ -280,3 +280,83 @@ crop that fits (≥ 5 of 7 values) compete on profit. Changing the weights moves
 7-crop recommendation, score formula, economics arithmetic, storage and timing feasibility,
 SHAP additivity for all three models, per-user history isolation, pagination, migration ↔
 model consistency, look-ahead checks for daily and monthly features).
+
+---
+
+## Weather and soil as inputs of the daily price model (tested, not adopted)
+
+`python -m scripts.evaluate_environment_features` fits the production XGBoost "rate" model with extra inputs and compares it with the
+deployed feature set on exactly the same (origin, horizon) pairs, hyper-parameters and the four 2025 quarterly rolling-origin folds of the
+main evaluation (250,000 training and 200,000 test pairs per fold; training pairs need a target date before the test quarter). Raw output:
+`dataset/reports/environment_feature_eval.json`.
+
+Inputs tested: trailing observed weather up to the forecast origin at the **selling market's town** (temperature: `temp_mean_7`,
+`temp_anom_7`; rainfall: `precip_sum_7`, `precip_sum_30`, `precip_ratio_30`; humidity: `humidity_mean_7`), and the **climatological normal at
+the target date** (normal temperature and 30-day rainfall for the day t+h, normals from years <= 2022: known in advance, aligned to the
+horizon, no future observation). The price data has no growing location, so a growing location cannot be a trained input.
+
+| Variant (all 1-60 days) | MAE | RMSE | MAE vs baseline | RMSE vs baseline | folds with lower MAE | worst fold |
+|---|---|---|---|---|---|---|
+| "no change" | 405.6 | 721.4 | | | | |
+| deployed features (baseline) | 413.7 | 700.7 | | | | |
+| + temperature | 413.8 | 697.9 | -0.01 % | +0.40 % | 1 / 4 | +1.76 % |
+| + rainfall | 414.0 | 707.4 | -0.06 % | -0.96 % | 2 / 4 | +2.59 % |
+| + humidity | 412.9 | 704.5 | +0.21 % | -0.53 % | 2 / 4 | +0.89 % |
+| + all six weather features | 410.7 | 692.3 | +0.73 % | +1.20 % | 2 / 4 | +1.70 % |
+| + climate at target date | 414.3 | 700.8 | -0.14 % | -0.01 % | 1 / 4 | +0.31 % |
+| + weather + climate | 413.0 | 718.3 | +0.19 % | -2.51 % | 2 / 4 | +4.19 % |
+
+(positive = better than the baseline.) Adoption rule, fixed before the run: pooled MAE **and** RMSE each >= 2 % better, MAE better in at
+least 3 of 4 folds, and no fold more than 2 % worse. **No variant passes**, so the deployed model, its artifacts and its explanations are
+unchanged. On this sample the plain "no change" forecast has a lower MAE than the model (the model is better on RMSE), consistent with
+section 1.3.
+
+**Soil was not evaluated.** Soil pH and soil group would be regional SoilGrids estimates for the selling market's town (static in time, so
+they can only describe the market). The SoilGrids services could not be reached from the environment where this was run, and no historical
+soil table exists in the repository, so there is nothing to train on and no value was invented. `python -m scripts.build_market_soil` builds
+`dataset/soil/market_soil.csv` when the services are reachable; `evaluate_environment_features` then adds `+soil` and `+all` variants
+automatically, and the forecaster already joins `soil_ph` / `soil_class_code` if a model is ever trained with them.
+
+Data limits: weather history exists for 66 of the 297 markets (about 72 % of usable forecast origins, including the state-median series);
+other markets have no weather features (NaN). The live forecast is projected from the same calendar day one year earlier because the data ends
+2025-12-31, so serving-time weather features would describe last year's weather, not the current season.
+
+
+---
+
+## Why Onion, Potato, Tomato and Wheat show no daily forecast (diagnosis and crop-model test)
+
+`python -m scripts.diagnose_price_forecasts` runs the real forecaster for every supported crop on the state-median series, the best-covered
+markets and the two thinnest listed markets (report: `dataset/reports/price_forecast_diagnostics.md`). Result, identical in every market:
+
+| Crop | Forecast produced | Reliability policy | Validated days in the 30-day window |
+|---|---|---|---|
+| Brinjal, Cabbage, Cauliflower | yes, every market tested | `model` | 29 of 30 (day 1 never validates) |
+| Onion | yes | `context_only` in every band | 0 |
+| Potato, Tomato | yes | `context_only` in every band | 0 |
+| Wheat | yes | `context_only` in every band | 0 |
+
+The cause is not missing data or an inference error: the markets tested have 800-980 usable reports each. It is the crop-level reliability
+rule (`scripts/build_crop_policy.py`): a crop is model-backed only if it beats "price stays unchanged" by 2 % in the validation folds, the
+2025-H2 real-origin test and the projection test. Onion: the model is 17-77 % worse than no-change in 2025-H2. Tomato and Potato fail the
+validation folds. Wheat is at +0.1 % to +1.8 % in the short bands and negative beyond 14 days. A market with stale or thin records
+(for example latest report 2025-08-25) is served from the state-median series, and the response says so.
+
+**Would a crop-specific model fix it?** `python -m scripts.evaluate_crop_models` (same chronological folds and features; the 0.5 damping was
+fixed in advance, not tuned; details in `dataset/reports/crop_model_eval*.json`):
+
+| Crop | pooled (deployed) vs no-change | crop-specific | crop-specific, change halved | projection test, halved vs x1.05 start |
+|---|---|---|---|---|
+| Onion | -40.9 % | -66.1 % | -12.1 % | -21.2 % |
+| Potato | -2.8 % | -8.4 % | +3.6 % | -14.7 % |
+| Tomato | -11.9 % | -21.7 % | +7.0 % | -1.3 % |
+| Wheat | -6.3 % | -0.7 % | +7.8 % | +12.4 % |
+
+(MAE, 2025 quarterly folds; positive = better.) A model trained on one crop alone is worse than the pooled one, because it reacts too
+strongly to recent moves. Halving its predicted change helps Potato, Tomato and Wheat in the real-origin folds but **fails the projection
+test for Potato and Tomato**, and Onion fails everything. Wheat's halved model is the only lead: it beats "no change" in 5 of 6 folds
+(2024-Q3 to 2025-Q4: 116.0 / 141.4 / 153.9 / 87.4 / 88.7 / 88.2 against 135.7 / 152.5 / 178.1 / 99.5 / 89.7 / 86.7) and beats the starting
+price in the projection test, **but in the held-out 2025-H2 period it is no better than "no change"** (88.5 vs 88.2 mean MAE), which
+the policy requires. So no crop-specific model is deployed, and no threshold was changed. A Wheat model would need new data (the
+2026 prices) or a method that holds up in 2025-H2 before it could be validated; it would also need its own reliability table before the
+forecaster could mark it validated.

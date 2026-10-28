@@ -29,6 +29,7 @@ from app.ml.price_prediction.features import (FEATURE_COLUMNS, HORIZONS, MAX_HOR
                                               with_pair_features)
 from app.ml.price_prediction.selling_advice import best_time_to_sell, no_direction_advice
 from app.ml.price_prediction.verdict import horizon_info, latest_recorded as aged_latest, price_verdict
+from app.ml.price_prediction import soil_features
 from app.ml.price_prediction.weather_features import WEATHER_FEATURES, attach
 
 log = logging.getLogger(__name__)
@@ -114,6 +115,14 @@ class PriceForecaster:
                 raise ModelSchemaError("The model was trained with weather features but "
                                        f"{wp} is missing; rebuild it (scripts.build_weather_features).")
             self.weather_feats = pd.read_parquet(wp)
+        # soil inputs (regional estimate for the selling market's town) are joined the same way, from the per-market table
+        self.uses_soil = any(f in soil_features.SOIL_FEATURES for f in self.feature_columns)
+        self.soil_table = None
+        if self.uses_soil:
+            self.soil_table = soil_features.load(paths.DATASET_DIR / "soil" / "market_soil.csv")
+            if self.soil_table is None:
+                raise ModelSchemaError("The model was trained with soil features but dataset/soil/market_soil.csv is missing; "
+                                       "rebuild it (scripts.build_market_soil).")
         cal = d / "explanation_calibration.json"
         self.calibration = json.loads(cal.read_text(encoding="utf-8")) if cal.exists() else None
         self.max_horizon = int(self.meta["max_horizon"])
@@ -158,6 +167,23 @@ class PriceForecaster:
             if n != len(self.feature_columns):
                 raise ModelSchemaError(f"model {c} expects {n} inputs but the feature schema has "
                                        f"{len(self.feature_columns)}; retrain or restore matching artifacts.")
+
+    def model_inputs(self) -> dict:
+        """Which kinds of input the LOADED model really has, read from its feature list (not from any setting). Weather and soil describe the
+        selling market's town; the growing location is never a model input because the training data has none."""
+        cols = set(self.feature_columns)
+        has = lambda names: any(n in cols for n in names)  # noqa: E731
+        return {
+            "season": has(["month", "season_code", "doy_sin", "doy_cos", "target_doy_sin", "target_doy_cos", "week_of_year"]),
+            "crop_market": has(["commodity_code", "market_code"]),
+            "temperature": has(["temp_mean_7", "temp_anom_7", "target_temp_normal"]),
+            "rainfall": has(["precip_sum_7", "precip_sum_30", "precip_ratio_30", "target_precip30_normal"]),
+            "humidity": has(["humidity_mean_7"]),
+            "soil_type": has(["soil_class_code"]),
+            "soil_ph": has(["soil_ph"]),
+            "growing_location": False,
+            "weather_soil_scope": "selling_market_town",
+        }
 
     # ------------------------------------------------------------------ catalogue
     def options(self) -> dict:
@@ -425,6 +451,8 @@ class PriceForecaster:
         feats = compute_features(series, self.encoders, with_targets=False)
         if self.uses_weather:
             feats = attach(feats, self.weather_feats)
+        if self.uses_soil:
+            feats = soil_features.attach(feats, self.soil_table)
 
         # The origin is the latest day on or before the reference date on which the market reported
         # a price AND every lag / rolling feature can be computed from earlier reports. It may be
