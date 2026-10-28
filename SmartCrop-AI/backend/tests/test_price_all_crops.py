@@ -5,6 +5,7 @@ from datetime import timedelta
 import pytest
 
 from app.ml.price_prediction.forecaster import PriceForecaster, SeriesRef
+from app.ml.price_prediction.crop_storage import storage_plans
 from app.ml.price_prediction.window import build_window
 from app.services import price_service
 
@@ -21,7 +22,7 @@ def run(fc, crop, market, days):
     ref = SeriesRef(sup["State"], sup["Market"], sup["Commodity"], sup["Variety"])
     start = price_service.today()
     f = fc.forecast(ref, start, start + timedelta(days=days), explain=False)
-    return f, build_window(f, hold_days=(f["advice"].get("storage") or {}).get("farm_hold_days"))
+    return f, build_window(f, storage=storage_plans(crop))
 
 
 @pytest.mark.parametrize("crop", ["Brinjal", "Cabbage", "Cauliflower", "Onion", "Potato", "Tomato", "Wheat"])
@@ -43,7 +44,9 @@ def test_window_agrees_with_the_policy_for_every_crop(fc, crop, days):
             # the chart and the planned-date price are the same daily prediction
             assert by[w["planned"]["date"]]["predicted_price"] == w["planned"]["price"] == f["target"]["predicted_price"]
         if w["comparison"]["code"] == "alternative":
-            best = max((e for e in w["entries"] if e["status"] == "validated" and e["day"] <= (w["hold_days"] or 99)), key=lambda e: e["predicted_price"])
+            # the recommendation is the highest validated price on or before the storage deadline (planned date + holding days)
+            deadline = w["storage"]["plans"][w["storage"]["default"]]["deadline"]
+            best = max((e for e in w["entries"] if e["status"] == "validated" and e["date"] <= deadline), key=lambda e: e["predicted_price"])
             assert w["comparison"]["price"] == best["predicted_price"] > w["planned"]["price"]
 
 

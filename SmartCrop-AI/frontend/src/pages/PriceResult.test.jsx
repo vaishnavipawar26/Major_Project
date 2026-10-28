@@ -104,7 +104,8 @@ describe("30-day price forecast", () => {
     expect(text("pf-high")).toContain("₹2,700");
     expect(text("pf-high")).toContain("11 Nov 2026");
     expect(text("pf-change")).toContain("+14.3%");
-    expect(text("pf-legend")).toMatch(/Predicted price.*Your planned date.*Highest predicted price/);
+    // with no storage block the highest date is also the recommended one, so one marker carries both names
+    expect(text("pf-legend")).toMatch(/Predicted price.*Your planned date.*Recommended selling date/);
   });
   it("says how many days have no validated prediction", () => {
     renderPage(forecast({ window: makeWindow({ ok: (n) => n !== 3, price: (d, n) => (n === 5 ? null : d === PLANNED ? 2520 : 2400) }) }));
@@ -140,8 +141,11 @@ describe("Smart Selling Recommendation", () => {
     renderPage(forecast({ window: makeWindow({ price: (d) => (d === PLANNED ? 2520 : d === "2026-11-11" ? 2772 : 2400) }) }));
     expect(text("sw-planned")).toContain("4 Nov 2026");
     expect(text("sw-planned")).toContain("₹2,520");
-    expect(text("sw-alt")).toContain("11 Nov 2026");
-    expect(text("sw-alt")).toContain("₹2,772");
+    expect(text("sw-rec")).toContain("11 Nov 2026");
+    expect(text("sw-rec")).toContain("7 days after your planned date");
+    expect(text("sw-price")).toContain("₹2,772");
+    expect(text("sw-high")).toContain("₹2,772");
+    expect(text("sw-high")).toContain("Same as the recommended date");
     expect(text("sw-diff")).toContain("+₹252");
     expect(text("sw-diff")).toContain("+10.0%");
     expect(text("sw-wait")).toContain("7 days");
@@ -151,11 +155,19 @@ describe("Smart Selling Recommendation", () => {
     renderPage(forecast());
     expect(screen.getByTestId("sell-card").getAttribute("data-outcome")).toBe("planned_is_best");
     expect(text("sell-why")).toBe("Your planned date already has the highest predicted price in this forecast window.");
+    // the planned date is the recommendation: stated plainly, with a zero difference and no waiting, never "None needed" or dashes
+    expect(text("sw-rec")).toContain("Your planned date");
+    expect(text("sw-price")).toContain("₹2,520");
+    expect(text("sw-diff")).toContain("₹0/quintal compared with your planned date");
+    expect(text("sw-wait")).toContain("0 days");
+    expect(screen.getByTestId("sell-card").textContent).not.toMatch(/None needed/);
   });
-  it("shows 'Alternative date unavailable' when nothing can be compared", () => {
+  it("recommends no date when nothing can be compared", () => {
     renderPage(forecast({ window: makeWindow({ ok: () => false }) }));
-    expect(text("sw-alt")).toContain("Alternative date unavailable");
-    expect(text("sw-planned")).toContain("no price is shown");
+    expect(text("sw-rec")).toContain("No date can be recommended");
+    // none of the price / difference / time-left cells (they would only be dashes) and no reliability wording
+    for (const id of ["sw-price", "sw-high", "sw-diff", "sw-wait", "sw-left"]) expect(screen.queryByTestId(id)).toBeNull();
+    expect(screen.getByTestId("sell-card").textContent).not.toMatch(/reliable enough|accuracy tests|Past tests/i);
   });
   it("does not substitute another date when the planned date is outside the window", () => {
     const w = makeWindow();
@@ -164,10 +176,11 @@ describe("Smart Selling Recommendation", () => {
     renderPage(forecast({ window: w }));
     expect(text("sell-why")).toContain("outside the 30-day forecast window");
   });
-  it("keeps storage advice and the profit caution", () => {
+  it("keeps storage advice and does not show the profit disclaimer", () => {
     renderPage(forecast());
     expect(text("sell-store")).toContain("Ripe tomatoes keep about a week.");
-    expect(text("sw-caution")).toContain("not always the highest profit");
+    expect(screen.queryByTestId("sw-caution")).toBeNull();
+    expect(screen.getByTestId("sell-card").textContent).not.toContain("not always the highest profit");
   });
 });
 
@@ -196,7 +209,8 @@ describe("crops without a validated forecast", () => {
   it("shows the market's real price history and the specific test result instead of an empty graph", () => {
     renderPage(blocked());
     expect(text("pf-none")).toContain("No daily price forecast");
-    expect(text("pf-none-reason")).toContain("model -17.2% vs no-change");
+    expect(screen.queryByTestId("pf-none-reason")).toBeNull();               // the backtest sentence is not shown
+    expect(document.body.textContent).not.toMatch(/backtest|vs no-change/i);
     expect(text("hist-note")).toContain("latest was ₹1,980");
     expect(document.querySelector("[data-testid=hist-chart] .recharts-wrapper")).toBeTruthy();
   });
@@ -209,25 +223,26 @@ describe("crops without a validated forecast", () => {
     expect(text("pf-legend")).toContain("Experimental estimate (not validated)");
   });
 
-  it("gives the real reason instead of 'No comparison available' and recommends no date", () => {
+  it("recommends no date, without accuracy-test or backtest wording, and leaves no empty explanation box", () => {
     renderPage(blocked());
-    expect(text("sell-why")).toContain("did not pass its accuracy tests");
-    expect(text("sell-why")).toContain("model -17.2% vs no-change");
-    expect(text("sw-alt")).toContain("Alternative date unavailable");
+    const card = screen.getByTestId("sell-card");
+    expect(card.textContent).not.toMatch(/accuracy tests|backtest|vs no-change|raw estimates/i);
+    expect(screen.queryByTestId("sell-why")).toBeNull();
+    expect(card.querySelector(".sell-why")).toBeNull();                       // the whole "Why this date?" box is left out, not shown empty
+    expect(text("sw-rec")).toContain("No date can be recommended");
+    expect(text("sell-store")).toContain("Storage advice");                   // storage advice stays
   });
 
-  it("labels a comparison built only on experimental estimates as experimental, never as a recommendation", () => {
+  it("never turns experimental estimates into prices on the selling card", () => {
     const w = blockedWindow();
     w.experimental = { validated: false, planned: { date: PLANNED, status: "validated", price: 2400 },
       comparison: { code: "alternative", reason: null, date: "2026-11-11", price: 2640, diff: 240, diff_pct: 10, wait_days: 7, beyond_storage: null } };
     renderPage(blocked({ window: w }));
-    expect(screen.getByTestId("sell-card").getAttribute("data-experimental")).toBe("true");
-    expect(text("sell-chip")).toContain("Experimental");
-    expect(text("sw-alt")).toContain("₹2,640");
-    expect(text("sw-alt")).toContain("Experimental");
-    expect(text("sw-alt")).not.toContain("Recommended");
-    expect(text("sell-why")).toContain("Experimental estimate, not a validated recommendation.");
-    expect(text("sw-exp-note")).toContain("not a recommendation to plan with");
+    const card = screen.getByTestId("sell-card");
+    expect(card.getAttribute("data-experimental")).toBeNull();
+    expect(card.textContent).not.toMatch(/Experimental|2,640|raw estimates|accuracy tests/);
+    expect(screen.queryByTestId("sw-price")).toBeNull();
+    expect(text("sw-rec")).toContain("No date can be recommended");
   });
 
   it("a validated comparison is never replaced by an experimental one", () => {
@@ -235,6 +250,143 @@ describe("crops without a validated forecast", () => {
     w.experimental = { validated: false, planned: { date: PLANNED, status: "validated", price: 1 }, comparison: { code: "alternative", date: "2026-11-30", price: 9999, diff: 9998, diff_pct: 9, wait_days: 26 } };
     renderPage(forecast({ window: w }));
     expect(screen.getByTestId("sell-card").getAttribute("data-experimental")).toBeNull();
-    expect(text("sw-alt")).toContain("₹2,772");
+    expect(text("sw-price")).toContain("₹2,772");
+  });
+});
+
+// ------------------------------------------------------------------------------------------------ storage-aware recommendation
+// Plans shaped like the API's window.storage (backend/app/ml/price_prediction/crop_storage.py; the backend tests check how they are computed).
+describe("Smart Selling with the farmer's storage", () => {
+  const FAR = "2026-11-23";          // 19 days after the planned date 2026-11-04
+  const NEAR = "2026-11-17";         // 13 days after
+  const src = (id, publisher) => ({ id, publisher, title: publisher, url: `https://example.org/${id}` });
+  const plan = (o) => ({
+    crop: "Brinjal", supported: true, profile: "fresh", profile_label: "Fresh brinjal", facility: "ordinary", facility_used: "ordinary",
+    facility_label: "In shade under ordinary conditions", fallback: false, hold_days: 2, range: "1 to 2 days in summer, 3 to 4 days in winter",
+    basis: "NHB", approximate: true, confidence: "moderate", category: "Fresh vegetable", perishability: "Highly perishable",
+    conditions: "Cold storage at 7-10 °C.", risks: "Shrivelling and rot within days.", advice: ["Keep brinjal in shade and handle gently."],
+    sources: [src("nhb_brinjal", "National Horticulture Board, India")], uncertainty: "This is an approximate estimate.", deadline: "2026-11-06",
+    experimental: null, comparison: null, ...o });
+  const planned = (o = {}) => ({ code: "planned_is_best", reason: null, date: PLANNED, price: 2520, diff: 0, diff_pct: 0, wait_days: 0,
+    beyond_storage: { date: FAR, price: 2900 }, deadline: "2026-11-06", days_left: 2, highest: { date: FAR, price: 2900, within_storage: false }, ...o });
+  const later = (o = {}) => ({ code: "alternative", reason: null, date: NEAR, price: 2750, diff: 230, diff_pct: 9.13, wait_days: 13, beyond_storage: { date: FAR, price: 2900 },
+    deadline: "2026-11-17", days_left: 0, highest: { date: FAR, price: 2900, within_storage: false }, ...o });
+  const withStorage = (plans, profiles = [], def = "ordinary:fresh") => {
+    const w = makeWindow({ price: (d) => (d === PLANNED ? 2520 : d === NEAR ? 2750 : d === FAR ? 2900 : 2400) });
+    w.storage = { crop: "Brinjal", supported: true, default: def, profiles,
+      facilities: [{ key: "ordinary", label: "Ordinary farm storage" }, { key: "improved", label: "Improved low-cost storage" }, { key: "cold", label: "Cold storage or cold room" }],
+      plans };
+    w.comparison = plans[w.storage.default].comparison;
+    w.highest = { date: FAR, price: 2900 };
+    return w;
+  };
+  const brinjal = () => withStorage({
+    "ordinary:fresh": plan({ comparison: planned() }),
+    "improved:fresh": plan({ facility: "improved", facility_used: "improved", facility_label: "Evaporative cool chamber", hold_days: 9, deadline: "2026-11-13",
+      range: "about 9 to 15 days", comparison: planned({ deadline: "2026-11-13", days_left: 9 }) }),
+    "cold:fresh": plan({ facility: "cold", facility_used: "cold", facility_label: "Cold room at 7-10 °C", hold_days: 7, deadline: "2026-11-11",
+      comparison: planned({ deadline: "2026-11-11", days_left: 7 }) }),
+  });
+
+  it("example A: a higher price 19 days later is shown as the highest price but not recommended under ordinary storage", () => {
+    renderPage(forecast({ window: brinjal(), series: { state: "Maharashtra", market: "APMC Mumbai", commodity: "Brinjal", variety: "Other" } }));
+    expect(text("sw-rec")).toContain("Your planned date");
+    expect(text("sw-price")).toContain("₹2,520");
+    expect(text("sw-high")).toContain("₹2,900");
+    expect(text("sw-high")).toContain("23 Nov 2026");
+    expect(text("sw-high")).toContain("after your storage limit, so not recommended");
+    expect(text("sw-diff")).toContain("₹0/quintal compared with your planned date");
+    expect(text("sw-wait")).toContain("0 days");
+    expect(text("sw-survival")).toContain("About 2 days");
+    expect(text("sw-left")).toContain("2 days");
+    expect(text("sell-why")).toContain("is on 23 November 2026, 19 days after your planned date");
+    expect(text("sell-why")).toContain("about 2 days after your planned date, until 6 November 2026");
+    expect(text("sell-why")).toContain("Waiting for it is not recommended");
+    expect(text("sw-differs")).toContain("highest price comes after the storage limit");
+    expect(text("ss-uncertainty")).toContain("approximate");
+    expect(text("ss-advice")).toContain("Keep brinjal in shade");
+    expect(screen.getByTestId("ss-sources").querySelector("a").getAttribute("href")).toBe("https://example.org/nhb_brinjal");
+  });
+
+  it("the card and the chart read the same prices, and the chart names the storage limit", () => {
+    renderPage(forecast({ window: brinjal() }));
+    expect(text("pf-high")).toContain("₹2,900");
+    expect(text("pf-high")).toContain("23 Nov 2026");
+    expect(text("sw-high")).toContain("₹2,900");
+    expect(text("pf-planned")).toContain("₹2,520");
+    expect(text("sw-planned")).toContain("₹2,520");
+    expect(text("pf-beyond")).toContain("after the estimated storage limit for this crop, so it is shown but not recommended");
+    expect(text("pf-legend")).toMatch(/Your planned date.*Highest predicted price.*Estimated storage limit/);
+  });
+
+  it("choosing storage the farmer really has can change the recommended date", () => {
+    const w = withStorage({
+      "ordinary:fresh": plan({ crop: "Tomato", hold_days: 7, deadline: "2026-11-11", comparison: planned({ deadline: "2026-11-11", days_left: 7, beyond_storage: { date: NEAR, price: 2750 } }) }),
+      "improved:fresh": plan({ crop: "Tomato", facility: "improved", facility_used: "improved", facility_label: "Evaporative cool chamber", hold_days: 14, deadline: "2026-11-18",
+        comparison: later({ deadline: "2026-11-18", days_left: 1 }) }),
+      "cold:fresh": plan({ crop: "Tomato", facility: "cold", facility_used: "cold", facility_label: "Cold room at about 13 °C", hold_days: 14, deadline: "2026-11-18",
+        comparison: later({ deadline: "2026-11-18", days_left: 1 }) }),
+    });
+    renderPage(forecast({ window: w }));
+    expect(text("sw-rec")).toContain("Your planned date");                      // the default assumes nothing beyond ordinary farm storage
+    expect(screen.getByTestId("ss-facility-ordinary").getAttribute("aria-checked")).toBe("true");
+    expect(text("ss-facility-improved")).toContain("Holds about 14 days");           // each choice shows what it changes
+    fireEvent.click(screen.getByTestId("ss-facility-improved"));
+    expect(text("sw-rec")).toContain("17 Nov 2026");
+    expect(text("sw-price")).toContain("₹2,750");
+    expect(text("sw-diff")).toContain("+₹230");
+    expect(text("sw-wait")).toContain("13 days");
+    expect(text("sw-survival")).toContain("About 14 days");
+    expect(text("sw-left")).toContain("1 day");
+    expect(text("sell-why")).toContain("within the estimated storage limit for Tomato (Evaporative cool chamber): about 14 days after your planned date");
+    expect(text("pf-legend")).toContain("Recommended selling date");              // the chart gets the new marker for the same choice
+    fireEvent.click(screen.getByTestId("ss-facility-ordinary"));
+    expect(screen.getByTestId("ss-facility-improved").getAttribute("aria-checked")).toBe("false");
+    expect(text("sw-rec")).toContain("Your planned date");
+  });
+
+  it("asks about the produce condition only for crops where it matters, and treats damp or uncured stock as not storable", () => {
+    renderPage(forecast({ window: brinjal() }));
+    expect(screen.queryByTestId("ss-profile")).toBeNull();                      // fresh vegetables: no dry/cured question
+    cleanup();
+    const profiles = [{ key: "cured", label: "Well-cured, dry onion bulbs" }, { key: "uncured", label: "Not cured, wet or freshly harvested onion" }];
+    const w = withStorage({
+      "ordinary:cured": plan({ crop: "Onion", profile: "cured", profile_label: "Well-cured, dry onion bulbs", hold_days: 120, deadline: "2027-03-04", range: "about 4 months, with heavy weight loss",
+        comparison: later({ deadline: "2027-03-04", days_left: 111, highest: { date: FAR, price: 2900, within_storage: true } }) }),
+      "ordinary:uncured": plan({ crop: "Onion", profile: "uncured", profile_label: "Not cured, wet or freshly harvested onion", hold_days: 0, deadline: PLANNED,
+        basis: "App rule, not a measured storage time.", range: "no safe holding time is known", comparison: planned({ deadline: PLANNED, days_left: 0 }) }),
+    }, profiles, "ordinary:cured");
+    w.storage.facilities = w.storage.facilities.slice(0, 1);
+    w.comparison = w.storage.plans["ordinary:cured"].comparison;
+    renderPage(forecast({ window: w }));
+    expect(screen.getByTestId("ss-profile-cured").getAttribute("aria-checked")).toBe("true");
+    expect(text("sw-survival")).toContain("About 120 days");
+    fireEvent.click(screen.getByTestId("ss-profile-uncured"));
+    expect(text("sw-rec")).toContain("Your planned date");
+    expect(text("sw-survival")).toContain("No safe holding time");
+    expect(text("sell-why")).toContain("is not advised to be held");
+  });
+
+  it("says when a storage choice has no reliable figure and another facility's figure is used", () => {
+    const w = withStorage({
+      "ordinary:fresh": plan({ comparison: planned() }),
+      "improved:fresh": plan({ facility: "improved", facility_used: "ordinary", fallback: true, comparison: planned() }),
+    });
+    renderPage(forecast({ window: w }));
+    fireEvent.click(screen.getByTestId("ss-facility-improved"));
+    expect(text("ss-fallback")).toContain("There is no reliable storage figure for Tomato");
+  });
+
+  it("does not show the profit disclaimer and never claims waiting raises profit", () => {
+    renderPage(forecast({ window: withStorage({ "ordinary:fresh": plan({ comparison: later({ highest: { date: NEAR, price: 2750, within_storage: true } }) }) }) }));
+    expect(screen.queryByTestId("sw-caution")).toBeNull();
+    expect(screen.getByTestId("sell-card").textContent).not.toContain("not always the highest profit");
+    expect(screen.getByTestId("sell-card").textContent).not.toMatch(/more profit|will earn|guarantee/i);
+  });
+
+  it("an older response without a storage block still shows the card from its own comparison", () => {
+    renderPage(forecast());
+    expect(screen.queryByTestId("ss-picker")).toBeNull();
+    expect(text("sw-survival")).toContain("60 days");
   });
 });

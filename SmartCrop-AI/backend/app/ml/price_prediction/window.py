@@ -35,11 +35,25 @@ def _day(d: date, point: dict | None, n: int) -> dict:
             "lower": point.get("lower") if ok else None, "upper": point.get("upper") if ok else None}
 
 
+def _deadline(planned: dict | None, hold_days: int | None) -> str | None:
+    """Storage deadline = the planned selling date + the days the crop can practically be held (None: no limit known)."""
+    if planned is None or hold_days is None:
+        return None
+    return (date.fromisoformat(planned["date"]) + timedelta(days=hold_days)).isoformat()
+
+
+def _days_between(a: str, b: str) -> int:
+    return (date.fromisoformat(b) - date.fromisoformat(a)).days
+
+
 def compare(planned: dict | None, days: list[dict], hold_days: int | None = None) -> dict:
     """The planned date against the highest validated price in the window.
 
-    ``hold_days`` = how long the crop keeps on an ordinary farm (None: no limit). Dates later than that are not eligible (the planned
-    date itself always is); a higher price beyond it is reported as ``beyond_storage`` instead of being recommended.
+    ``hold_days`` = how many days AFTER THE PLANNED DATE the crop can practically be held with the farmer's storage (None: no limit).
+    The storage deadline is the planned date + ``hold_days``. Dates up to the deadline (earlier dates, the planned date itself, and later
+    dates inside the limit) are eligible; a higher price after the deadline is reported as ``beyond_storage`` and never recommended.
+    ``highest`` is the highest validated price in the whole window and whether it is within the deadline, so the page can show the
+    highest price and the recommended date separately.
 
     ``planned`` = {"date", "price", "status"} or None. ``code``:
       planned_is_best  the planned date has the highest validated price of the window (ties go to the earlier date)
@@ -47,7 +61,8 @@ def compare(planned: dict | None, days: list[dict], hold_days: int | None = None
       unavailable      no validated price for the planned date or for any other date, so nothing can be compared
     """
     validated = [d for d in days if d["status"] == VALIDATED]
-    keeps = lambda d: hold_days is None or d["day"] <= hold_days or (planned is not None and d["date"] == planned["date"])  # noqa: E731
+    deadline = _deadline(planned, hold_days)
+    keeps = lambda d: deadline is None or d["date"] <= deadline  # noqa: E731
     pool = [d for d in validated if keeps(d)]
     best = None
     for d in pool:                       # strictly greater: the earliest date wins a tie
@@ -59,15 +74,23 @@ def compare(planned: dict | None, days: list[dict], hold_days: int | None = None
     if planned is None or planned.get("status") != VALIDATED or best is None:
         reason = ("planned_not_validated" if planned is not None and planned.get("status") != VALIDATED else
                   "no_validated_dates")
-        return {"code": "unavailable", "reason": reason, "date": None, "price": None, "diff": None, "diff_pct": None, "wait_days": None}
-    if best["date"] == planned["date"] or best["predicted_price"] <= planned["price"]:
+        return {"code": "unavailable", "reason": reason, "date": None, "price": None, "diff": None, "diff_pct": None, "wait_days": None,
+                "deadline": deadline, "days_left": None, "highest": None}
+    top = None
+    for d in validated:                  # strictly greater: the earliest date wins a tie
+        if top is None or d["predicted_price"] > top["predicted_price"]:
+            top = d
+    highest = {"date": top["date"], "price": top["predicted_price"], "within_storage": keeps(top)}
+    chosen = planned if (best["date"] == planned["date"] or best["predicted_price"] <= planned["price"]) else best
+    left = None if deadline is None else _days_between(chosen["date"], deadline)   # storage days still left on the day the crop is sold
+    if chosen is planned:
         return {"code": "planned_is_best", "reason": None, "date": planned["date"], "price": planned["price"],
-                "diff": 0.0, "diff_pct": 0.0, "wait_days": 0, "beyond_storage": beyond}
+                "diff": 0.0, "diff_pct": 0.0, "wait_days": 0, "beyond_storage": beyond, "deadline": deadline, "days_left": left, "highest": highest}
     diff = round(best["predicted_price"] - planned["price"], 2)
     pct = round(diff / planned["price"] * 100, 2) if planned["price"] > 0 else None
-    wait = (date.fromisoformat(best["date"]) - date.fromisoformat(planned["date"])).days
+    wait = _days_between(planned["date"], best["date"])
     return {"code": "alternative", "reason": None, "date": best["date"], "price": best["predicted_price"],
-            "diff": diff, "diff_pct": pct, "wait_days": wait, "beyond_storage": beyond}
+            "diff": diff, "diff_pct": pct, "wait_days": wait, "beyond_storage": beyond, "deadline": deadline, "days_left": left, "highest": highest}
 
 
 def _experimental(entries: list[dict], planned: dict, inside: bool, hold_days: int | None, comparison: dict) -> dict | None:
@@ -85,8 +108,12 @@ def _experimental(entries: list[dict], planned: dict, inside: bool, hold_days: i
     return {"validated": False, "planned": exp_planned, "comparison": compare(exp_planned, raw, hold_days)}
 
 
-def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None) -> dict:
+def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None, storage: dict | None = None) -> dict:
     """``f`` = a forecast dict (``input_date``, ``target_date``, ``current_price``, ``chart_path``).
+
+    ``storage`` = ``crop_storage.storage_plans(crop)``: one plan per storage facility and produce condition. Every plan is compared on the
+    SAME daily entries, so the chart, the highest price and each plan's recommendation always agree. Without it, ``hold_days`` (days after
+    the planned date; None = no limit) is used for the single comparison.
 
     Days run from the forecast start (``input_date``) + 1 to + ``days``. Returns the daily entries, the starting reference price, the
     planned date's entry, the highest validated price and the planned-vs-best comparison."""
@@ -116,10 +143,21 @@ def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None)
         change = {"to_date": last["date"], "pct": round((last["predicted_price"] - ref) / ref * 100, 2),
                   "is_window_end": last["day"] == days}
 
-    comparison = (compare(planned, entries, hold_days) if inside else
-                  {"code": "outside_window", "reason": "planned_outside_window", "date": None, "price": None, "diff": None,
-                   "diff_pct": None, "wait_days": None})
-    experimental = _experimental(entries, planned, inside, hold_days, comparison)
+    outside = {"code": "outside_window", "reason": "planned_outside_window", "date": None, "price": None, "diff": None,
+               "diff_pct": None, "wait_days": None, "deadline": None, "days_left": None, "highest": None}
+    plans_out = None
+    if storage:
+        plans_out = {}
+        for key, plan in storage["plans"].items():
+            h = plan["hold_days"]
+            c = compare(planned, entries, h) if inside else outside
+            plans_out[key] = {**plan, "deadline": _deadline(planned, h), "comparison": c,
+                              "experimental": _experimental(entries, planned, inside, h, c)}
+        default = plans_out[storage["default"]]
+        hold_days, comparison, experimental = default["hold_days"], default["comparison"], default["experimental"]
+    else:
+        comparison = compare(planned, entries, hold_days) if inside else outside
+        experimental = _experimental(entries, planned, inside, hold_days, comparison)
     pol = f.get("policy") or {}
     # why the model's days are (not) shown: the reliability rule's own result for this crop and distance, in the backend's words
     validation = {"mode": pol.get("mode"), "band": pol.get("band"), "reasons": list(pol.get("reasons") or [])[:3],
@@ -130,4 +168,5 @@ def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None)
             "highest": ({"date": highest["date"], "price": highest["predicted_price"]} if highest else None),
             "change": change, "comparison": comparison,
             "validated_days": len(valid), "unvalidated_days": sum(d["status"] == NOT_VALIDATED for d in entries),
-            "unavailable_days": sum(d["status"] == UNAVAILABLE for d in entries)}
+            "unavailable_days": sum(d["status"] == UNAVAILABLE for d in entries),
+            "storage": ({**storage, "plans": plans_out} if storage else None)}

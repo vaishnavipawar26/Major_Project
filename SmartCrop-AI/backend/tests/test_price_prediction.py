@@ -280,3 +280,24 @@ def test_environmental_factors_never_change_the_predicted_price(client, user, mo
     other = client.post("/api/price-prediction/trend", headers=user["headers"], json=STATE_REQ).json()
     assert other["target"]["predicted_price"] == plain["target"]["predicted_price"]
     assert [p["predicted_price"] for p in other["path"]] == [p["predicted_price"] for p in plain["path"]]
+
+
+def test_the_prediction_carries_one_storage_plan_per_facility_and_the_card_data_matches_the_chart(client, user):
+    """The 30-day window the chart draws and every storage plan the selling card offers come from the same response."""
+    for crop in ("Cabbage", "Wheat"):
+        r = client.post("/api/price-prediction/predict", headers=user["headers"],
+                        json={**STATE_REQ, "commodity": crop, "target_date": "2025-06-26"})
+        assert r.status_code == 201, r.text
+        w = r.json()["window"]
+        st = w["storage"]
+        assert st["supported"] is True and st["default"].startswith("ordinary:")
+        assert {k.split(":")[0] for k in st["plans"]} == {"ordinary", "improved", "cold"}
+        default = st["plans"][st["default"]]
+        assert default["comparison"] == w["comparison"] and default["hold_days"] == w["hold_days"]
+        assert default["sources"] and default["approximate"] is True and default["deadline"]
+        prices = {e["date"]: e["predicted_price"] for e in w["entries"] if e["status"] == "validated"}
+        for plan in st["plans"].values():
+            c = plan["comparison"]
+            if c["code"] in ("alternative", "planned_is_best"):
+                assert c["price"] == prices[c["date"]]                       # the card's price is the chart's price
+                assert c["highest"]["price"] == w["highest"]["price"]

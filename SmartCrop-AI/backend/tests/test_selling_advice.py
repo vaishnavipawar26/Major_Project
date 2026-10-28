@@ -49,11 +49,11 @@ def test_better_future_date_is_recommended():
 
 def test_wait_beyond_farm_storage_needs_proper_storage_and_gives_farm_option():
     prices = [1000.0] * 60
-    prices[9] = 1080.0   # 5 days after the planned date: within farm storage
-    prices[39] = 1200.0  # 35 days after: needs cold storage for potato
-    a = advise(prices, 5)
-    assert STORAGE["Potato"]["farm_hold_days"] < 35 <= STORAGE["Potato"]["max_hold_days"]
-    assert a["code"] == "WAIT" and a["wait_days"] == 35 and a["needs_special_storage"]
+    prices[9] = 1080.0    # 5 days after the planned date: within ordinary farm storage for tomato
+    prices[16] = 1200.0   # 12 days after: needs a cool chamber or cold room
+    a = advise(prices, 5, commodity="Tomato")
+    assert STORAGE["Tomato"]["farm_hold_days"] < 12 <= STORAGE["Tomato"]["max_hold_days"]
+    assert a["code"] == "WAIT" and a["wait_days"] == 12 and a["needs_special_storage"]
     assert a["farm_option"]["horizon_days"] == 10
     assert "cold storage" in a["reason"]
     check_maths(a)

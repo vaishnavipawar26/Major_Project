@@ -123,8 +123,8 @@ def test_advice_reports_but_never_recommends_a_higher_earlier_price():
 
 
 def test_advice_respects_storage_limit_of_perishable_crops():
-    # tomato: later dates are only considered up to 7 days after the target
-    prices = [1000] * 3 + [1000] * 7 + [2000]
+    # tomato: later dates are only considered up to 14 days after the target (the longest any storage keeps it, see crop_storage.py)
+    prices = [1000] * 3 + [1000] * 14 + [2000]
     a = best_time_to_sell(_path(prices), 3, "Tomato", projected=False)
     assert a["code"] != "WAIT"
     assert best_time_to_sell(_path(prices), 3, "Onion", projected=False)["code"] == "WAIT"

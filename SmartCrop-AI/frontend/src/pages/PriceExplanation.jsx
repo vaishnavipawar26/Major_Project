@@ -156,7 +156,7 @@ export default function PriceExplanation() {
           ? <UnderstandPrediction exp={exp} crop={crop} market={explain.series.market} targetDate={exp.date} req={req} afterA={influence} />
           : (
             <>
-              <div data-testid="no-price-status"><Alert type="info">{t(noForecast ? "fb.notShown" : "price.expl.unreliable", { crop })}</Alert></div>
+              {!noForecast && <div data-testid="no-price-status"><Alert type="info">{t("price.expl.unreliable", { crop })}</Alert></div>}
               {influence}
             </>
           )}

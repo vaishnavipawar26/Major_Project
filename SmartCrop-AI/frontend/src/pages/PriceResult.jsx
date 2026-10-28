@@ -58,6 +58,8 @@ export default function PriceResult() {
   const { source, error: sourceError, missing } = useResultSource();
   const [forecast, setForecast] = useState(source?.forecast || null);
   const [explain, setExplain] = useState(null);
+  // the farmer's storage choice ("facility:condition"); null = the API's default, ordinary farm storage. One choice drives the chart and the card.
+  const [storageKey, setStorageKey] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -139,11 +141,11 @@ export default function PriceResult() {
       </ResultStep>
 
       <ResultStep n={2} id="step-chart" title={tr("pfc.title")} subtitle={tr("pfc.subtitle")}>
-        <PriceForecastChart forecast={forecast} crop={crop} market={marketName} />
+        <PriceForecastChart forecast={forecast} crop={crop} market={marketName} storageKey={storageKey} />
       </ResultStep>
 
       <ResultStep n={3} id="step-sell" title={tr("price.sell.title")} subtitle={tr("price.sell.subtitle")} className="sell-step">
-        <SellingRecommendation win={forecast.window} storage={advice.storage} crop={crop} />
+        <SellingRecommendation win={forecast.window} storage={advice.storage} crop={crop} storageKey={storageKey} onStorageChange={setStorageKey} />
       </ResultStep>
 
       <div className="card" style={{ margin: "1rem 0", padding: "1.1rem", textAlign: "center" }} data-testid="explain-card">

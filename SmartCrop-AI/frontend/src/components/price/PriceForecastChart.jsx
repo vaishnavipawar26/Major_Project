@@ -5,6 +5,7 @@ import { useT } from "../../i18n/LanguageContext";
 import { chartModel, isoOf, ts } from "../../utils/forecastWindow";
 import { fmtDate, pct, rupees, shortDate } from "../../utils/format";
 import { rangeView } from "../../utils/priceView";
+import { activePlan } from "../../utils/storagePlan";
 import HistoricalPriceChart from "./HistoricalPriceChart";
 import { priceAxis } from "./SimplePriceChart";
 
@@ -12,6 +13,8 @@ const ACTUAL = "var(--series-actual)";
 const PREDICTED = "var(--series-forecast)";
 const PLANNED = "#6b3fa0";
 const BEST = "#0f7b4f";
+const RECOMMENDED = "#1d6fb8";
+const LIMIT = "#b7791f";
 const EXPERIMENTAL = "#8a6d3b";
 
 function Stat({ label, value, sub, testid }) {
@@ -42,7 +45,7 @@ function Tip({ active, payload, t, crop, market }) {
   );
 }
 
-function Legend({ t, showActual, showRange, hasBest, showExperimental, hasValidated }) {
+function Legend({ t, showActual, showRange, hasBest, showExperimental, hasValidated, hasRec, hasLimit }) {
   return (
     <div className="legend pf-legend" data-testid="pf-legend">
       {showActual && <span><span className="swatch-line" style={{ borderColor: ACTUAL, borderTopWidth: 3 }} />{t("pfc.legend.actual")}</span>}
@@ -51,6 +54,8 @@ function Legend({ t, showActual, showRange, hasBest, showExperimental, hasValida
       {showRange && <span><span className="swatch" style={{ background: PREDICTED, opacity: 0.22 }} />{t("pfc.legend.range")}</span>}
       <span><span className="pf-dot" style={{ background: PLANNED }} />{t("pfc.legend.planned")}</span>
       {hasBest && <span><span className="pf-dot pf-star" style={{ background: BEST }} />{t("pfc.legend.best")}</span>}
+      {hasRec && <span><span className="pf-dot" style={{ background: RECOMMENDED }} />{t("pfc.legend.recommended")}</span>}
+      {hasLimit && <span><span className="swatch-dash" style={{ borderColor: LIMIT, borderTopWidth: 2 }} />{t("pfc.legend.limit")}</span>}
     </div>
   );
 }
@@ -60,7 +65,7 @@ function Legend({ t, showActual, showRange, hasBest, showExperimental, hasValida
  * validated daily predictions (dashed), the farmer's planned date and the highest predicted date. `win` is the API's `window`.
  * Days without a validated prediction are left empty; the notes below the chart say how many.
  */
-export default function PriceForecastChart({ forecast, crop, market }) {
+export default function PriceForecastChart({ forecast, crop, market, storageKey = null }) {
   const t = useT();
   const narrow = useNarrow();
   const [showExp, setShowExp] = useState(false);
@@ -74,7 +79,13 @@ export default function PriceForecastChart({ forecast, crop, market }) {
   const experimentalRows = model.rows.filter((r) => r.experimental != null);
   const predicted = model.rows.filter((r) => r.predicted != null && r.kind !== "start");
   const planned = win.planned.in_window && win.planned.status === "validated" ? win.planned : null;
-    const peak = win.highest;
+  const peak = win.highest;
+  // the recommended date and the storage limit of the farmer's chosen storage (the same plan the selling card shows)
+  const plan = activePlan(win, storageKey);
+  const cmp = plan ? plan.comparison : win.comparison;
+  const rec = planned && cmp?.code === "alternative" ? { date: cmp.date, price: cmp.price } : null;
+  const plannedIsRec = Boolean(planned && cmp?.code === "planned_is_best");
+  const limit = plan?.deadline && plan.deadline > win.start_date && plan.deadline < win.end_date && plan.hold_days > 0 ? plan.deadline : null;
 
   const toggle = hasExperimental && (
     <label className="pf-exp-toggle" data-testid="pf-exp-toggle">
@@ -82,14 +93,13 @@ export default function PriceForecastChart({ forecast, crop, market }) {
       <span>{t("pfc.exp.toggle")}</span>
     </label>
   );
-  const expWarning = showExp && experimentalRows.length > 0 && <p className="pf-exp-warn" data-testid="pf-exp-warn">{t("pfc.exp.warn", { reason: win.validation?.reasons?.[0] || "" })}</p>;
+  const expWarning = showExp && experimentalRows.length > 0 && <p className="pf-exp-warn" data-testid="pf-exp-warn">{t("pfc.exp.warn")}</p>;
 
   if (!predicted.length && !(showExp && experimentalRows.length)) {
     const v = win.validation || {};
     return (
       <div data-testid="pf-chart">
         <p className="pf-none" data-testid="pf-none"><strong>{t("pfc.none.title", { crop, market })}</strong> {t(v.mode === "context_only" ? "pfc.none.policy" : "pfc.none.generic", { crop })}</p>
-        {v.reasons?.[0] && <p className="muted small" data-testid="pf-none-reason">{v.reasons[0]}</p>}
         <HistoricalPriceChart observed={forecast.observed} crop={crop} market={market} />
         {!model.latestActual && <p className="muted small">{t("pfc.noActual")}</p>}
         {toggle}
@@ -104,6 +114,8 @@ export default function PriceForecastChart({ forecast, crop, market }) {
   const startTs = ts(win.start_date);
   const tickLabel = (v) => shortDate(isoOf(v));
   const sameDay = planned && peak && planned.date === peak.date;
+  const peakIsRec = Boolean(rec && peak && rec.date === peak.date);
+  const showPeak = peak && !sameDay && !peakIsRec;
   const rangeText = showRange && planned?.lower != null
     ? t(range.kind === "measured" ? "pfc.rangeMeasured" : "pfc.rangeUnmeasured", { low: rupees(planned.lower), high: rupees(planned.upper), pct: range.pct })
     : null;
@@ -141,19 +153,28 @@ export default function PriceForecastChart({ forecast, crop, market }) {
             {showExp && <Line dataKey="experimental" stroke={EXPERIMENTAL} strokeWidth={2} strokeDasharray="2 4" dot={false} connectNulls={false} isAnimationActive={false} />}
             <Line dataKey="predicted" stroke={PREDICTED} strokeWidth={2.5} strokeDasharray="7 4" dot={false} connectNulls={false} isAnimationActive={false} />
             <Line dataKey="ref" stroke="none" dot={{ r: 4.5, fill: "#fff", stroke: PREDICTED, strokeWidth: 2.5 }} activeDot={false} isAnimationActive={false} />
-            {peak && !sameDay && (
+            {limit && (
+              <ReferenceLine x={ts(limit)} stroke={LIMIT} strokeDasharray="5 4" strokeWidth={1.5}
+                label={{ value: t("pfc.mark.limit"), position: "insideTopRight", fill: LIMIT, fontSize: 11 }} />
+            )}
+            {showPeak && (
               <ReferenceDot x={ts(peak.date)} y={peak.price} r={8} fill={BEST} stroke="#fff" strokeWidth={2.5} ifOverflow="visible"
                 label={{ value: `${t("pfc.mark.best")} ${shortDate(peak.date)}`, position: "top", fill: BEST, fontSize: narrow ? 11 : 12.5, fontWeight: 700 }} />
             )}
+            {rec && (
+              <ReferenceDot x={ts(rec.date)} y={rec.price} r={8} fill={RECOMMENDED} stroke="#fff" strokeWidth={2.5} ifOverflow="visible"
+                label={{ value: `${t(peakIsRec ? "pfc.mark.recommendedHigh" : "pfc.mark.recommended")} ${shortDate(rec.date)}`, position: "top", fill: RECOMMENDED,
+                  fontSize: narrow ? 11 : 12.5, fontWeight: 700 }} />
+            )}
             {planned && (
               <ReferenceDot x={ts(planned.date)} y={planned.price} r={8} fill={PLANNED} stroke="#fff" strokeWidth={2.5} ifOverflow="visible"
-                label={{ value: `${t(sameDay ? "pfc.mark.plannedBest" : "pfc.mark.planned")} ${shortDate(planned.date)}`, position: sameDay ? "top" : "bottom",
+                label={{ value: `${t(plannedIsRec ? (sameDay ? "pfc.mark.plannedRecHigh" : "pfc.mark.plannedRec") : sameDay ? "pfc.mark.plannedBest" : "pfc.mark.planned")} ${shortDate(planned.date)}`, position: sameDay ? "top" : "bottom",
                   fill: PLANNED, fontSize: narrow ? 11 : 12.5, fontWeight: 700 }} />
             )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-      <Legend t={t} showActual={model.showActual} showRange={showRange} hasBest={Boolean(peak)} showExperimental={showExp && experimentalRows.length > 0} hasValidated={predicted.length > 0} />
+      <Legend t={t} showActual={model.showActual} showRange={showRange} hasBest={showPeak} hasRec={Boolean(rec)} hasLimit={Boolean(limit)} showExperimental={showExp && experimentalRows.length > 0} hasValidated={predicted.length > 0} />
       {toggle}
       {expWarning}
 
@@ -163,6 +184,9 @@ export default function PriceForecastChart({ forecast, crop, market }) {
           <p data-testid="pf-stale">{t("pfc.staleActual", { price: rupees(model.latestActual.price), date: fmtDate(model.latestActual.date) })}</p>
         )}
         {!model.latestActual && <p data-testid="pf-noactual">{t("pfc.noActual")}</p>}
+        {peak && cmp?.highest && cmp.highest.within_storage === false && (
+          <p data-testid="pf-beyond">{t("pfc.beyond", { date: fmtDate(peak.date), price: rupees(peak.price) })}</p>
+        )}
         {win.unvalidated_days + win.unavailable_days > 0 && (
           <p data-testid="pf-missing">{t("pfc.missingDays", { n: win.unvalidated_days + win.unavailable_days })}</p>
         )}

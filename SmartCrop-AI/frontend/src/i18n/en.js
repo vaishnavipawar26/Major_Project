@@ -186,7 +186,6 @@ const en = {
   "why.takeDown": "{name} lowered the expected price by about {amount} per quintal.",
   "why.takeNetUp": "Overall, the factors move the price up by about {amount}, from {base} to {end}.",
   "why.takeNetDown": "Overall, the factors move the price down by about {amount}, from {base} to {end}.",
-  "why.notShown": "No expected price is shown for {crop} at this distance, because past tests found it not reliable enough. So there is no price breakdown to explain.",
   "why.unavailable": "A reliable explanation of the expected price is not available right now.",
   "pc.legendLatest": "Latest price (reference)",
   "res.latestActual": "Latest actual market price: {price} per quintal on {date}.",

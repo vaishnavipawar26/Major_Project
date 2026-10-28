@@ -28,37 +28,15 @@ from __future__ import annotations
 
 import math
 
+from app.ml.price_prediction.crop_storage import legacy_storage, supported_crops
+
 DECISION_AID = ("This is a forecast-based decision aid, not a guarantee that prices will rise "
                 "or of any profit. Actual mandi prices may differ.")
 
-# General post-harvest guidance (not learned from the data). max_hold_days caps how long
-# after the farmer's date a later sale is considered (with good storage); farm_hold_days is
-# the shorter time the crop usually keeps in ordinary farm conditions (equal to max_hold_days
-# unless the note says ordinary farm storage is shorter).
-STORAGE = {
-    "Tomato": {"category": "Highly perishable", "max_hold_days": 7, "farm_hold_days": 7,
-               "note": "Ripe tomatoes usually keep only a few days to about a week at room "
-                       "temperature; keeping them longer needs cold storage."},
-    "Brinjal": {"category": "Highly perishable", "max_hold_days": 7, "farm_hold_days": 7,
-                "note": "Brinjal usually stays fresh for only a few days to about a week "
-                        "without cold storage."},
-    "Cauliflower": {"category": "Highly perishable", "max_hold_days": 7, "farm_hold_days": 7,
-                    "note": "Cauliflower loses quality within a few days to a week unless it "
-                            "is kept cool."},
-    "Cabbage": {"category": "Perishable", "max_hold_days": 14, "farm_hold_days": 14,
-                "note": "Firm cabbage heads can usually keep for one to two weeks in a cool, "
-                        "shaded and airy place."},
-    "Onion": {"category": "Storable with care", "max_hold_days": 60, "farm_hold_days": 60,
-              "note": "Well-dried (cured) rabi onion can keep for months in a ventilated store "
-                      "(onion chawl), but it still loses weight and some bulbs may rot or "
-                      "sprout. Kharif onion does not store well."},
-    "Potato": {"category": "Storable with care", "max_hold_days": 60, "farm_hold_days": 21,
-               "note": "Potato keeps for months in cold storage, but usually only a few weeks "
-                       "in a cool, dark and airy place on the farm."},
-    "Wheat": {"category": "Storable", "max_hold_days": 60, "farm_hold_days": 60,
-              "note": "Clean, well-dried wheat can be stored for months in sealed bags or bins "
-                      "if it is protected from moisture and pests."},
-}
+# Per-crop storage summary. The guidance (with its sources, and the facility and produce-condition choices) lives in crop_storage.py; this
+# keeps the older two-figure view: farm_hold_days = ordinary farm storage, max_hold_days = the longest any facility supports. Not learned
+# from the data.
+STORAGE = {crop: legacy_storage(crop) for crop in supported_crops()}
 DEFAULT_STORAGE = {"category": "Unknown", "max_hold_days": 7, "farm_hold_days": 7,
                    "note": "Check how long this crop can be stored safely before waiting."}
 

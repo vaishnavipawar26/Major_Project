@@ -91,7 +91,11 @@ describe("PriceExplanation page", () => {
     const noForecast = exp({ policy: { mode: "context_only" }, v3: { context_only: true } });
     for (const r of [response(), response({ explanations: [broken] }), response({ explanations: [noForecast] })]) {
       renderAt(withState(r));
-      expect(screen.getByTestId("no-price-status")).toBeTruthy();
+      // a breakdown that cannot be explained keeps its short status; a crop with no forecast gets NO "past tests ... not reliable enough" message
+      if (r.explanations?.[0] === noForecast) {
+        expect(screen.queryByTestId("no-price-status")).toBeNull();
+        expect(document.body.textContent).not.toMatch(/No expected price is shown|not reliable enough|past tests/i);
+      } else expect(screen.getByTestId("no-price-status")).toBeTruthy();
       expect(screen.getAllByTestId("influence-card").length).toBe(1);
       expect(document.body.textContent).not.toMatch(OLD);
       expect(document.querySelector("table, details")).toBeNull();
