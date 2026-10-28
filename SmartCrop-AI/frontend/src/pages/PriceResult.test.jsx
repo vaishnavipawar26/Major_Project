@@ -215,4 +215,26 @@ describe("crops without a validated forecast", () => {
     expect(text("sell-why")).toContain("model -17.2% vs no-change");
     expect(text("sw-alt")).toContain("Alternative date unavailable");
   });
+
+  it("labels a comparison built only on experimental estimates as experimental, never as a recommendation", () => {
+    const w = blockedWindow();
+    w.experimental = { validated: false, planned: { date: PLANNED, status: "validated", price: 2400 },
+      comparison: { code: "alternative", reason: null, date: "2026-11-11", price: 2640, diff: 240, diff_pct: 10, wait_days: 7, beyond_storage: null } };
+    renderPage(blocked({ window: w }));
+    expect(screen.getByTestId("sell-card").getAttribute("data-experimental")).toBe("true");
+    expect(text("sell-chip")).toContain("Experimental");
+    expect(text("sw-alt")).toContain("₹2,640");
+    expect(text("sw-alt")).toContain("Experimental");
+    expect(text("sw-alt")).not.toContain("Recommended");
+    expect(text("sell-why")).toContain("Experimental estimate, not a validated recommendation.");
+    expect(text("sw-exp-note")).toContain("not a recommendation to plan with");
+  });
+
+  it("a validated comparison is never replaced by an experimental one", () => {
+    const w = makeWindow({ price: (d) => (d === PLANNED ? 2520 : d === "2026-11-11" ? 2772 : 2400) });
+    w.experimental = { validated: false, planned: { date: PLANNED, status: "validated", price: 1 }, comparison: { code: "alternative", date: "2026-11-30", price: 9999, diff: 9998, diff_pct: 9, wait_days: 26 } };
+    renderPage(forecast({ window: w }));
+    expect(screen.getByTestId("sell-card").getAttribute("data-experimental")).toBeNull();
+    expect(text("sw-alt")).toContain("₹2,772");
+  });
 });

@@ -70,6 +70,11 @@ def scores(p0, y, pred, h):
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--only", nargs="*", help="run just these variants (plus baseline), e.g. --only +weather")
+    ap.add_argument("--out", default="environment_feature_eval.json")
+    args = ap.parse_args()
     t0 = time.time()
     rng = np.random.default_rng(SEED)
     panel = pd.read_parquet(paths.PRICE_PANEL_PATH)
@@ -105,6 +110,10 @@ def main() -> None:
     if soil is not None:
         variants |= {"+soil": soil_cols, "+all": WEATHER_FEATURES + CLIMATE + soil_cols}
 
+    if args.only:
+        variants = {k: v for k, v in variants.items() if k == "baseline" or k in args.only}
+    crop_of = base["Commodity"].to_numpy()[oi]
+
     def X_of(idx, extra):
         X = with_pair_features(base.iloc[oi[idx]], hh[idx]).drop(columns=[c for c in WEATHER_FEATURES if c in base.columns], errors="ignore")
         r, d = mrow[oi[idx]], np.minimum(doy_all[idx], 365) - 1
@@ -125,7 +134,7 @@ def main() -> None:
         s, e = np.datetime64(start), np.datetime64(end)
         tr = sample(rng, ok & (target_day < s), N_TRAIN)
         te = sample(rng, ok & (origin_day >= s) & (origin_day <= e), N_TEST)
-        frame = lambda pred: pd.DataFrame({"p0": p0_all[oi[te]], "y": y_all[te], "pred": pred, "h": hh[te], "fold": fname})  # noqa: E731
+        frame = lambda pred: pd.DataFrame({"p0": p0_all[oi[te]], "y": y_all[te], "pred": pred, "h": hh[te], "fold": fname, "crop": crop_of[te]})  # noqa: E731
         rows["no_change"].append(frame(np.zeros(len(te), dtype="float32")))
         for key, extra in variants.items():
             rows[key].append(frame(predict("xgb_rate", fit("xgb_rate", X_of(tr, extra), y_all[tr]), X_of(te, extra))))
@@ -140,6 +149,8 @@ def main() -> None:
         report["results"][key] = scores(d["p0"].to_numpy(), d["y"].to_numpy(), d["pred"].to_numpy(), d["h"].to_numpy())
         report["by_fold"][key] = {f: scores(g["p0"].to_numpy(), g["y"].to_numpy(), g["pred"].to_numpy(), g["h"].to_numpy())["all"]
                                   for f, g in d.groupby("fold")}
+    report["by_crop"] = {key: {c: {"MAE": float(np.abs(g["p0"] * np.exp(g["pred"]) - g["p0"] * np.exp(g["y"])).mean())} for c, g in pd.concat(parts).groupby("crop")}
+                         for key, parts in rows.items()}
     b = report["results"]["baseline"]["all"]
     report["decision"] = {}
     for key in variants:
@@ -151,13 +162,17 @@ def main() -> None:
         adopt = gain_mae >= MIN_GAIN and gain_rmse >= MIN_GAIN and sum(x < 0 for x in folds) >= MIN_FOLDS and max(folds) <= MAX_FOLD_LOSS
         report["decision"][key] = {"MAE_gain_pct": round(100 * gain_mae, 2), "RMSE_gain_pct": round(100 * gain_rmse, 2),
                                    "folds_improved": int(sum(x < 0 for x in folds)), "worst_fold_change_pct": round(100 * max(folds), 2), "adopt": bool(adopt)}
-    out = paths.DATASET_DIR / "reports" / "environment_feature_eval.json"
+    out = paths.DATASET_DIR / "reports" / args.out
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(f"\n{'variant':20} {'MAE':>7} {'RMSE':>7} {'MAE gain':>9} {'RMSE gain':>10} {'folds+':>7} {'worst fold':>11}  adopt")
     for key in ["no_change", "baseline", *[k for k in variants if k != "baseline"]]:
         r = report["results"][key]["all"]
         d = report["decision"].get(key)
         print(f"{key:20} {r['MAE']:7.1f} {r['RMSE']:7.1f} " + (f"{d['MAE_gain_pct']:8.2f}% {d['RMSE_gain_pct']:9.2f}% {d['folds_improved']:>5}/4 {d['worst_fold_change_pct']:+10.2f}%  {d['adopt']}" if d else ""))
+    print("MAE by crop (baseline / variant):")
+    for key in variants:
+        if key != "baseline":
+            print(key, {c: f"{report['by_crop']['baseline'][c]['MAE']:.0f}/{report['by_crop'][key][c]['MAE']:.0f}" for c in report["by_crop"]["baseline"]})
     print(f"wrote {out}  ({time.time() - t0:.0f}s)")
 
 

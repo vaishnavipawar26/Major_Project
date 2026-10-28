@@ -26,14 +26,18 @@ function Cell({ label, tag, date, price, value, sub, tone, rec, testid }) {
 export default function SellingRecommendation({ win, storage, crop }) {
   const t = useT();
   if (!win) return <p className="muted small" data-testid="sell-unavailable">{t("sw.unavailable")}</p>;
-  const { planned, comparison: c } = win;
+  // with no validated comparison, the model's raw estimates may still give an EXPERIMENTAL one: labelled as such, never a recommendation
+  const exp = win.comparison.code === "unavailable" && win.experimental?.comparison?.code && win.experimental.comparison.code !== "unavailable" ? win.experimental : null;
+  const c = exp ? exp.comparison : win.comparison;
+  const planned = exp ? { ...win.planned, status: "validated", price: exp.planned.price } : win.planned;
   const alt = c.code === "alternative";
   const best = c.code === "planned_is_best";
   const farmDays = storage.farm_hold_days ?? storage.max_hold_days;
   const earlier = alt && c.wait_days < 0;
 
-  const chip = alt ? { Icon: CalendarCheck, tone: "good", key: earlier ? "earlier" : "later" }
-    : best ? { Icon: CircleCheck, tone: "good", key: "best" } : { Icon: Scale, tone: "neutral", key: "none" };
+  const pre = exp ? "exp." : "";
+  const chip = alt ? { Icon: CalendarCheck, tone: exp ? "neutral" : "good", key: pre + (earlier ? "earlier" : "later") }
+    : best ? { Icon: CircleCheck, tone: exp ? "neutral" : "good", key: pre + "best" } : { Icon: Scale, tone: "neutral", key: "none" };
 
   let plannedNote = null;
   if (planned.status !== "validated") plannedNote = t(planned.status === "unavailable" ? "sw.planned.unavailable" : "sw.planned.notValidated");
@@ -45,16 +49,17 @@ export default function SellingRecommendation({ win, storage, crop }) {
   else if (c.code === "outside_window") why = t("sw.why.outside", { n: win.days });
   else if (win.validation?.mode === "context_only") why = t("sw.why.policy", { crop, reason: win.validation.reasons?.[0] || "" });
   else why = t(c.reason === "planned_not_validated" ? "sw.why.noPlanned" : "sw.why.noDates");
+  if (exp && (alt || best)) why = `${t("sw.exp.prefix")} ${why}`;
 
   return (
-    <div className={`sell-card ${chip.tone}`} data-testid="sell-card" data-outcome={c.code}>
+    <div className={`sell-card ${chip.tone}`} data-testid="sell-card" data-outcome={exp ? `experimental_${c.code}` : c.code} data-experimental={exp ? "true" : undefined}>
       <div className="sell-badge" data-testid="sell-chip"><chip.Icon size={18} aria-hidden="true" />{t(`sw.chip.${chip.key}`)}</div>
 
       <div className="sell-summary">
         <Cell testid="sw-planned" label={t("price.sell.planned")} date={planned.date} price={planned.status === "validated" ? planned.price : null}
-          sub={plannedNote} tag={best ? t("sw.bestTag") : null} rec={best} />
+          sub={plannedNote} tag={best ? t("sw.bestTag") : null} rec={best && !exp} />
         {alt ? (
-          <Cell testid="sw-alt" label={t("price.sell.alt")} date={c.date} price={c.price} rec tag={t("price.sell.recTag")} />
+          <Cell testid="sw-alt" label={t("price.sell.alt")} date={c.date} price={c.price} rec={!exp} tag={t(exp ? "sw.exp.tag" : "price.sell.recTag")} />
         ) : best ? (
           <Cell testid="sw-alt" label={t("price.sell.alt")} value={t("sw.alt.none")} sub={t("sw.alt.noneSub")} />
         ) : (
@@ -68,6 +73,8 @@ export default function SellingRecommendation({ win, storage, crop }) {
           <Cell testid="sw-wait" label={t(earlier ? "price.sell.daysBefore" : "price.sell.waitTime")} value={days(t, c.wait_days)} />
         ) : <Cell testid="sw-wait" label={t("price.sell.waitTime")} value="—" />}
       </div>
+
+      {exp && <p className="pf-exp-warn" data-testid="sw-exp-note">{t("sw.exp.note", { reason: win.validation?.reasons?.[0] || "" })}</p>}
 
       <div className="sell-why">
         <h3><Lightbulb size={16} aria-hidden="true" />{t("price.sell.whyTitle")}</h3>

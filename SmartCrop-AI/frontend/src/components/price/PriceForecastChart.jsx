@@ -112,7 +112,7 @@ export default function PriceForecastChart({ forecast, crop, market }) {
     <div data-testid="pf-chart">
       <div className="pf-stats">
         <Stat testid="pf-start" label={t("pfc.stat.start")} value={win.reference_price != null ? rupees(win.reference_price) : "—"}
-          sub={win.reference_date ? fmtDate(win.reference_date) : null} />
+          sub={forecast.projection ? t("pfc.stat.startFrom", { date: fmtDate(forecast.projection.reference_origin_date), pct: forecast.projection.inflation_annual_pct }) : win.reference_date ? fmtDate(win.reference_date) : null} />
         <Stat testid="pf-planned" label={t("pfc.stat.planned")} value={win.planned.price != null ? rupees(win.planned.price) : "—"}
           sub={fmtDate(win.planned.date)} />
         <Stat testid="pf-high" label={t("pfc.stat.high")} value={peak ? rupees(peak.price) : "—"} sub={peak ? fmtDate(peak.date) : null} />

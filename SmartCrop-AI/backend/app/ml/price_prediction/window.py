@@ -70,6 +70,21 @@ def compare(planned: dict | None, days: list[dict], hold_days: int | None = None
             "diff": diff, "diff_pct": pct, "wait_days": wait, "beyond_storage": beyond}
 
 
+def _experimental(entries: list[dict], planned: dict, inside: bool, hold_days: int | None, comparison: dict) -> dict | None:
+    """The same planned-vs-best comparison on the model's raw estimates for days that did NOT pass the accuracy tests. Only built when no
+    validated comparison exists, and always labelled experimental: it is the model's unvalidated output, never a recommendation."""
+    if comparison["code"] in ("alternative", "planned_is_best") or not inside:
+        return None
+    raw = [{**e, "status": VALIDATED} if e["status"] == NOT_VALIDATED else e for e in entries]
+    if not any(e["status"] == NOT_VALIDATED for e in entries):
+        return None
+    pe = next((e for e in raw if e["date"] == planned["date"]), None)
+    if pe is None or pe["status"] != VALIDATED:
+        return None
+    exp_planned = {"date": pe["date"], "status": VALIDATED, "price": pe["predicted_price"]}
+    return {"validated": False, "planned": exp_planned, "comparison": compare(exp_planned, raw, hold_days)}
+
+
 def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None) -> dict:
     """``f`` = a forecast dict (``input_date``, ``target_date``, ``current_price``, ``chart_path``).
 
@@ -104,12 +119,13 @@ def build_window(f: dict, days: int = WINDOW_DAYS, hold_days: int | None = None)
     comparison = (compare(planned, entries, hold_days) if inside else
                   {"code": "outside_window", "reason": "planned_outside_window", "date": None, "price": None, "diff": None,
                    "diff_pct": None, "wait_days": None})
+    experimental = _experimental(entries, planned, inside, hold_days, comparison)
     pol = f.get("policy") or {}
     # why the model's days are (not) shown: the reliability rule's own result for this crop and distance, in the backend's words
     validation = {"mode": pol.get("mode"), "band": pol.get("band"), "reasons": list(pol.get("reasons") or [])[:3],
                   "validated_up_to_days": f.get("last_validated_days"), "method": (f.get("source") or {}).get("method"),
                   "source_kind": (f.get("source") or {}).get("kind")}
-    return {"days": days, "hold_days": hold_days, "validation": validation, "start_date": start.isoformat(), "end_date": end.isoformat(), "reference_price": ref,
+    return {"days": days, "hold_days": hold_days, "validation": validation, "experimental": experimental, "start_date": start.isoformat(), "end_date": end.isoformat(), "reference_price": ref,
             "reference_date": f.get("forecast_origin_date"), "entries": entries, "planned": planned,
             "highest": ({"date": highest["date"], "price": highest["predicted_price"]} if highest else None),
             "change": change, "comparison": comparison,

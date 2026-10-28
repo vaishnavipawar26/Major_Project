@@ -360,3 +360,9 @@ price in the projection test, **but in the held-out 2025-H2 period it is no bett
 the policy requires. So no crop-specific model is deployed, and no threshold was changed. A Wheat model would need new data (the
 2026 prices) or a method that holds up in 2025-H2 before it could be validated; it would also need its own reliability table before the
 forecaster could mark it validated.
+
+
+**Weather effect by crop** (`--only +weather`, `dataset/reports/environment_feature_eval_by_crop.json`; MAE without / with the six trailing
+weather features, same folds and pairs): Brinjal 860 / 857, Cabbage 263 / 261, Cauliflower 507 / 496 (-2.2 %), Onion 375 / 377, Potato
+187 / 195 (+4.3 % worse), Tomato 684 / 662 (-3.2 %), Wheat 119 / 122 (+2.5 % worse). The effect changes sign between crops (and between
+quarters), so it is not a stable relationship the model can be said to have learned; weather stays out of the deployed model.

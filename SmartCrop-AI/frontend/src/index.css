@@ -2378,3 +2378,4 @@ html:lang(mr) .footer-heading, html:lang(hi) .footer-heading { letter-spacing: 0
 .hist-title { margin: 0.6rem 0 0.2rem; font-weight: 700; }
 .pf-exp-toggle { display: flex; align-items: center; gap: 0.45rem; margin-top: 0.5rem; font-size: 0.86rem; color: var(--text-2); cursor: pointer; }
 .pf-exp-warn { margin: 0.3rem 0 0; padding: 0.45rem 0.7rem; border-radius: 8px; background: var(--harvest-soft); border: 1px solid var(--harvest-line); color: var(--warn-text); font-size: 0.84rem; }
+.wf-contrib { margin: 0.3rem 0 0; font-size: 0.84rem; font-weight: 600; color: var(--brand-strong); }

@@ -226,4 +226,21 @@ describe("What Influences Your Predicted Price? card", () => {
       expect(screen.getByTestId(`wf-${id}`).querySelector(".wf-status").textContent).not.toBe("Used by the model");
     }
   });
+
+  it("shows the model's own signed contribution on the season and crop/market cards, labelled experimental for a blocked crop", async () => {
+    const r = withCharts();
+    r.explanations[0].charts.local.steps.push({ group: "crop_market", title: "Usual behaviour", help: "h", log_contribution: -0.02, inr: -51.4 });
+    renderAt(withState({ ...r, model_inputs: { season: true, crop_market: true } }));
+    await screen.findByTestId("why-factors");
+    expect(screen.getByTestId("wf-season-contrib").textContent).toBe("Model contribution: +₹150 per quintal. It pushes the estimate up.");
+    expect(screen.getByTestId("wf-market-contrib").textContent).toContain("−₹51 per quintal. It pulls the estimate down.");
+    expect(screen.queryByTestId("wf-temperature-contrib")).toBeNull();     // no invented contribution for weather, soil or location
+    expect(screen.queryByTestId("wf-location-contrib")).toBeNull();
+    cleanup();
+    const e = r.explanations[0];
+    e.v3 = { context_only: true };
+    renderAt(withState({ ...r, explanations: [e], model_inputs: { season: true, crop_market: true } }));
+    await screen.findByTestId("why-factors");
+    expect(screen.getByTestId("wf-season-contrib").textContent).toContain("Experimental estimate, not validated");
+  });
 });

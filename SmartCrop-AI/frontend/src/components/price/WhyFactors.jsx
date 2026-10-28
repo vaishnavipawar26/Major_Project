@@ -1,13 +1,13 @@
 import { CalendarDays, Droplets, FlaskConical, Layers, MapPin, Store, Thermometer, CloudRain } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { availability } from "../../utils/factorWeights";
-import { fmtDate } from "../../utils/format";
+import { fmtDate, rupees } from "../../utils/format";
 
 const long = (d) => fmtDate(d, { day: "numeric", month: "long", year: "numeric" });
 const first = (s) => (s ? String(s).split(",")[0] : null);
 
 /** One factor: heading, the actual value, a status label and 1-2 plain sentences. A missing value says "Not available". */
-function Card({ id, Icon, title, value, status, tone, text }) {
+function Card({ id, Icon, title, value, status, tone, text, contrib = null }) {
   const t = useT();
   return (
     <li className="wf-card" data-testid={`wf-${id}`}>
@@ -18,6 +18,7 @@ function Card({ id, Icon, title, value, status, tone, text }) {
       </div>
       <p className="wf-value" data-testid={`wf-${id}-value`}>{value ?? t("wf.na")}</p>
       <p className="wf-text">{text}</p>
+      {contrib && <p className="wf-contrib" data-testid={`wf-${id}-contrib`}>{contrib}</p>}
     </li>
   );
 }
@@ -33,6 +34,16 @@ export function WhyFactorsMatter({ exp, crop, market, targetDate, weather, soil,
   const w = weather?.data, wxOk = weather?.state === "ok" && w && w.status !== "unavailable";
   const groups = new Set((exp?.charts?.local?.steps || []).map((s) => s.group));
   const mi = modelInputs || {};
+  // the model's own signed contribution (SHAP, in rupees per quintal) for a factor group, only when the breakdown adds up to the forecast
+  const local = exp?.charts?.local;
+  const trusted = Boolean(local?.matches_forecast);
+  const experimental = exp?.policy?.mode === "context_only" || Boolean(exp?.v3?.context_only);
+  const contribOf = (group) => {
+    const st = trusted ? (local.steps || []).find((x) => x.group === group && Number.isFinite(x.inr)) : null;
+    if (!st) return null;
+    const amount = rupees(Math.abs(st.inr));
+    return t(st.inr >= 0 ? "wf.contrib.up" : "wf.contrib.down", { amount }) + (experimental ? ` ${t("wf.contrib.exp")}` : "");
+  };
   const usesSeason = modelInputs ? Boolean(mi.season) : groups.has("season");
   const usesMarket = modelInputs ? Boolean(mi.crop_market) : groups.has("crop_market");
   const anyUsed = Boolean(mi.temperature || mi.rainfall || mi.humidity || mi.soil_type || mi.soil_ph);
@@ -59,10 +70,10 @@ export function WhyFactorsMatter({ exp, crop, market, targetDate, weather, soil,
       <ul className="wf-grid">
         <Card id="season" Icon={CalendarDays} title={t("wf.season")} value={long(targetDate)}
           status={t(usesSeason ? "wf.s.model" : "wf.s.unconfirmed")} tone={usesSeason ? "is-model" : "is-context"}
-          text={t(usesSeason ? "wf.season.model" : "wf.season.unconfirmed")} />
+          text={t(usesSeason ? "wf.season.model" : "wf.season.unconfirmed")} contrib={usesSeason ? contribOf("season") : null} />
         <Card id="market" Icon={Store} title={t("wf.market")} value={`${crop} · ${market}`}
           status={t(usesMarket ? "wf.s.model" : "wf.s.unconfirmed")} tone={usesMarket ? "is-model" : "is-context"}
-          text={t(usesMarket ? "wf.market.model" : "wf.market.unconfirmed", { crop, market })} />
+          text={t(usesMarket ? "wf.market.model" : "wf.market.unconfirmed", { crop, market })} contrib={usesMarket ? contribOf("crop_market") : null} />
         {env("temperature", Thermometer, t("wf.temperature"), mi.temperature, `${av.temperature.value} °C`, t("wf.temperature.used", at), t("wf.temperature.text", at))}
         {env("rainfall", CloudRain, t("wf.rainfall"), mi.rainfall, `${av.rainfall.value} mm`, t("wf.rainfall.used", at), t("wf.rainfall.text", at))}
         {env("humidity", Droplets, t("wf.humidity"), mi.humidity, `${av.humidity.value}%`, t("wf.humidity.used", at), t("wf.humidity.text", at))}

@@ -120,3 +120,18 @@ def test_window_carries_the_reliability_result_so_the_page_can_say_why():
     v = build_window(f)["validation"]
     assert v["mode"] == "context_only" and v["reasons"] == ["Real-origin backtest: model -17.2% vs no-change."] and v["validated_up_to_days"] == 0
     assert build_window(forecast([1000.0] * 60, 5))["validation"]["mode"] is None   # no policy in the forecast: nothing is claimed
+
+
+def test_experimental_comparison_only_when_nothing_is_validated_and_never_mixed_in():
+    prices = [1000.0] * 60
+    prices[14] = 1200.0
+    w = build_window(forecast(prices, 5, validated=lambda h: False))
+    assert w["comparison"]["code"] == "unavailable" and w["validated_days"] == 0 and w["highest"] is None
+    e = w["experimental"]
+    assert e["validated"] is False and e["planned"]["price"] == 1000.0
+    assert e["comparison"]["code"] == "alternative" and e["comparison"]["date"] == "2026-11-16" and e["comparison"]["diff"] == 200.0
+    # with validated days the validated comparison stands alone
+    assert build_window(forecast(prices, 5))["experimental"] is None
+    # a missing prediction on the planned date gives no experimental comparison either
+    prices[4] = None
+    assert build_window(forecast(prices, 5, validated=lambda h: False))["experimental"] is None
