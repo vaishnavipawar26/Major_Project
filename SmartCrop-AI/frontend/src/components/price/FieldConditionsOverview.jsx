@@ -69,8 +69,8 @@ function growingInfo(growing, w, sd) {
  * Temperature, humidity and rainfall come from the weather service for the farmer's growing location and the selling date (recorded, forecast
  * or, for older requests at a market, typical); soil pH and soil type are regional SoilGrids estimates, not field measurements. Requests made
  * before the growing location existed use the selling market's town and say so. Numbers use their own scale, soil type is a category label,
- * and anything missing is a dashed "Unavailable" row, never 0. The conditions are shown for context only: the price model does not use them,
- * and nothing here is a SHAP value, a score, a correlation or a price effect.
+ * and anything missing is a dashed "Unavailable" row, never 0. Nothing here is a SHAP value, a score, a correlation or a price effect: the
+ * price model does not take these conditions as inputs.
  */
 export default function FieldConditionsOverview({ weather, soil, growing = null }) {
   const t = useT();
@@ -97,7 +97,9 @@ export default function FieldConditionsOverview({ weather, soil, growing = null 
   const rows = [
     num("temperature", t("fc.temperature"), wxStatus, w?.temperature_c, `${w?.temperature_c} °C`),
     num("humidity", t("fc.humidity"), wxStatus, w?.humidity_pct, `${w?.humidity_pct}%`),
-    num("rainfall", t("fc.rainfall"), wxStatus, w?.rainfall_mm, `${w?.rainfall_mm} mm`),
+    // rainfall says what the number is: that single day's amount, or the average per day at this time of year
+    num("rainfall", t("fc.rainfall"), wxStatus, w?.rainfall_mm,
+      t((w?.rainfall_basis || (w?.status === "typical" ? "daily_average" : "single_day")) === "daily_average" ? "fc.rain.avg" : "fc.rain.single", { mm: w?.rainfall_mm })),
     num("ph", t("fc.ph"), phStatus, sd?.ph, `${sd?.ph}`),
     { id: "soil", label: t("fc.soil"), kind: "cat", status: soilStatus, span: 100, range: null, pct: null, valueText: soilStatus === "ok" ? sd.soil_type : missing(soilStatus) },
     { id: "location", label: t("fc.location"), kind: "cat", status: locStatus, span: 100, range: null, pct: null, valueText: locText },

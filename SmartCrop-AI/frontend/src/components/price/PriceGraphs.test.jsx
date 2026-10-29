@@ -12,7 +12,7 @@ import FactorBars, { axisTicks, orderRows } from "./FactorBars";
 import SimplePriceChart, { SHOW_DAYS, chartRows, makeScale, priceAxis } from "./SimplePriceChart";
 import FieldConditions from "./FieldConditionsOverview";
 import UnderstandPrediction from "./UnderstandPrediction";
-import { aboutPct, barRows, calculation, explanationOk, splitSteps } from "./factorModel";
+import { aboutPct, barRows, calculation, explanationOk, scalePct, splitSteps } from "./factorModel";
 
 afterEach(cleanup);
 
@@ -124,6 +124,19 @@ const local = (over = {}) => ({
 const exp = (over = {}) => ({ base_value: 0.01, date: "2026-11-02", technical: { reconstruction_ok: true, model_output_log: 0.035 }, charts: { local: local() }, ...over });
 
 describe("factorModel (model units, not rupees)", () => {
+  it("scalePct: a guidance value's place on its own scale, never invented for a category or without a min/max", () => {
+    expect(scalePct("humidity", 61)).toBe(61);
+    expect(scalePct("ph", 6.8)).toBe(49);
+    expect(scalePct("temperature", 25, { temperature_min_c: 15, temperature_max_c: 35 })).toBe(50);
+    expect(scalePct("temperature", 40, { temperature_min_c: 15, temperature_max_c: 35 })).toBe(100);   // clamped
+    expect(scalePct("temperature", 10, { temperature_min_c: 15, temperature_max_c: 35 })).toBe(0);
+    expect(scalePct("temperature", 25, {})).toBeNull();                                             // no min/max: the plain value
+    expect(scalePct("temperature", 25, { temperature_min_c: null, temperature_max_c: 35 })).toBeNull();
+    expect(scalePct("temperature", 25, { temperature_min_c: 30, temperature_max_c: 30 })).toBeNull();
+    expect(scalePct("soil", "Vertisols")).toBeNull();
+    expect(scalePct("location", "Nashik")).toBeNull();
+    expect(scalePct("ph", null)).toBeNull();
+  });
   it("orders bars by SHAP size, folds the small ones into one and keeps every value", () => {
     const many = local({ steps: Array.from({ length: 10 }, (_, i) => ({ group: `g${i}`, title: `G${i}`, help: "", log_contribution: (i + 1) / 100 })) });
     const rows = barRows(many, 6);
@@ -228,7 +241,7 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
       .toEqual(["fc-temperature", "fc-humidity", "fc-rainfall", "fc-ph", "fc-soil", "fc-location"]);
     expect(val("temperature")).toBe("24 °C");
     expect(val("humidity")).toBe("80%");
-    expect(val("rainfall")).toBe("6.2 mm");
+    expect(val("rainfall")).toBe("6.2 mm that day");                 // a forecast: the amount for that single day
     expect(val("ph")).toBe("Unavailable");
     expect(val("soil")).toBe("Vertisols");
     expect(val("location")).toBe("Not provided");
@@ -269,7 +282,7 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
     expect(screen.getByTestId("fc-note-weather").textContent).toBe("Temperature, humidity and rainfall are the forecast for 2 Nov 2026.");
     expect(screen.getByTestId("fc-note-soil").textContent).toBe("Soil pH and soil type are regional estimates (at the market town), not measurements from your farm.");   // an older result: no growing location
     expect(screen.getByTestId("fc-note-location").textContent).toContain("not given for this prediction");
-    expect(screen.getByTestId("fc-note").textContent).toBe("Environmental conditions shown for context; these factors are not inputs to the current price prediction model.");
+    expect(screen.getByTestId("fc-note").textContent).toBe("Conditions at your growing location around your selling date, to help you plan your harvest and storage.");
     expect(root().textContent).not.toMatch(/Open-Meteo|SoilGrids|GeoNames|ISRIC|geocoding|API|Source:/);                                  // no provider or technical names anywhere
     expect(screen.queryByTestId("fc-sources")).toBeNull();
     expect(root().textContent).not.toMatch(/shap|score|correlat|null|undefined|NaN/i);
@@ -293,7 +306,7 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
     expect(screen.getByTestId("fc-note-soil").textContent).toContain("matches more than one town");
     cleanup();
     render(<FieldConditions weather={{ state: "ok", data: { status: "unavailable", reason: "beyond_forecast_range", temperature_c: null } }} soil={soil} />);
-    expect(screen.getByTestId("fc-note-weather").textContent).toContain("beyond the 15-day weather forecast");
+    expect(screen.getByTestId("fc-note-weather").textContent).toContain("beyond the 14-day weather forecast");
     expect(screen.getByTestId("fc-note-soil").textContent).toContain("The soil map has no pH value for this area.");
   });
   it("missing weather and soil read Unavailable on dashed rows, never 0 and never a bar", () => {
@@ -323,10 +336,11 @@ describe("Field Conditions: one combined chart (FieldConditionsOverview)", () =>
   it("a typical-weather answer is labelled as not a forecast, and an out-of-range value fills its bar but still shows its true number", () => {
     render(<FieldConditions weather={{ state: "ok", data: { ...wx.data, status: "typical", rainfall_mm: 120, reason: "service_unreachable", served_from: "stored_history", source: "Stored market weather, same time of year, 2015-2025" } }} soil={soil} />);
     const w = screen.getByTestId("fc-note-weather").textContent;
-    expect(w).toContain("typical for this time of year, an estimate and not a measurement for 2 Nov 2026");
+    expect(w).toContain("typical for this time of year (averages of earlier years), an estimate and not a forecast for 2 Nov 2026");
+    expect(w).toContain("Rainfall is the average per day.");
     expect(w).toContain("The live forecast could not be reached.");
     expect(w).not.toMatch(/stored|project|Open-Meteo/);
-    expect(val("rainfall")).toBe("120 mm");
+    expect(val("rainfall")).toBe("120 mm a day (typical)");          // typical: an average per day, never a single day's amount
     const r = row("rainfall").querySelectorAll("rect");
     expect(Number(r[1].getAttribute("width"))).toBeCloseTo(Number(r[0].getAttribute("width")), 0);
   });
@@ -350,7 +364,7 @@ describe("Field Conditions for the farmer's growing location", () => {
   it("shows the returned values and the growing location, with a plain explanation for each", () => {
     render(<FieldConditions weather={wx} soil={soil} growing={growing} />);
     expect([val("temperature"), val("humidity"), val("rainfall"), val("ph"), val("soil"), val("location")])
-      .toEqual(["22.5 °C", "89%", "12 mm", "7.8", "Vertisols", "Nashik"]);
+      .toEqual(["22.5 °C", "89%", "12 mm that day", "7.8", "Vertisols", "Nashik"]);
     expect(screen.getByTestId("fc-location").getAttribute("data-status")).toBe("ok");
     expect(screen.getByTestId("fc-note-location").textContent).toBe("Growing location: Nashik, Maharashtra, India.");
     expect(screen.getByTestId("fc-note-weather").textContent).toBe("Temperature, humidity and rainfall are the forecast for 2 Nov 2026.");

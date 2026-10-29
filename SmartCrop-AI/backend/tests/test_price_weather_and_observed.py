@@ -402,3 +402,68 @@ def test_a_first_timeout_pauses_the_host_at_once_so_a_parallel_request_does_not_
     monkeypatch.setattr(http_client.httpx, "get", slow)
     assert http_client.get_json(pw.SOILGRIDS_CLASS, {}, 1.0) == (None, "timeout")
     assert len(seen) == 2                                       # only this request's own retry reached the network
+
+
+# ------------------------------------------------------------------ seasonal estimate for any place (the growing location)
+NASIK = {"label": "Nashik, Maharashtra, India", "latitude": 19.9973, "longitude": 73.791, "source": "test fixture"}
+
+
+def _archive(calls, temp=20.0, rain=0.4, hum=60):     # synthetic archive: one value per requested day
+    def get(url, params=None, timeout=None, verify=None):
+        calls.append((url, params["start_date"], params["end_date"]))
+        d0, d1 = dt.date.fromisoformat(params["start_date"]), dt.date.fromisoformat(params["end_date"])
+        days = [d0 + dt.timedelta(days=i) for i in range((d1 - d0).days + 1)]
+        return _resp(body={"daily": {"time": [d.isoformat() for d in days], "temperature_2m_mean": [temp] * len(days),
+                                     "precipitation_sum": [rain] * len(days), "relative_humidity_2m_mean": [hum] * len(days)}})
+    return get
+
+
+def test_growing_location_beyond_the_forecast_gets_a_labelled_seasonal_estimate(monkeypatch):
+    calls = []
+    monkeypatch.setattr(http_client.httpx, "get", _archive(calls))
+    day = TODAY + dt.timedelta(days=40)
+    w = weather_context("All markets (state median)", day, NASIK)
+    assert w["status"] == "typical" and w["place_kind"] == "growing_location" and w["place"] == NASIK["label"]
+    assert (w["temperature_c"], w["rainfall_mm"], w["humidity_pct"]) == (20.0, 0.4, 60)
+    assert w["rainfall_basis"] == "daily_average" and "not a forecast" in w["note"]
+    assert w["source"] == f"Open-Meteo historical weather, same time of year, {TODAY.year - 5}-{TODAY.year - 1}"
+    # one archive request spanning the same calendar window in the last five complete years, nothing after last year
+    assert len(calls) == 1 and "archive" in calls[0][0]
+    assert dt.date.fromisoformat(calls[0][2]) < dt.date(TODAY.year, 1, 1) + dt.timedelta(days=7)
+    # stored: the next request for the same place and day is answered without calling the provider
+    again = weather_context("All markets (state median)", day, NASIK)
+    assert len(calls) == 1 and again["status"] == "typical" and again["temperature_c"] == 20.0
+
+
+def test_seasonal_estimate_averages_only_the_same_time_of_year(monkeypatch):
+    rows = {}
+    for y in range(2021, 2026):
+        for k in range(-30, 31):
+            d = dt.date(y, 12, 6) + dt.timedelta(days=k)
+            near = abs(k) <= pw.SEASONAL_WINDOW_DAYS
+            rows[d.isoformat()] = {"temperature_c": 10.0 if near else 40.0, "rainfall_mm": 2.0 if near else 50.0, "humidity_pct": 50 if near else 99}
+    monkeypatch.setattr(pw, "_fetch_range", lambda *a, **k: (rows, None))
+    v, err = pw._seasonal(19.9, 73.8, dt.date(2026, 12, 6))
+    assert err is None and (v["temperature_c"], v["rainfall_mm"], v["humidity_pct"]) == (10.0, 2.0, 50)   # days far from 6 Dec never count
+
+
+def test_provider_down_beyond_the_forecast_is_unavailable_never_a_made_up_value():
+    w = weather_context("All markets (state median)", TODAY + dt.timedelta(days=40), NASIK)   # conftest: every request fails
+    assert w["status"] == "unavailable" and w["reason"] == "service_unreachable"
+    assert w["temperature_c"] is None and w["rainfall_mm"] is None and w["humidity_pct"] is None
+
+
+def test_a_forecast_day_reports_rain_for_that_single_day(monkeypatch):
+    monkeypatch.setattr(http_client.httpx, "get", _fake_weather([], values=(25.0, 3.0, 60)))
+    w = weather_context("All markets (state median)", TODAY + dt.timedelta(days=5), NASIK)
+    assert w["status"] == "forecast" and w["rainfall_basis"] == "single_day"
+
+
+def test_environmental_factors_keep_growing_location_and_selling_market_apart_and_say_what_the_rain_is(monkeypatch):
+    monkeypatch.setattr(http_client.httpx, "get", _archive([]))
+    monkeypatch.setattr(pw, "resolve_growing", lambda g: (NASIK, None))
+    e = environmental_factors("Pune(Khadiki)", TODAY + dt.timedelta(days=40), {"name": "Nashik"})
+    assert e["market"] == "Pune(Khadiki)" and e["location"]["kind"] == "growing_location" and e["location"]["name"] == NASIK["label"]
+    assert e["weather"]["place"] == NASIK["label"]                       # weather is for where the crop grows, not the selling market
+    assert e["temperature"]["data_type"] == "typical" and e["rainfall"]["period"] == "average per day at this time of year"
+    assert e["growing_location"]["value"] == NASIK["label"]

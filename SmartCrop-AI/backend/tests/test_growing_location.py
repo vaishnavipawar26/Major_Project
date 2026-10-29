@@ -121,12 +121,25 @@ def test_a_past_date_uses_the_archive_and_a_near_future_date_the_forecast(monkey
     assert future["status"] == "forecast" and "api.open-meteo.com/v1/forecast" in calls[1][0] and calls[1][1]["start_date"] == "2025-06-26"
 
 
-def test_beyond_the_forecast_range_a_growing_location_is_unavailable_not_a_market_average(monkeypatch):
+def test_beyond_the_forecast_range_a_growing_location_gets_its_own_seasonal_estimate_never_the_market_average(monkeypatch):
     calls = []
-    monkeypatch.setattr(http_client.httpx, "get", providers(calls))
+    def get(url, params=None, timeout=None, verify=None):            # synthetic archive, one value per requested day
+        calls.append((url, dict(params or {})))
+        d0, d1 = dt.date.fromisoformat(params["start_date"]), dt.date.fromisoformat(params["end_date"])
+        days = [(d0 + dt.timedelta(days=i)).isoformat() for i in range((d1 - d0).days + 1)]
+        class R:
+            status_code = 200
+            def json(self):
+                return {"daily": {"time": days, "temperature_2m_mean": [21.0] * len(days), "precipitation_sum": [0.5] * len(days),
+                                  "relative_humidity_2m_mean": [55] * len(days)}}
+        return R()
+    monkeypatch.setattr(http_client.httpx, "get", get)
     r = weather_context("APMC Pune", TODAY + dt.timedelta(days=40), {**NASHIK, "label": NASHIK["name"]})
-    assert (r["status"], r["reason"], r["temperature_c"]) == ("unavailable", "beyond_forecast_range", None)
-    assert not [u for u, _ in calls if "open-meteo" in u]                 # nothing asked for a day no forecast covers
+    assert (r["status"], r["temperature_c"], r["place_kind"]) == ("typical", 21.0, "growing_location")
+    assert r["source"].startswith("Open-Meteo historical weather, same time of year")   # not "Stored market weather" of APMC Pune
+    assert "not a forecast" in r["note"] and r["reason"] == "beyond_forecast_range"
+    (url, params), = calls                                                 # one archive request, at the growing location itself
+    assert "archive" in url and (params["latitude"], params["longitude"]) == (NASHIK["latitude"], NASHIK["longitude"])
 
 
 # ------------------------------------------------------------------------------------------------ invalid or missing locations

@@ -264,7 +264,7 @@ const en = {
   "fc.ph": "Soil pH",
   "fc.soil": "Soil Type",
   "fc.location": "Growing Location",
-  "fc.note": "Environmental conditions shown for context; these factors are not inputs to the current price prediction model.",
+  "fc.note": "Conditions at your growing location around your selling date, to help you plan your harvest and storage.",
   "fc.when.observed": "Recorded on {date}",
   "fc.when.forecast": "Forecast for {date}",
   "fc.when.typical": "Typical for this time of year",
@@ -279,7 +279,7 @@ const en = {
   "fc.why.location": "Weather and soil are checked for this place.",
   "fc.note.weather.forecast": "Temperature, humidity and rainfall are the forecast for {date}.",
   "fc.note.weather.observed": "Temperature, humidity and rainfall were recorded on {date}.",
-  "fc.note.weather.typical": "Temperature, humidity and rainfall are typical for this time of year, an estimate and not a measurement for {date}.",
+  "fc.note.weather.typical": "Temperature, humidity and rainfall are typical for this time of year (averages of earlier years), an estimate and not a forecast for {date}. Rainfall is the average per day.",
   "fc.note.weatherNone": "Temperature, humidity and rainfall are unavailable. {why}",
   "fc.note.soil": "Soil pH and soil type are regional estimates ({scope}), not measurements from your farm.",
   "fc.note.soilNone": "Soil pH and soil type are unavailable. {why}",
@@ -293,7 +293,7 @@ const en = {
   "fc.reason.state_series": "This price covers many markets, so there is no single place to look up.",
   "fc.reason.soilUnreachable": "Soil information could not be loaded just now. Please try again later.",
   "fc.reason.service_unreachable": "The data service could not be reached just now. Please try again later.",
-  "fc.reason.beyond_forecast_range": "Your date is beyond the 15-day weather forecast, and no typical values are available for this place.",
+  "fc.reason.beyond_forecast_range": "Your date is beyond the 14-day weather forecast, and no typical values could be found for this place.",
   "fc.reason.location_not_found": "No place with this name was found.",
   "fc.reason.not_provided": "No growing location was given.",
   "fc.reason.no_data": "No data exists for this place and date.",
@@ -1119,6 +1119,8 @@ const en = {
   "gc.estimateShifted": "Typical estimate · {season} · planting in {month}",
   "gc.estimateSeason": "Typical estimate · {season}",
   "gc.estimateTip": "Typical months for the crop's main planting season; they vary by region, variety and climate. Sources: {sources}",
+  "fc.rain.single": "{mm} mm that day",
+  "fc.rain.avg": "{mm} mm a day (typical)",
 };
 
 export default en;

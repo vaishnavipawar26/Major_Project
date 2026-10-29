@@ -60,6 +60,10 @@ STATE_SERIES = "All markets (state median)"
 TTL_FORECAST = timedelta(hours=3)
 TTL_RECENT = timedelta(hours=6)
 TTL_SOIL = timedelta(days=30)
+SEASONAL_YEARS = 5            # a seasonal estimate averages the same calendar window in this many complete earlier years
+SEASONAL_WINDOW_DAYS = 3      # ... taking the days within this many days of the calendar day
+SEASONAL_MIN_DAYS = 7         # fewer valid days than this: no estimate
+TTL_SEASONAL = timedelta(days=30)
 TTL_SOIL_PARTIAL = timedelta(hours=1)   # a soil answer missing pH or type is asked for again soon; a complete one is kept 30 days
 UNREACHABLE = {"timeout", "network", "rate_limited", "server_error", "rejected", "bad_response", "unknown", "backoff"}
 FACTOR_BUDGET_SECONDS = 8.0   # the prediction response never waits longer than this for environmental data
@@ -124,9 +128,11 @@ def _no_place_reason(market: str) -> tuple[str, str]:
 
 # ----------------------------------------------------------------------------------------------------------------------- weather
 def _out(status: str, market: str, day: date, **kw) -> dict:
+    # rainfall_basis: "single_day" = the amount on that date (forecast or recorded); "daily_average" = average per day at this time of year
     base = {"status": status, "market": market, "date": day.isoformat(), "temperature_c": None, "rainfall_mm": None,
             "humidity_pct": None, "source": None, "place": None, "latitude": None, "longitude": None, "note": None,
-            "served_from": None, "retrieved_at": None, "reason": None, "place_kind": None}
+            "served_from": None, "retrieved_at": None, "reason": None, "place_kind": None,
+            "rainfall_basis": "single_day" if status in ("forecast", "observed") else "daily_average" if status == "typical" else None}
     return {**base, **kw}
 
 
@@ -186,6 +192,39 @@ def _typical(market: str, day: date, m: pd.DataFrame | None = None) -> dict | No
             "years": sorted({int(y) for y in near["date"].dt.year})}
 
 
+def _same_day(d: date, year: int) -> date:
+    try:
+        return d.replace(year=year)
+    except ValueError:            # 29 February in a year without it
+        return d.replace(year=year, day=28)
+
+
+def _seasonal(lat: float, lon: float, day: date) -> tuple[dict | None, str | None]:
+    """Typical weather for this place at this time of year: the mean of Open-Meteo's historical archive within SEASONAL_WINDOW_DAYS of the
+    same calendar day in each of the last SEASONAL_YEARS complete years (one request). Rainfall is the AVERAGE PER DAY of that window. Returns
+    (values with "years", None) or (None, reason). A statistic of earlier years: never a forecast or an observation of ``day``."""
+    last = today().year - 1
+    years = list(range(last - SEASONAL_YEARS + 1, last + 1))
+    first_day = _same_day(day, years[0]) - timedelta(days=SEASONAL_WINDOW_DAYS)
+    last_day = _same_day(day, years[-1]) + timedelta(days=SEASONAL_WINDOW_DAYS)
+    url, extra = _url("archive")
+    rows, err = _fetch_range(url, lat, lon, first_day, last_day, extra)
+    if err:
+        return None, err
+    keep = []
+    for y in years:
+        c = _same_day(day, y)
+        for k in range(-SEASONAL_WINDOW_DAYS, SEASONAL_WINDOW_DAYS + 1):
+            v = rows.get((c + timedelta(days=k)).isoformat())
+            if v:
+                keep.append(v)
+    if len(keep) < SEASONAL_MIN_DAYS:
+        return None, "no_data"
+    mean = lambda f: sum(v[f] for v in keep) / len(keep)   # noqa: E731
+    return {"temperature_c": round(mean("temperature_c"), 1), "rainfall_mm": round(mean("rainfall_mm"), 1),
+            "humidity_pct": round(mean("humidity_pct")), "years": years}, None
+
+
 def _from_store(e: dict, market: str, day: date, where: dict) -> dict:
     vals = {k: e[k] for k in ("temperature_c", "humidity_pct", "rainfall_mm")}
     if vals["humidity_pct"] is not None:
@@ -240,7 +279,7 @@ def weather_context(market: str, day: date, place: dict | None = None) -> dict:
         v, err = _fetch(url, lat, lon, day, extra)
         if v:
             e = store.put("weather", data_type, market, name, lat, lon, day.isoformat(), day, v, src, ttl)
-            return _out(data_type, market, day, **v, **where, source=src, served_from="live", retrieved_at=e["retrieved_at"])
+            return _out(data_type, market, day, **v, **where, source=src, served_from="live", retrieved_at=e["retrieved_at"], rainfall_basis="single_day")
         if stored:       # the provider failed: an earlier valid answer for the same place and day is better than nothing, and says so
             return _from_store(stored, market, day, where)
         reason = "service_unreachable" if err in UNREACHABLE else "no_data"
@@ -249,9 +288,29 @@ def weather_context(market: str, day: date, place: dict | None = None) -> dict:
     if ty:
         yrs = ty.pop("years")
         return _out("typical", market, day, **ty, **where, source=f"Stored market weather, same time of year, {yrs[0]}-{yrs[-1]}",
-                    served_from="stored_history", reason=reason,
+                    served_from="stored_history", reason=reason, rainfall_basis="daily_average",
                     note="No observation or forecast could be used for this date. These are typical values for this time of year.")
-    return _out("unavailable", market, day, **where, reason=reason or "no_data", note="Weather information unavailable.")
+    # any other place (above all the farmer's growing location): the same provider's archive for this place, same time of year
+    stored = store.get("weather", lat, lon, day.isoformat(), "typical")
+    if stored and stored["is_fresh"]:
+        out = _from_store(stored, market, day, where)
+        return {**out, "reason": reason, "rainfall_basis": "daily_average",
+                "note": "No forecast reaches this date. These are typical values for this time of year, not a forecast."}
+    sv, s_err = _seasonal(lat, lon, day)
+    if sv:
+        yrs = sv.pop("years")
+        src = f"Open-Meteo historical weather, same time of year, {yrs[0]}-{yrs[-1]}"
+        e = store.put("weather", "typical", market, name, lat, lon, day.isoformat(), day, sv, src, TTL_SEASONAL)
+        return _out("typical", market, day, **sv, **where, source=src, served_from="live", retrieved_at=e["retrieved_at"], reason=reason,
+                    rainfall_basis="daily_average",
+                    note="No forecast reaches this date. These are typical values for this time of year, not a forecast.")
+    if stored:
+        out = _from_store(stored, market, day, where)
+        return {**out, "reason": reason, "rainfall_basis": "daily_average",
+                "note": "No forecast reaches this date. These are typical values for this time of year, not a forecast."}
+    if reason is None or reason == "beyond_forecast_range":
+        reason = "service_unreachable" if s_err in UNREACHABLE else (reason or "no_data")
+    return _out("unavailable", market, day, **where, reason=reason, note="Weather information unavailable.")
 
 
 WINDOW_DAYS = 60
@@ -570,7 +629,8 @@ def environmental_factors(market: str, selling_date: date, growing: dict | None 
         "note": "Environmental conditions shown for context; these factors are not inputs to the current price prediction model.",
         "temperature": _factor(w.get("temperature_c"), "°C", w_reason, wdt, w, measure="daily mean", date=w.get("date")),
         "humidity": _factor(w.get("humidity_pct"), "%", w_reason, wdt, w, measure="daily mean relative humidity", date=w.get("date")),
-        "rainfall": _factor(w.get("rainfall_mm"), "mm", w_reason, wdt, w, period="daily total", date=w.get("date")),
+        "rainfall": _factor(w.get("rainfall_mm"), "mm", w_reason, wdt, w, date=w.get("date"),
+                            period="average per day at this time of year" if w.get("rainfall_basis") == "daily_average" else "daily total"),
         "soil_ph": _factor(s.get("ph"), "pH", s.get("ph_reason") or s_reason, "soil_estimate", s, depth="0-5 cm",
                            scope=s.get("ph_scope")),
         "soil_type": _factor(s.get("soil_type"), None, s_reason, "soil_estimate", s, classification="WRB reference soil group"),

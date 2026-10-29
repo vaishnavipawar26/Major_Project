@@ -1,32 +1,36 @@
-import { CalendarDays, Droplets, FlaskConical, Layers, MapPin, Store, Thermometer, CloudRain } from "lucide-react";
+import { CalendarDays, Droplets, FlaskConical, Layers, MapPin, Store, Thermometer } from "lucide-react";
 import { useT } from "../../i18n/LanguageContext";
 import { availability } from "../../utils/factorWeights";
-import { fmtDate, rupees } from "../../utils/format";
+import { fmtDate } from "../../utils/format";
+import { modelContributions, whyLines } from "./factorModel";
 
 const long = (d) => fmtDate(d, { day: "numeric", month: "long", year: "numeric" });
 const first = (s) => (s ? String(s).split(",")[0] : null);
 
-/** One factor: heading, the actual value, a status label and 1-2 plain sentences. A missing value says "Not available". */
-function Card({ id, Icon, title, value, status, tone, text, contrib = null }) {
-  const t = useT();
+/** One card: icon, title, status badge, the big value and ONE short line, or, for a model factor with a contribution, its TWO short lines
+ *  (what the past prices showed, then what the model adds or subtracts). */
+function Card({ id, Icon, title, value, badge, line, contrib = false }) {
   return (
     <li className="wf-card" data-testid={`wf-${id}`}>
       <div className="wf-head">
         <Icon size={17} aria-hidden="true" />
         <h3>{title}</h3>
-        <span className={`wf-status ${tone}`}>{status}</span>
+        <span className={`wf-status ${badge.tone}`}>{badge.text}</span>
       </div>
-      <p className="wf-value" data-testid={`wf-${id}-value`}>{value ?? t("wf.na")}</p>
-      <p className="wf-text">{text}</p>
-      {contrib && <p className="wf-contrib" data-testid={`wf-${id}-contrib`}>{contrib}</p>}
+      <p className="wf-value" data-testid={`wf-${id}-value`}>{value}</p>
+      <p className={contrib ? "wf-contrib" : "wf-text"} data-testid={`wf-${id}-${contrib ? "contrib" : "line"}`}>
+        {contrib ? line.map((l, i) => <span key={i}>{i > 0 && <br />}{l}</span>) : line}
+      </p>
     </li>
   );
 }
 
 /**
- * "Why these factors matter": one short card per factor of the histogram, built from this prediction's own data (selling date, crop,
- * market, the growing location's weather and soil). Season and crop/market say they matter to the model only when the explanation really
- * contains those model inputs; weather, soil and location are labelled context and never described as changing the price.
+ * "Why these factors matter": seven cards built from this prediction's own data (selling date, crop and market, and the weather and regional
+ * soil looked up for the farmer's growing location). Season and crop/market explain the model's own signed contribution (SHAP, rupees per
+ * quintal) in two lines when the explanation provides it and the breakdown adds up to the forecast; weather and soil cards never get one,
+ * because the current price model does not take them as inputs. Each value carries a short source label (forecast / recorded / typical for
+ * this time of year / regional estimate); a missing value says "Not available".
  */
 export function WhyFactorsMatter({ exp, crop, market, targetDate, weather, soil, growing, modelInputs = null }) {
   const t = useT();
@@ -34,56 +38,42 @@ export function WhyFactorsMatter({ exp, crop, market, targetDate, weather, soil,
   const w = weather?.data, wxOk = weather?.state === "ok" && w && w.status !== "unavailable";
   const groups = new Set((exp?.charts?.local?.steps || []).map((s) => s.group));
   const mi = modelInputs || {};
-  // the model's own signed contribution (SHAP, in rupees per quintal) for a factor group, only when the breakdown adds up to the forecast
-  const local = exp?.charts?.local;
-  const trusted = Boolean(local?.matches_forecast);
-  const experimental = exp?.policy?.mode === "context_only" || Boolean(exp?.v3?.context_only);
-  const contribOf = (group) => {
-    const st = trusted ? (local.steps || []).find((x) => x.group === group && Number.isFinite(x.inr)) : null;
-    if (!st) return null;
-    const amount = rupees(Math.abs(st.inr));
-    return t(st.inr >= 0 ? "wf.contrib.up" : "wf.contrib.down", { amount }) + (experimental ? ` ${t("wf.contrib.exp")}` : "");
-  };
+  const mc = modelContributions(exp);
+  const experimental = mc.experimental;
+  const contribOf = (group) => (mc[group] == null ? null : whyLines(t, group, mc[group], { crop, market }));
   const usesSeason = modelInputs ? Boolean(mi.season) : groups.has("season");
   const usesMarket = modelInputs ? Boolean(mi.crop_market) : groups.has("crop_market");
-  const anyUsed = Boolean(mi.temperature || mi.rainfall || mi.humidity || mi.soil_type || mi.soil_ph);
-  const kind = wxOk ? t(`wf.kind.${w.status}`) : "";
-  const where = first(w?.place) || market;
-  const place = av.location.value || first(typeof growing === "string" ? growing : growing?.name);
+  const seasonContrib = usesSeason ? contribOf("season") : null;
+  const marketContrib = usesMarket ? contribOf("crop_market") : null;
   const na = t("wf.na");
-
-  // a weather / soil card: "Used by the model" only when the loaded model has that input; otherwise context only (or a regional estimate)
-  const env = (id, Icon, label, used, value, usedText, contextText, estimate = false) => {
-    const ok = av[id].ok;
-    const status = used ? (ok ? t("wf.s.model") : t("wf.na")) : t(estimate ? "wf.s.estimate" : "wf.s.context");
-    const tone = used && ok ? "is-model" : estimate ? "is-estimate" : "is-context";
-    return <Card key={id} id={id} Icon={Icon} title={label} value={ok ? value : null} status={status} tone={tone}
-      text={!ok ? t("wf.missing") : used ? usedText : contextText} />;
-  };
-  const date = fmtDate(w?.date);
-  const at = { kind, where, date };
+  const place = av.location.value || first(typeof growing === "string" ? growing : growing?.name);
+  // a weather value carries its short source label: (forecast), (recorded) or (typical for this time of year)
+  const src = wxOk ? ` (${t(`wf.src.${w.status}`)})` : "";
+  const show = (id, text) => (av[id].ok ? text : na);
+  const badge = (key) => ({ tone: { model: "is-model", unconfirmed: "is-context", guidance: "is-context", estimate: "is-estimate", location: "is-context" }[key],
+    text: t(`wf.s.${key}`) });
+  // a weather or soil card is "Used by the model" only if the loaded model really has that input (none at present)
+  const env = (key, fallback) => badge(mi[key] ? "model" : fallback);
 
   return (
     <section className="card xp-section" aria-labelledby="wf-title" data-testid="why-factors">
       <h2 id="wf-title" className="cr-h2">{t("wf.title")}</h2>
-      <p className="muted small wf-note" data-testid="wf-note">{t(anyUsed ? "wf.noteUsed" : "wf.note")}</p>
       <ul className="wf-grid">
-        <Card id="season" Icon={CalendarDays} title={t("wf.season")} value={long(targetDate)}
-          status={t(usesSeason ? "wf.s.model" : "wf.s.unconfirmed")} tone={usesSeason ? "is-model" : "is-context"}
-          text={t(usesSeason ? "wf.season.model" : "wf.season.unconfirmed")} contrib={usesSeason ? contribOf("season") : null} />
-        <Card id="market" Icon={Store} title={t("wf.market")} value={`${crop} · ${market}`}
-          status={t(usesMarket ? "wf.s.model" : "wf.s.unconfirmed")} tone={usesMarket ? "is-model" : "is-context"}
-          text={t(usesMarket ? "wf.market.model" : "wf.market.unconfirmed", { crop, market })} contrib={usesMarket ? contribOf("crop_market") : null} />
-        {env("temperature", Thermometer, t("wf.temperature"), mi.temperature, `${av.temperature.value} °C`, t("wf.temperature.used", at), t("wf.temperature.text", at))}
-        {env("rainfall", CloudRain, t("wf.rainfall"), mi.rainfall, `${av.rainfall.value} mm`, t("wf.rainfall.used", at), t("wf.rainfall.text", at))}
-        {env("humidity", Droplets, t("wf.humidity"), mi.humidity, `${av.humidity.value}%`, t("wf.humidity.used", at), t("wf.humidity.text", at))}
-        {env("soil", Layers, t("wf.soil"), mi.soil_type, av.soil.ok ? `${av.soil.value} ${t("wf.estimate")}` : null, t("wf.soil.used", { value: av.soil.value, market }),
-          t("wf.soil.text", { value: av.soil.value }), true)}
-        {env("ph", FlaskConical, t("wf.ph"), mi.soil_ph, av.ph.ok ? `${av.ph.value} ${t("wf.estimate")}` : null, t("wf.ph.used", { value: av.ph.value, market }),
-          t("wf.ph.text", { value: av.ph.value }), true)}
-        <Card id="location" Icon={MapPin} title={t("wf.location")} value={place || na} status={t("wf.s.location")} tone="is-context"
-          text={place ? t("wf.location.text", { place }) : t("wf.missing")} />
+        <Card id="season" Icon={CalendarDays} title={t("wf.season")} value={long(targetDate)} badge={badge(usesSeason ? "model" : "unconfirmed")}
+          line={seasonContrib || t("wf.line.season")} contrib={Boolean(seasonContrib)} />
+        <Card id="market" Icon={Store} title={t("wf.market")} value={`${crop} · ${market}`} badge={badge(usesMarket ? "model" : "unconfirmed")}
+          line={marketContrib || t("wf.line.market")} contrib={Boolean(marketContrib)} />
+        <Card id="temperature" Icon={Thermometer} title={t("wf.c.temperature")} value={show("temperature", `${av.temperature.value} °C${src}`)}
+          badge={env("temperature", "guidance")} line={t("wf.line.temperature")} />
+        <Card id="humidity" Icon={Droplets} title={t("wf.c.humidity")} value={show("humidity", `${av.humidity.value}%${src}`)}
+          badge={env("humidity", "guidance")} line={t("wf.line.humidity")} />
+        <Card id="soil" Icon={Layers} title={t("wf.c.soil")} value={show("soil", `${av.soil.value} ${t("wf.estimate")}`)}
+          badge={env("soil_type", "estimate")} line={t("wf.line.soil")} />
+        <Card id="ph" Icon={FlaskConical} title={t("wf.c.ph")} value={show("ph", `${av.ph.value} ${t("wf.estimate")}`)}
+          badge={env("soil_ph", "estimate")} line={t("wf.line.ph")} />
+        <Card id="location" Icon={MapPin} title={t("wf.c.location")} value={place || na} badge={badge("location")} line={t("wf.line.location")} />
       </ul>
+      {experimental && (seasonContrib || marketContrib) && <p className="muted small wf-note" data-testid="wf-exp-note">{t("wf.contrib.exp")}</p>}
     </section>
   );
 }

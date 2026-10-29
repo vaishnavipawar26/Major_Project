@@ -126,7 +126,7 @@ export default function PriceExplanation() {
       <section className="card xp-section fi-card" aria-labelledby="fi-title" data-testid="influence-card">
         <h2 id="fi-title" className="cr-h2">{t("fi.title")}</h2>
         <p className="step-subtitle">{t("fi.subtitle")}</p>
-        <FactorInfluence weather={fieldConditions.weather} soil={fieldConditions.soil} market={marketName} />
+        <FactorInfluence exp={exp} crop={crop} weather={fieldConditions.weather} soil={fieldConditions.soil} market={marketName} />
       </section>
       <WhyFactorsMatter exp={exp} crop={crop} market={marketName} targetDate={exp.date ?? explain.target_date}
         weather={fieldConditions.weather} soil={fieldConditions.soil} growing={req?.growing_location} modelInputs={explain.model_inputs} />

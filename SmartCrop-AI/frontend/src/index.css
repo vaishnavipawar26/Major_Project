@@ -31,6 +31,11 @@
   --pos: #2a78d6;      /* diverging: pushes up / supports */
   --neg: #e34948;      /* diverging: pulls down / against */
   --seq: #2a78d6;
+  /* farm-guidance columns of the influence chart: a light tint of --brand, clearly lighter than the Season bar (AA on the tint) */
+  --guide-fill: rgba(23, 77, 53, 0.15);
+  --guide-line: #3d7a5a;
+  --guide-text: #0f3a27;    /* 9.3:1 on the tint */
+  --guide-text-2: #2d6a4a;  /* 4.7:1 on the tint: source line and "Unavailable" */
 
   /* status (always paired with icon + label) */
   --good: #0ca30c;
