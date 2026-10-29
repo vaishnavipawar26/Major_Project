@@ -613,6 +613,7 @@ const en = {
   "price.result.emptyBody": "Start a new price prediction first.",
   "price.result.loading": "Preparing your forecast…",
   "price.result.likelyRange": "Likely range: {low} to {high}",
+  "price.result.historicalEstimate": "Historical estimate, not a model forecast.",
   "price.result.startingPrice": "Starting price",
   "price.result.noDirectionNoPrice": "No clear direction for this crop and distance.",
   "table.range": "Range",

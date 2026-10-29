@@ -595,8 +595,8 @@ def explain_price(shap_row: np.ndarray, base_value: float, feature_values: dict,
     limits = []
     if projected:
         limits.append("The forecast starts after the last date in the price data, so it reuses "
-                      "market behaviour from the same time of an earlier year, adjusted for "
-                      "inflation. Treat it as a seasonal guide.")
+                      "market behaviour from the same time of an earlier year, raised by an assumed "
+                      "yearly price rise (an app setting, not learned from prices). Treat it as a seasonal guide.")
     if within_error:
         limits.append(f"The expected change is smaller than the forecast's typical error "
                       f"(about {band:.0f}%), so the price may well stay close to where it is now.")
@@ -633,7 +633,7 @@ def explain_price(shap_row: np.ndarray, base_value: float, feature_values: dict,
                   else "Prices and arrivals are for the selected market only."},
         "data_basis": {"kind": "historical", "projected": projected, "data_end": ctx.get("data_end"),
                        "text": ("Based on historical prices" + (f" up to {ctx['data_end']}" if ctx.get("data_end") else "")
-                                + (", repeated for the same season and adjusted for inflation. " if projected else ". ")
+                                + (", repeated for the same season and raised by an assumed yearly price rise (an app setting, not learned from prices). " if projected else ". ")
                                 + "No live market feed is connected, so this does not describe today's market conditions.")},   # the (at most) top_k strongest by |SHAP| that have evidence
         "projected": projected,
         "factors": factors,

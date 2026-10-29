@@ -10,10 +10,11 @@ const num = (v) => typeof v === "number" && Number.isFinite(v);
 
 /**
  * { rows, showActual, firstActual, ticks, domain } for the chart.
- * rows: { t, date, actual?, predicted?, range?, ref?, kind } sorted by time. `range` ([low, high]) only where the API gave both.
+ * rows: { t, date, actual?, predicted?, experimental?, estimate?, range?, ref?, kind } sorted by time. `range` ([low, high]) only where the
+ * API gave both. `estimate` = the API's historical estimate for a day the model does not reach (never a model price).
  * The start row carries the starting reference price (`ref`, and `predicted` so the dashed line begins there).
  */
-export function chartModel(win, observed = [], { showRange = false, showExperimental = false, tickDays = 7 } = {}) {
+export function chartModel(win, observed = [], { showRange = false, showExperimental = false, showEstimates = false, tickDays = 7 } = {}) {
   const start = ts(win.start_date), end = ts(win.end_date);
   const real = (observed || []).filter((p) => num(p.price) && ts(p.date) <= start);
   const latest = real.length ? ts(real.at(-1).date) : null;
@@ -39,6 +40,7 @@ export function chartModel(win, observed = [], { showRange = false, showExperime
   }
   for (const e of win.entries) {
     if (showExperimental && e.status === "not_validated" && num(e.predicted_price)) row(ts(e.date), "experimental").experimental = e.predicted_price;
+    if (showEstimates && e.status === "unavailable" && num(e.estimate?.price)) row(ts(e.date), "estimate").estimate = e.estimate.price;
     if (e.status !== "validated" || !num(e.predicted_price)) continue;
     const r = row(ts(e.date), "forecast");
     r.predicted = e.predicted_price;

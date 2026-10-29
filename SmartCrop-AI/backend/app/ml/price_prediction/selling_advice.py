@@ -139,6 +139,17 @@ def no_direction_advice(path: list[dict], target_h: int, commodity: str) -> dict
     return out
 
 
+def beyond_reach_advice(path: list[dict], target: dict, target_h: int, commodity: str, reach: str) -> dict:
+    """The planned date is further from the market's latest report than the model forecasts: its price is a historical estimate, so no
+    selling dates are compared with it (``reach`` = the last date the model covers, already formatted)."""
+    storage = STORAGE.get(commodity, DEFAULT_STORAGE)
+    return _unavailable(
+        path, target, target_h, storage, commodity,
+        f"Your planned date is after {reach}, the last date the model can forecast from the market's latest report, so its price "
+        f"({_rs(target['predicted_price'])} per quintal) is a historical estimate, not a model forecast, and no selling dates are compared with it.",
+        "Choose a planned date on or before that day for a model forecast, or check current mandi prices before deciding.")
+
+
 def best_time_to_sell(path: list[dict], target_h: int, commodity: str, projected: bool) -> dict:
     """``path``: daily forecast points (with private ``_band``, the median absolute CV error
     in log units at that horizon); ``target_h``: days from the forecast date to the planned

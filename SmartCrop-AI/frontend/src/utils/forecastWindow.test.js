@@ -25,6 +25,26 @@ describe("chartModel", () => {
     expect(on.rows.find((r) => r.date === "2026-11-04").experimental).toBe(1500);
     expect(on.rows.find((r) => r.date === "2026-11-04").predicted).toBeUndefined();
   });
+  it("draws every one of the 60 days in its own series: validated, experimental, historical estimate; a day with nothing stays a gap", () => {
+    // days 1-20 validated, 21-40 experimental, 41-55 past the model's reach with a historical estimate, 56-60 with nothing at all
+    const entries = Array.from({ length: 60 }, (_, i) => {
+      const d = i + 1;
+      if (d <= 20) return entry(d, "validated", 1000 + d);
+      if (d <= 40) return entry(d, "not_validated", 1100 + d);
+      return { ...entry(d, "unavailable", null), estimate: d <= 55 ? { price: 1200 + d, method: "historical_baseline", validated: false } : null };
+    });
+    const m = chartModel(win(entries), [], { showExperimental: true, showEstimates: true });
+    const of = (k) => m.rows.filter((r) => r[k] != null && r.kind !== "start" && r.kind !== "gap").map((r) => r.date);
+    const days = (a, b) => entries.slice(a - 1, b).map((e) => e.date);
+    expect(of("predicted")).toEqual(days(1, 20));
+    expect(of("experimental")).toEqual(days(21, 40));
+    expect(of("estimate")).toEqual(days(41, 55));
+    const drawn = new Set([...of("predicted"), ...of("experimental"), ...of("estimate")]);
+    expect(drawn.size).toBe(55);                                            // no date drawn twice, and the last 5 days are left empty
+    expect(days(56, 60).some((d) => drawn.has(d))).toBe(false);
+    expect(m.rows.find((r) => r.date === days(45, 45)[0]).predicted).toBeUndefined();    // an estimate is never a model price
+    expect(chartModel(win(entries), [], { showExperimental: true }).rows.some((r) => r.estimate != null)).toBe(false);
+  });
   it("breaks the line instead of joining the start price to a first validated day weeks later", () => {
     const entries = Array.from({ length: 60 }, (_, i) => entry(i + 1, i + 1 >= 31 ? "validated" : "not_validated", 1000 + i));
     const m = chartModel(win(entries));

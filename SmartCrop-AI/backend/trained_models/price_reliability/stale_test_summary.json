@@ -1,0 +1,28 @@
+{
+ "created": "2026-10-29T00:31:11+00:00",
+ "source": "dataset/reports/stale_forecast_eval.md (scripts/evaluate_stale_forecasts.py)",
+ "gap_days": 302,
+ "crops": {
+  "Onion": {
+   "current_wape_pct": 65.9,
+   "flat_wape_pct": 70.9,
+   "current_mae": 1294.6,
+   "flat_mae": 1392.2,
+   "n": 40185
+  },
+  "Potato": {
+   "current_wape_pct": 46.1,
+   "flat_wape_pct": 45.7,
+   "current_mae": 842.5,
+   "flat_mae": 835.9,
+   "n": 25645
+  },
+  "Tomato": {
+   "current_wape_pct": 61.1,
+   "flat_wape_pct": 74.7,
+   "current_mae": 1143.8,
+   "flat_mae": 1399.5,
+   "n": 36828
+  }
+ }
+}

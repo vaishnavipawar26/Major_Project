@@ -27,7 +27,7 @@ from app.ml.price_prediction.features import (FEATURE_COLUMNS, HORIZONS, MAX_HOR
                                               STATE_VARIETY, TARGET_FFILL_LIMIT,
                                               compute_features, usable_origin_mask,
                                               with_pair_features)
-from app.ml.price_prediction.selling_advice import best_time_to_sell, no_direction_advice
+from app.ml.price_prediction.selling_advice import best_time_to_sell, beyond_reach_advice, no_direction_advice
 from app.ml.price_prediction.verdict import horizon_info, latest_recorded as aged_latest, price_verdict
 from app.ml.price_prediction import soil_features
 from app.ml.price_prediction.weather_features import WEATHER_FEATURES, attach
@@ -159,13 +159,24 @@ class PriceForecaster:
         self._validated = {c: sorted(int(h) for h in g["horizon"])
                            for c, g in ok.groupby("commodity")}
         self.data_start = date.fromisoformat(self.meta["data_start"])
-        self.data_end = date.fromisoformat(self.meta["data_end"])
+        # the end of the records is the newest price really REPORTED in the loaded panel, never a metadata date: prices imported after training
+        # (scripts.import_price_data + prepare_price_data) count as soon as the panel contains them, and a metadata date can never make old data
+        # look fresh. The freshness gate and every "prices up to" message read this.
+        seen = self.panel.loc[self.panel["observed"] & self.panel["price"].notna() & (self.panel["price"] > 0), "Date"]
+        if seen.empty:
+            raise ModelSchemaError(f"{paths.PRICE_PANEL_PATH} has no reported prices; rebuild it with scripts.prepare_price_data.")
+        self.data_end = seen.max().date()
+        self.model_data_end = date.fromisoformat(self.meta["data_end"])   # last date the loaded models were trained on (may be older)
         self.version = self.meta["version"]
         self.inflation = _load_inflation()
         # backtest reliability per crop x horizon band (built by scripts/build_reliability_table.py); optional
         rt = paths.MODELS_DIR / "price_reliability" / "reliability_v1.json"
         self.reliability_table = json.loads(rt.read_text(encoding="utf-8")) if rt.exists() else None
         # crops for which validation showed the model should not be used to claim a direction (strategy "no_change")
+        # how far the experimental estimates were off in a leak-free test of the app's real situation (records ending ~10 months before the
+        # start; scripts/evaluate_stale_forecasts.py), next to the flat baseline; shown with projected estimates only. Optional.
+        st = paths.MODELS_DIR / "price_reliability" / "stale_test_summary.json"
+        self.stale_test = json.loads(st.read_text(encoding="utf-8")) if st.exists() else None
         cp = paths.MODELS_DIR / "price_reliability" / "crop_policy.json"
         self.crop_policy = json.loads(cp.read_text(encoding="utf-8")) if cp.exists() else {"no_change_crops": []}
 
@@ -216,6 +227,7 @@ class PriceForecaster:
                           "markets": markets,
                           "validated_horizons": self.validated_horizons(commodity)})
         return {"data_start": self.data_start.isoformat(), "data_end": self.data_end.isoformat(),
+                "trained_data_end": self.model_data_end.isoformat(),
                 "projection_end": PROJECTION_END.isoformat(),
                 "inflation_annual_pct": round(self.inflation * 100, 2),
                 "max_horizon_days": self.max_horizon, "commodities": crops,
@@ -351,7 +363,11 @@ class PriceForecaster:
             except _Unusable as why:
                 log.info("model forecast unavailable for %s: %s", cref, why)
                 continue
-            return self._with_note(self._with_source(out, kind, cref, ref, "trained_model"), stale_note)
+            target_note = out.pop("_target_note", None)
+            out = self._with_source(out, kind, cref, ref, "trained_model")
+            if target_note:
+                out["source"]["target_method"] = "historical_baseline"
+            return self._with_note(out, " ".join(n for n in (stale_note, target_note) if n) or None)
         for kind, cref in cands:
             try:
                 out = self._forecast_baseline(cref, ctx, target_date)
@@ -483,9 +499,24 @@ class PriceForecaster:
         target_h = (target_date - origin_date).days
         if target_h < 1:
             raise _Unusable("The latest usable report is later than the target date.")
-        if target_h > self.max_horizon:
+        # The model's distance is counted from the report its inputs describe (that is what it was trained and validated on), so it reaches
+        # origin + max_horizon, while the window and the planned date count from the forecast start. A planned date past the reach no
+        # longer discards the model for the days it does reach: those keep their model prices and labels, and only the planned date gets
+        # a historical estimate, labelled as such. With no window day in reach the model is unusable, as before.
+        reach = origin_date + timedelta(days=self.max_horizon)
+        beyond = target_h > self.max_horizon
+        if beyond and reach <= ctx.input_date:
             raise _Unusable(f"The latest usable report ({origin_date}) is more than "
                             f"{self.max_horizon} days before the target date.")
+        # window days past the reach get the historical estimate (labelled as such, never as a model price); computed once
+        base = None
+        if reach < ctx.input_date + timedelta(days=self.max_horizon):
+            try:
+                base = self._forecast_baseline(ref, ctx, target_date)
+            except _Unusable:
+                if beyond:      # the planned date can be neither predicted nor estimated
+                    raise
+        fallback_target = self._beyond_reach_target(base, origin_date, reach, ref_p0 * level) if beyond else None
 
         # one model row per horizon; every row uses only data known at the origin
         origins = pd.DataFrame([origin] * len(HORIZONS))
@@ -514,6 +545,9 @@ class PriceForecaster:
             d = origin_date + timedelta(days=h)
             actual = None if projected else tp.get(pd.Timestamp(d))
             mode = self.policy_for(ref.commodity, h)
+            # how often this day's 80 % range held in backtests of the same crop, distance and scenario (None: never measured)
+            rc, rscope = self.reliability_cell(ref.commodity, h, projected)
+            rcov = None if rc is None else round(float(rc["range_coverage_pct"]), 1)
             path.append({
                 "model": (self.band_model_name(own) if own is not None
                           else _algorithm_name(self.meta, self.horizon_models[h])),
@@ -531,6 +565,8 @@ class PriceForecaster:
                 "actual_price": None if actual is None or pd.isna(actual) else round(float(actual), 2),
                 "beats_baseline": own is not None or (h in validated and mode["mode"] == "model"),
                 "model_mae": round(model_mae, 1), "baseline_mae": round(base_mae, 1),
+                "range_coverage_pct": rcov, "range_scope": rscope,
+                "range_shown": rcov is None or rcov >= RANGE_MIN_SHOWN_COVERAGE,
                 "_band": band,
             })
 
@@ -540,19 +576,25 @@ class PriceForecaster:
         horizon = horizon_info((target_date - ctx.input_date).days, ref_origin_date, target_h)
         cell_t, scope_t = self.reliability_cell(ref.commodity, target_h, projected)
         policy_t = self.policy_for(ref.commodity, target_h, cell_t)
-        # context-only cells make no claim about the model's price, so they carry no verdict
-        verdict = (None if policy_t["mode"] == "context_only"
-                   else price_verdict(p0, path[target_h - 1]["predicted_price"], self.typical_miss(ref.commodity, target_h, projected)))
-        advice = (no_direction_advice(shown, target_h, ref.commodity) if policy_t["mode"] == "context_only"
-                  else best_time_to_sell(shown, target_h, ref.commodity, projected))
-        cov = None if cell_t is None else cell_t["range_coverage_pct"]
-        range_info = {"coverage_pct": None if cov is None else round(cov, 1), "n": None if cell_t is None else cell_t["n"],
-                      "scope": scope_t, "min_coverage_to_show_pct": RANGE_MIN_SHOWN_COVERAGE,
-                      "shown": cov is None or cov >= RANGE_MIN_SHOWN_COVERAGE,
-                      "typical_miss_inr": None if cell_t is None else round(cell_t["mae"], 1)}
+        target_point = fallback_target or path[target_h - 1]
+        if fallback_target:
+            # the planned date has no model price: no verdict, no date comparison, no measured range and no SHAP explanation for it
+            verdict, range_info = None, None
+            advice = beyond_reach_advice(shown, fallback_target, target_h, ref.commodity, f"{reach:%d %b %Y}")
+        else:
+            # context-only cells make no claim about the model's price, so they carry no verdict
+            verdict = (None if policy_t["mode"] == "context_only"
+                       else price_verdict(p0, path[target_h - 1]["predicted_price"], self.typical_miss(ref.commodity, target_h, projected)))
+            advice = (no_direction_advice(shown, target_h, ref.commodity) if policy_t["mode"] == "context_only"
+                      else best_time_to_sell(shown, target_h, ref.commodity, projected))
+            cov = None if cell_t is None else cell_t["range_coverage_pct"]
+            range_info = {"coverage_pct": None if cov is None else round(cov, 1), "n": None if cell_t is None else cell_t["n"],
+                          "scope": scope_t, "min_coverage_to_show_pct": RANGE_MIN_SHOWN_COVERAGE,
+                          "shown": cov is None or cov >= RANGE_MIN_SHOWN_COVERAGE,
+                          "typical_miss_inr": None if cell_t is None else round(cell_t["mae"], 1)}
 
         explanations = []
-        if explain:
+        if explain and not fallback_target:
             hs = [target_h] + ([advice["recommended_horizon_days"]]
                                if advice["recommended_horizon_days"] not in (0, target_h) else [])
             try:
@@ -580,7 +622,7 @@ class PriceForecaster:
             "current_price": round(p0, 2),
             "arrivals_used": (None if pd.isna(origin["log_arrivals"])
                               else round(float(np.expm1(origin["log_arrivals"])), 2)),
-            "target": path[target_h - 1],
+            "target": target_point,
             "path": shown,
             "last_validated_days": last_validated,
             "validated_days": len(validated),
@@ -595,9 +637,9 @@ class PriceForecaster:
             "earlier_years": self._earlier_years(series, target_date),
             "reference_after": self._reference_after(series, ctx, ref_origin_date, chart_h, projected),
             "chart_path": path, "chart_end_date": path[chart_h - 1]["date"],
-            "model": {"version": self.version, "algorithm": path[target_h - 1]["model"],
+            "model": {"version": self.version, "algorithm": target_point["model"],
                       "approach": self.meta.get("approach", ""),
-                      "data_end": self.data_end.isoformat()},
+                      "data_end": self.data_end.isoformat(), "trained_data_end": self.model_data_end.isoformat()},
             "projection": {"reference_origin_date": ref_origin_date.isoformat(),
                            "reference_price": round(ref_p0, 2),
                            "years_ahead": years_ahead,
@@ -605,7 +647,30 @@ class PriceForecaster:
                            "price_level_factor": round(level, 4)} if projected else None,
             "dates": self._dates(ctx, target_date, ref_origin_date),
             "disclaimer": DISCLAIMER,
+            "stale_test": self._stale_test(ref.commodity) if projected else None,
+            # read by forecast() (source note) and price_service.explain (message); never part of the response as such
+            "_target_note": fallback_target["validation_reason"] if fallback_target else None,
+            # the historical estimate for every window day (read by build_window for the days the model does not reach; not in the API as such)
+            "estimate_path": [] if base is None else [{"date": p["date"], "price": p["predicted_price"]} for p in base["chart_path"]],
+            "explanation_note": (f"No explanation for {target_date:%d %b %Y}: {fallback_target['validation_reason']}" if fallback_target else None),
         }
+
+    def _stale_test(self, crop: str) -> dict | None:
+        c = (self.stale_test or {}).get("crops", {}).get(crop)
+        return None if c is None else {**c, "gap_days": self.stale_test["gap_days"]}
+
+    def _beyond_reach_target(self, base: dict, origin_date: date, reach: date, p0: float) -> dict:
+        """The planned date's point when it is past the model's reach: the historical estimate for that date (``base`` = the
+        _forecast_baseline answer, the same figure the whole answer used to fall back to), never validated and saying why."""
+        t = dict(base["target"])
+        chg = math.log(t["predicted_price"] / p0)     # against the same starting price as the rest of the answer
+        t.update({"change_pct": round((math.exp(chg) - 1) * 100, 2),
+                  "direction": "Stable" if abs(chg) < math.log(1 + BASELINE_STABLE_PCT / 100) else ("Increasing" if chg > 0 else "Decreasing"),"model": "Historical price estimate (no model)", "method": "historical_baseline", "beats_baseline": False,
+                  "range_coverage_pct": None, "range_scope": None, "range_shown": True,
+                  "validation_reason": (f"The model forecasts at most {self.max_horizon} days after the market's latest report "
+                                        f"({origin_date:%d %b %Y}), that is up to {reach:%d %b %Y}. Your planned date is later, so its price is a "
+                                        "historical estimate (recent price level and the usual seasonal change), not a model forecast.")})
+        return t
 
     # ------------------------------------------------------------------ historical estimate
     @staticmethod
@@ -682,7 +747,9 @@ class PriceForecaster:
                 "stable_band_pct": BASELINE_STABLE_PCT,
                 "direction": "Stable" if abs(chg) < band else ("Increasing" if chg > 0 else "Decreasing"),
                 "actual_price": None, "beats_baseline": False,
-                "model_mae": None, "baseline_mae": None, "_band": band,
+                "model_mae": None, "baseline_mae": None,
+                "range_coverage_pct": None, "range_scope": None, "range_shown": True,   # a spread of past weekly changes, never backtested
+                "_band": band,
             })
         target_h = (target_date - start).days
         shown = path[:target_h]
@@ -724,7 +791,7 @@ class PriceForecaster:
                       "approach": ("Latest reported price level, moved to the requested year with the "
                                    "annual inflation assumption and by the typical seasonal change "
                                    "seen in earlier years. Not a trained-model prediction."),
-                      "data_end": self.data_end.isoformat()},
+                      "data_end": self.data_end.isoformat(), "trained_data_end": self.model_data_end.isoformat()},
             "projection": None,
             "dates": self._dates(ctx, target_date, ref_origin),
             "disclaimer": DISCLAIMER,
@@ -845,8 +912,9 @@ class PriceForecaster:
         cell, _ = self.reliability_cell(commodity, target_h, projected)
         ref = SeriesRef(state, market, commodity, variety)
         policy = self.policy_for(commodity, target_h, cell)
+        # past the model's reach the saved price was a historical estimate, so no rise / fall verdict is claimed for it (as when it was made)
         return {"policy": policy,
-                "verdict": (None if policy["mode"] == "context_only"
+                "verdict": (None if policy["mode"] == "context_only" or target_h > self.max_horizon
                             else price_verdict(current_price, predicted_price, self.typical_miss(commodity, target_h, projected))),
                 "latest_recorded": self.latest_for(ref, input_date)}
 
@@ -983,6 +1051,7 @@ class PriceForecaster:
             model_output_log=model_out, latest_recorded=ctx.latest, horizon_info=horizon,
             verdict=price_verdict(p0, point["predicted_price"], self.typical_miss(commodity, h, projected)))
         out["policy"] = pol
+        out["price_build"] = _price_build(ref, ctx, ref_origin_date, p0, point, target, commodity, h, pol, sv, base, model_out, self.inflation)
         return out
 
     def _evidence_context(self, series: pd.DataFrame, origin: pd.Series, ref_origin: date,
@@ -1059,7 +1128,7 @@ class PriceForecaster:
             else:
                 model_mae, base_mae = self.reliability(h, commodity)
             ctx = {**{k: v for k, v in evidence.items() if not k.startswith("_")},
-                   "data_end": self.meta["data_end"],
+                   "data_end": self.data_end.isoformat(),
                    "reliability": {"model_mae": round(model_mae, 1), "baseline_mae": round(base_mae, 1),
                                    "validated": own is not None or h in set(self.validated_horizons(commodity))},
                    "seasonal": self._seasonal_evidence(evidence, h)}
@@ -1086,6 +1155,47 @@ class PriceForecaster:
                                              model_out, state_prices, horizon)
             out.append(entry)
         return out
+
+
+def _price_build(ref: SeriesRef, ctx: "_Ctx", ref_origin_date: date, p0: float, point: dict, target: date, crop: str, h: int,
+                 pol: dict, sv, base: float, model_out: float, inflation: float) -> dict:
+    """How the forecast number is put together, one kind of fact per step, so a reported price, the app's assumed yearly price rise, the
+    model's predicted change (what SHAP explains), the validation result and the range are never mixed up."""
+    reported = p0 / ctx.level
+    projected = ctx.years_ahead > 0
+    adj = {"applied": projected, "pct_per_year": round(inflation * 100, 2) if projected else None, "years": ctx.years_ahead,
+           "factor": round(ctx.level, 4), "amount_inr": round(p0 - reported, 2),
+           "basis": "assumption" if projected else None}
+    change_inr = point["predicted_price"] - p0
+    validated = bool(point.get("beats_baseline")) and pol["mode"] == "model"
+    reasons = [r for r in ([point.get("validation_reason")] if not validated else []) + list(pol.get("reasons") or []) if r][:2]
+    cov, shown = point.get("range_coverage_pct"), point.get("range_shown", True) is not False
+    rs = lambda v: f"₹{v:,.0f}"   # noqa: E731
+    where = "the median of Maharashtra markets" if ref.market == STATE_MARKET else ref.market
+    steps = [f"Last real price used: {rs(reported)} per quintal, reported on {ref_origin_date:%d %b %Y} at {where}."]
+    if ctx.latest and ctx.latest.get("stale"):
+        steps.append(f"The newest price in the app's records is from {date.fromisoformat(ctx.latest['date']):%d %b %Y}; no newer market prices have been loaded.")
+    steps.append(f"Assumed price rise: +{inflation * 100:.0f}% a year for {ctx.years_ahead} year(s) = {'+' if p0 >= reported else '−'}{rs(abs(p0 - reported))}. "
+                 "This is a fixed setting of the app, not something the model learned and not a measured market change." if projected
+                 else "No adjustment: the forecast starts from a reported price.")
+    steps.append(f"Starting price: {rs(p0)}.")
+    steps.append(f"Model's predicted change by {target:%d %b %Y} ({h} days): {(math.exp(model_out) - 1) * 100:+.1f}% "
+                 f"({'+' if change_inr >= 0 else '−'}{rs(abs(change_inr))}), giving {rs(point['predicted_price'])}. "
+                 "The factor list explains this change only.")
+    steps.append(("Checked in past tests: this crop and distance beat 'price stays the same'." if validated else
+                  f"Experimental: in past tests the model did not reliably beat 'price stays the same' for {crop} this far ahead, "
+                  "so treat this number as a rough guide, not a forecast to act on."))
+    steps.append("Range: not tested against past prices." if cov is None else
+                 (f"Range: in past tests the real price fell inside it {cov:.0f}% of the time." if shown else
+                  f"No range is given: in past tests the real price fell inside it only {cov:.0f}% of the time."))
+    return {"reported_price": {"price": round(reported, 2), "date": ref_origin_date.isoformat(), "market": ref.market},
+            "latest_actual": ctx.latest, "adjustment": adj, "start_price": round(p0, 2),
+            "model_change": {"log": round(float(model_out), 5), "pct": round((math.exp(model_out) - 1) * 100, 2), "inr": round(change_inr, 2),
+                             "shap_base": round(float(base), 5), "shap_sum": round(float(np.sum(sv)), 5)},
+            "predicted_price": point["predicted_price"], "target_date": target.isoformat(), "horizon_days": h,
+            "validation": {"status": "validated" if validated else "experimental", "reasons": reasons},
+            "uncertainty": {"coverage_pct": cov, "shown": shown, "scope": point.get("range_scope")},
+            "steps": steps}
 
 
 def _algorithm_name(meta: dict, candidate: str) -> str:

@@ -4,7 +4,7 @@ use them (its 29 inputs are price, arrivals, calendar and crop/market codes).
 
 Weather status, never mixed:
   observed     the day has passed: values the Open-Meteo archive (or, for the last few days, its recent-weather service) reports
-  forecast     the day is today or up to 15 days ahead: Open-Meteo's forecast for that day
+  forecast     the day is today or up to FORECAST_DAYS (14) days ahead: Open-Meteo's forecast for that day
   typical      no observation or forecast could be used for that day: the average of the same time of year (+-3 days) from the project's
                stored market weather. An estimate, never presented as a measurement for the selected date.
   unavailable  nothing trustworthy exists; ``reason`` says why (no_coordinates, ambiguous_location, state_series, service_unreachable,
@@ -50,7 +50,9 @@ PAID_FORECAST_URL = "https://customer-api.open-meteo.com/v1/forecast"
 DAILY = "temperature_2m_mean,precipitation_sum,relative_humidity_2m_mean"
 TIMEZONE = "Asia/Kolkata"     # every "day" is a calendar day in India, the same zone the price data uses
 TIMEOUT = 8.0
-FORECAST_DAYS = 15
+# Open-Meteo's free forecast accepts an explicit end_date at most 14 days after today (checked 2026-10-29: "end_date is out of allowed
+# range ... to <today + 14>"; forecast_days=16 reaches today + 15 only without explicit dates). 15 here made a date 15 days ahead fail.
+FORECAST_DAYS = 14
 ARCHIVE_LAG_DAYS = 6          # archive data is complete up to about this many days ago
 RECENT_DAYS = 90              # the forecast service can also return this many past days
 STATE_SERIES = "All markets (state median)"
@@ -128,6 +130,24 @@ def _out(status: str, market: str, day: date, **kw) -> dict:
     return {**base, **kw}
 
 
+def _fetch_range(url: str, lat: float, lon: float, first: date, last: date, extra: dict | None = None) -> tuple[dict | None, str | None]:
+    """Daily weather from ``first`` to ``last`` as {iso date: values or None}, or (None, reason). A day with any missing value is None
+    (no data), never 0."""
+    data, err = get_json(url, {"latitude": lat, "longitude": lon, "start_date": first.isoformat(), "end_date": last.isoformat(),
+                               "daily": DAILY, "timezone": TIMEZONE, **(extra or {})}, TIMEOUT)
+    if err:
+        return None, err
+    try:
+        d = data["daily"]
+        rows = zip(d["time"], d["temperature_2m_mean"], d["precipitation_sum"], d["relative_humidity_2m_mean"])
+        out = {str(t): (None if any(v is None for v in (a, b, c)) else
+                        {"temperature_c": round(float(a), 1), "rainfall_mm": round(float(b), 1), "humidity_pct": round(float(c))})
+               for t, a, b, c in rows}
+    except (KeyError, TypeError, ValueError):
+        return None, "bad_response"
+    return out, None
+
+
 def _fetch(url: str, lat: float, lon: float, day: date, extra: dict | None = None) -> tuple[dict | None, str | None]:
     """One day of weather, or (None, reason). A day with any missing value counts as no data, never as 0."""
     data, err = get_json(url, {"latitude": lat, "longitude": lon, "start_date": day.isoformat(), "end_date": day.isoformat(),
@@ -144,12 +164,15 @@ def _fetch(url: str, lat: float, lon: float, day: date, extra: dict | None = Non
     return {"temperature_c": round(float(vals[0]), 1), "rainfall_mm": round(float(vals[1]), 1), "humidity_pct": round(float(vals[2]))}, None
 
 
-def _typical(market: str, day: date) -> dict | None:
+def _market_rows(market: str) -> pd.DataFrame | None:
     df = _stored()
-    if df is None:
-        return None
-    m = df[df["market"] == market]
-    if m.empty:
+    return None if df is None else df[df["market"] == market]
+
+
+def _typical(market: str, day: date, m: pd.DataFrame | None = None) -> dict | None:
+    """Mean of the stored daily weather within 3 days of this calendar day, over the stored years (``m``: the market's rows, if read already)."""
+    m = _market_rows(market) if m is None else m
+    if m is None or m.empty:
         return None
     doy = m["date"].dt.dayofyear
     target = pd.Timestamp(day).dayofyear
@@ -175,23 +198,28 @@ def _growing_where(place: dict) -> tuple[float, float, str, dict]:
     return lat, lon, name, {"place": name, "latitude": lat, "longitude": lon, "place_kind": "growing_location"}
 
 
+def _resolve(market: str, place: dict | None) -> tuple[tuple | None, tuple[str, str] | None]:
+    """((lat, lon, name, where, typical_market), None) or (None, (reason, note)). ``place`` = the growing location, else the market's town.
+    Typical values exist only for markets (the project's stored market weather), never for other places."""
+    if place is not None:
+        return (*_growing_where(place), None), None
+    if not market or market == STATE_SERIES:
+        return None, ("state_series", "This price covers many markets, so there is no single place to show weather for.")
+    found = _place(market)
+    if found is None:
+        return None, _no_place_reason(market)
+    lat, lon, name = found
+    return (lat, lon, name, {"place": f"{name} (town centre)", "latitude": lat, "longitude": lon, "place_kind": "selling_market_town"},
+            market), None
+
+
 def weather_context(market: str, day: date, place: dict | None = None) -> dict:
     """Weather for ``place`` ({label, latitude, longitude}: the growing location) when given, else for the selling market's town."""
     market = (market or "").strip()
-    typical_market = None          # typical values exist only for markets (the project's stored market weather), never for other places
-    if place is not None:
-        lat, lon, name, where = _growing_where(place)
-    else:
-        if not market or market == STATE_SERIES:
-            return _out("unavailable", market, day, reason="state_series",
-                        note="This price covers many markets, so there is no single place to show weather for.")
-        found = _place(market)
-        if found is None:
-            reason, note = _no_place_reason(market)
-            return _out("unavailable", market, day, reason=reason, note=note)
-        lat, lon, name = found
-        where = {"place": f"{name} (town centre)", "latitude": lat, "longitude": lon, "place_kind": "selling_market_town"}
-        typical_market = market
+    found, why = _resolve(market, place)
+    if found is None:
+        return _out("unavailable", market, day, reason=why[0], note=why[1])
+    lat, lon, name, where, typical_market = found
     t = today()
     age = (t - day).days
     if 0 <= -age <= FORECAST_DAYS:
@@ -224,6 +252,61 @@ def weather_context(market: str, day: date, place: dict | None = None) -> dict:
                     served_from="stored_history", reason=reason,
                     note="No observation or forecast could be used for this date. These are typical values for this time of year.")
     return _out("unavailable", market, day, **where, reason=reason or "no_data", note="Weather information unavailable.")
+
+
+WINDOW_DAYS = 60
+
+
+def weather_window(market: str, start: date, place: dict | None = None, days: int = WINDOW_DAYS) -> dict:
+    """Daily weather for start + 1 .. start + ``days`` (the price forecast's window), each day labelled by what it really is:
+      forecast     Open-Meteo's live forecast; it reaches FORECAST_DAYS days after today, never further
+      typical      the mean of the project's stored weather for this market within 3 days of the same calendar day in earlier years:
+                   what is usual at this time of year, NOT a forecast (only for markets with stored weather)
+      unavailable  neither exists: no value is given (nothing is repeated or filled in)
+    One forecast request covers all live days; the stored history is read once."""
+    market = (market or "").strip()
+    dates = [start + timedelta(days=n) for n in range(1, days + 1)]
+    found, why = _resolve(market, place)
+    base = {"market": market, "start_date": start.isoformat(), "days": days, "forecast_limit_days": FORECAST_DAYS}
+    if found is None:
+        return {**base, "place": None, "place_kind": None, "reason": why[0], "note": why[1],
+                "entries": [_day_entry(d, "unavailable") for d in dates], "counts": {"forecast": 0, "typical": 0, "unavailable": days}}
+    lat, lon, name, where, typical_market = found
+    t = today()
+    live_last = min(dates[-1], t + timedelta(days=FORECAST_DAYS))
+    live_first = max(dates[0], t)
+    live, err = ({}, None)
+    if live_first <= live_last:
+        url, extra = _url("forecast")
+        live, err = _fetch_range(url, lat, lon, live_first, live_last, extra)
+        live = live or {}
+    rows = _market_rows(typical_market) if typical_market else None
+    entries = []
+    for d in dates:
+        v = live.get(d.isoformat())
+        if v:
+            entries.append(_day_entry(d, "forecast", v, "Open-Meteo weather forecast"))
+            continue
+        ty = _typical(typical_market, d, rows) if rows is not None else None
+        if ty:
+            yrs = ty.pop("years")
+            entries.append(_day_entry(d, "typical", ty, f"Stored market weather, same time of year, {yrs[0]}-{yrs[-1]}"))
+        else:
+            entries.append(_day_entry(d, "unavailable"))
+    counts = {k: sum(e["status"] == k for e in entries) for k in ("forecast", "typical", "unavailable")}
+    reason = ("service_unreachable" if err in UNREACHABLE else "no_data") if err else None
+    return {**base, **{k: where[k] for k in ("place", "place_kind")}, "reason": reason,
+            "note": (f"Live forecasts reach at most {FORECAST_DAYS} days ahead (the weather provider's limit). Later days show typical values "
+                     "for this time of year from stored weather, not a forecast." if typical_market else
+                     f"Live forecasts reach at most {FORECAST_DAYS} days ahead (the weather provider's limit). No stored weather exists for this "
+                     "place, so later days have no values."),
+            "entries": entries, "counts": counts}
+
+
+def _day_entry(d: date, status: str, v: dict | None = None, source: str | None = None) -> dict:
+    v = v or {}
+    return {"date": d.isoformat(), "status": status, "temperature_c": v.get("temperature_c"), "rainfall_mm": v.get("rainfall_mm"),
+            "humidity_pct": v.get("humidity_pct"), "source": source}
 
 
 # ----------------------------------------------------------------------------------------------------------------------- soil

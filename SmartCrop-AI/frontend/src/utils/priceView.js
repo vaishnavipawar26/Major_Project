@@ -2,6 +2,18 @@ import { fmtDate, rupees } from "./format";
 
 /** Display rules for a price forecast, kept in one place so every page applies them the same way. */
 
+/**
+ * The planned date's price is the backend's historical estimate (recent price level and the usual seasonal change), not a model forecast:
+ * either the whole answer fell back to it, or only the planned date did because it is past the model's reach. { reason } or null.
+ */
+export function historicalEstimate(forecast) {
+  if (!forecast || isContextOnly(forecast)) return null;
+  const t = forecast.target, src = forecast.source;
+  if (t?.method === "historical_baseline") return { reason: t.validation_reason || null };
+  if (src?.method === "historical_baseline") return { reason: src.note || null };
+  return null;
+}
+
 /** True where backtests show the model is not reliable enough to claim a rise or fall (crop x distance). */
 export const isContextOnly = (x) => x?.policy?.mode === "context_only";
 

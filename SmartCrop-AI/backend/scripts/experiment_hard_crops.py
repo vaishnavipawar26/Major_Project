@@ -126,11 +126,11 @@ def pairs(feat, mask, crop, lo, hi, rng, origin_from=None, origin_to=None, targe
     return (pd.concat(Xs, ignore_index=True), np.concatenate(ys), np.concatenate(p0s), np.concatenate(ds), np.concatenate(hs))
 
 
-def fit_xgb(X, y, huber=False):
+def fit_xgb(X, y, huber=False, sample_weight=None):
     m = XGBRegressor(n_estimators=250, learning_rate=0.04, max_depth=3, min_child_weight=200, subsample=0.7, colsample_bytree=0.7,
                      reg_lambda=20.0, objective="reg:pseudohubererror" if huber else "reg:squarederror",
                      tree_method="hist", n_jobs=-1, random_state=SEED)
-    m.fit(X, y)
+    m.fit(X, y, sample_weight=sample_weight)
     return m
 
 

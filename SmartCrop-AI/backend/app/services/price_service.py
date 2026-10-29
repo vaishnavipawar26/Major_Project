@@ -104,4 +104,4 @@ def explain(forecaster: PriceForecaster, req: PriceRequest) -> dict:
             "source": f.get("source"),
             "model_inputs": forecaster.model_inputs(),
             "message": None if f["explanations"] else
-            "The model could not calculate an explanation for this forecast."}
+            (f.get("explanation_note") or "The model could not calculate an explanation for this forecast.")}

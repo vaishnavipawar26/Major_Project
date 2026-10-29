@@ -17,7 +17,8 @@ import { historyService } from "../services/historyService";
 import { priceService } from "../services/priceService";
 import { STATE_MARKET } from "../utils/constants";
 import { addDays, cropName, fmtDate, rupees } from "../utils/format";
-import { isContextOnly, rangeView } from "../utils/priceView";
+import ServerText from "../components/ServerText";
+import { historicalEstimate, isContextOnly, rangeView } from "../utils/priceView";
 import { referenceInfo, selectedPrice } from "../utils/selectedPrice";
 import { LAST_PRICE_REQUEST_KEY } from "./PricePrediction";
 
@@ -91,6 +92,7 @@ export default function PriceResult() {
   const crop = cropName(tr, series.commodity);
   const ctxOnly = isContextOnly(forecast);
   const range = rangeView(forecast);
+  const estimate = historicalEstimate(forecast);
   const latest = forecast.latest_recorded;
   // ONE price for the selected date: the chart dot, the estimate card and the planned-date tile all read it
   const selected = selectedPrice(forecast);
@@ -126,11 +128,14 @@ export default function PriceResult() {
                 <div className="stat-sub" data-testid="ref-note">{tr(ref.inflationPct != null ? "price.result.refNoteInfl" : "price.result.refNote",
                   { source: fmtDate(ref.sourceDate), date: fmtDate(forecast.target_date), pct: ref.inflationPct })}</div>
               )}
+              {estimate && (
+                <div className="stat-sub" data-testid="historical-estimate-note">{tr("price.result.historicalEstimate")}{estimate.reason && <> <ServerText>{estimate.reason}</ServerText></>}</div>
+              )}
               <div className="stat-sub" data-testid="summary-line"><strong>{crop}</strong> · {marketName} · {tr("price.form.date")}: <strong>{fmtDate(forecast.target_date)}</strong></div>
               {latest && selected.source !== "latest" && (
                 <div className="stat-sub" data-testid="latest-actual">{tr("res.latestActual", { price: rupees(latest.price), date: fmtDate(latest.date) })}</div>
               )}
-              {!ctxOnly && (range.kind === "measured" || range.kind === "unmeasured") && (
+              {!ctxOnly && !estimate && (range.kind === "measured" || range.kind === "unmeasured") && (
                 <div className="stat-sub" data-testid="range-line">{tr("price.result.likelyRange", { low: rupees(range.low), high: rupees(range.high) })}</div>
               )}
             </div>

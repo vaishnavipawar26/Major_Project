@@ -379,15 +379,53 @@ rule against "no change" for Onion, Potato, Tomato and Wheat, on three chronolog
 * **Onion:** every candidate is worse than no change at 8-60 days in the test half-year (the seasonal rule much worse). Not deployed.
 * **Potato:** the halved model clears +2 % in all three splits against no change at 1-30 days, but under the projection scenario (the one the app uses
   while records end in 2025) fold C is +0.0 to +0.2 % and fold A is -6 to +1.4 %. Not deployed.
-* **Tomato:** a second search (`scripts/experiment_forecast_v2.py`, `dataset/reports/forecast_v2_experiment.md`: halved, quartered, learned-factor,
-  ridge) found 31-60 days clears +2 % in all six scores (three splits, both scenarios) under every candidate family; the best, XGBoost scaled by a
-  factor learned from the training data only (0.71 on all data), scores +15 / +13 / +20 % real-origin and +45 / +13 / +28 % projection (folds C / A / test T).
-  Deployed for 31-60 days only; 1-30 days stay unvalidated. Its 80 % range covers about 65 % of outcomes (shown as measured). The evidence is about
-  2.5 seasons.
-* **Wheat 1-7 and 8-14 days:** +3.8 / +7.0 % (real origin, test) and +3.2 / +3.1 % (projection, test) with folds C and A also above +2 %. Deployed through
-  `scripts/train_crop_band_models.py` -> `trained_models/price_prediction/crop_band_models.joblib`. Wheat 15-60 days stays unvalidated (15-30 days:
-  +0.7 % in the projection test). Error ranges are 88-90 % covered after a fresh report but only 29-38 % in projection, so the app hides them there.
+* **Tomato:** the 31-60 day cell deployed after the second search (`forecast_v2_experiment.md`) was withdrawn. The third search
+  (`forecast_v3_experiment.md`, sub-bands of 15 days) showed its 46-60 day part is -41 % (real origin) / -36 % (projection) in fold A, and the
+  one sub-band that passed (31-45 days, year-over-year input) clears +2 % under two of three sampling seeds only (weakest scores 0.7 / 5.4 / 0.0 %).
+  A cell must clear the margin under every seed, so Tomato has no validated days again. It needs more years of prices.
+* **Wheat 1-30 days:** 1-7 days (XGBoost, change x 0.5) and, from the third search, 8-14, 15-21 and 22-30 days (ridge regression on moving-average gaps,
+  scaled by a learned factor of 1.0) clear +2 % in folds C, A and test T in both scenarios under three sampling seeds (weakest scores +3.0 / +5.4 / +5.6 /
+  +4.4 %). Test-T skill: real origin +3.7 / +7.2 / +6.3 / +6.8 %, projection +3.1 / +7.9 / +8.4 / +9.1 %. Wheat 31-60 days is negative in the
+  2025 test half-year for every candidate. Error ranges: 83-88 % covered after a fresh report, 29 / 44 / 51 / 58 % in projection (hidden below 40 %).
+* **Why the projection scenario fails for Onion and Potato:** year-over-year price levels swing far more than the x1.05 assumption (Onion x1.2-2.3 in 2024,
+  then x0.28-0.6 in 2025; Potato x1.7-1.9 then x0.56-0.65; Wheat only x0.9-1.1). With three years there are only two such transitions and they point
+  opposite ways, so no model can learn the level change; nine years or more of prices (and the 2026 prices) are needed.
 * The 2 % margin, the folds and `crop_policy.json` were not changed; the deployed cells overlay the policy and carry their own evidence.
 * **Searched again with learned shrinkage, ridge and 15-60 day bands (v2):** Wheat 15-30 days misses in the projection test (+1 %), Wheat 31-60 days
   is negative in the 2025 test half-year for every candidate, Onion and Potato have no candidate that clears all six scores. Wheat therefore stays
   validated for 1-14 days only. No data later than 2025-12-31 exists, so a longer horizon needs a 2026 extension of the mandi prices.
+
+## Onion, Potato, Tomato: per-horizon metrics and the Tomato 46-60 day model (2026-10-29)
+
+Full tables: `dataset/reports/horizon_eval_onion_potato_tomato.md` (`scripts/evaluate_horizon_metrics.py`; MAE, RMSE, WAPE, R2 of the price change and
+skill vs no change, bands 1-12 / 13-30 / 31-60, folds C / A / T, both scenarios; every model fitted inside its fold). Nothing in the rule changed.
+
+* **The records are 302 days old.** The newest real price is 31 Dec 2025 (`data_end` now comes only from reported prices in the loaded panel, never
+  from `metadata.json`). Every forecast from today is therefore a projection: last year's price on the same date x1.05 (an app assumption).
+* **The projected starting price is the largest error.** Against the price really reported on the start day, it is off by WAPE 176 % (Onion),
+  75 % (Potato) and 64 % (Tomato) in test fold T; the median ratio projected / actual was 2.72 (Onion) and 1.79 (Potato), because 2025 prices fell far
+  below 2024's. No model can recover from a starting price that wrong; only real 2026 prices fix it.
+* **Onion:** worse than no change in every band of fold T (real origin 1-12 / 13-30 / 31-60: -2 / -19 / -75 % for the best candidate). Over 31-60 days
+  the models predict a median rise of +27 to +61 % while the real median change was 0 % (drift learned from the 2023-24 rallies). Not deployed.
+* **Potato:** halved crop XGBoost clears +2 % in all three folds from a real price at 1-12 days (+3.3 / +5.1 / +3.6 %) and 13-30 days (+4.5 / +5.4 / +4.8 %),
+  but not in the projection scenario (fold A -5.7 % at 13-30, fold C +0.2 % at 1-12). Not deployed while records are stale.
+* **Tomato 46-60 days: tested, then withdrawn.** Halved crop XGBoost cleared `train_crop_band_models.py`'s rule (weakest +16.2 %), but that rule's
+  projection test trains up to the scored period. In the leak-free test below it loses to the flat baseline in fold A (-18.7 %), so it is not deployed
+  and Tomato has no validated days. The Wheat cells were validated with the same protocol and should be re-checked the same way.
+* **Uncertainty per day:** each window day now carries the measured coverage of its own crop x distance x scenario cell; `lower` / `upper` are withheld
+  where it is below 40 % (Onion and Potato projections cover only 1-8 %).
+
+## Leak-free test of the real situation: records ending 302 days before the start (2026-10-29)
+
+`scripts/evaluate_stale_forecasts.py` -> `dataset/reports/stale_forecast_eval.md`. For every start S, the newest record is S - 302 days (31 Dec 2025 to
+29 Oct 2026) and every model is trained only on targets before the fold's earliest end of records; inputs come from S - 1 year, as in the app.
+
+* **Starting price:** no option is reliably closer to the price reported on the start day. Last year's price x1.05 (current), without the x1.05, and the
+  newest real report each win some folds (Onion WAPE 38 / 41 / 171 % vs latest report 33 / 75 / 176 %). The current start stays, labelled as an
+  adjusted estimate from a dated report.
+* **One method for all 60 days vs the current stitched method** (mean fold MAE, Rs/quintal): Onion current 1,290 (best; flat 1,386, single crop
+  models 1,403+); Potato crop RF 841, flat-latest 843, current 853; Tomato halved crop XGBoost 1,129, flat-latest 1,138, current 1,140. Daily-rate single
+  models were worse (Potato 867, Tomato 1,188). No candidate is +2 % better and better in two of three folds, so the current method is kept: a
+  1 % difference does not justify a model that jumps 7-12 % on day 1 (the plain single models do).
+* **What the experimental estimates are worth (60-day WAPE):** Onion 66 % (flat 71 %), Potato 46 % (flat 46 %), Tomato 61 % (flat 75 %). These figures
+  are shown under the chart. Reliable 2026 mandi prices for the same markets are the only way to improve them.

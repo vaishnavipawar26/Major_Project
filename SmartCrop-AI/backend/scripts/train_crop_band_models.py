@@ -45,6 +45,9 @@ CELLS = [
     {"crop": "Wheat", "band": "22-30", "family": "ma_ridge", "shrink": "learned"},
     {"crop": "Tomato", "band": "31-45", "family": "yoy_xgb", "shrink": "learned"},
 ]
+# Tomato 46-60 (crop XGBoost x 0.5) clears this script's rule, but that rule's projection test trains up to the scored period. In the leak-free
+# test of scripts/evaluate_stale_forecasts.py (records ending 302 days before the start, as in the app) it loses to the flat baseline in fold A
+# (-18.7 %), so it is NOT deployed. The same check should be repeated for the Wheat cells above.
 
 
 class _Fit:

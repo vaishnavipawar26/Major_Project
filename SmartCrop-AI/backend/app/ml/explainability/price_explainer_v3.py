@@ -388,7 +388,8 @@ def _context_only(*, facts, values, crop, market, requested_market, series_is_st
     if projected:
         banner = {"text": f"No {forecast_date.year} market data yet — this forecast replays the same season of {ref_origin_date.year}.",
                   "detail": (f"The starting price is the {d_(ref_origin_date)} price"
-                             + (f" plus {inflation_pct:.0f}% for a year's inflation" if _ok(inflation_pct) else "") + ". "
+                             + (f", raised by an assumed {inflation_pct:.0f}% a year for general price rises (a fixed app setting: not learned by the model and "
+                                "not a measured 2026 price)" if _ok(inflation_pct) else "") + ". "
                              f"Every figure below is dated from {ref_origin_date.year} records."),
                   "reference_date": ref_origin_date.isoformat()}
     return {
@@ -582,7 +583,8 @@ def build_v3(*, contrib: dict[str, float], base_value: float, values: dict, mode
     if projected:
         banner = {"text": f"No {forecast_date.year} market data yet — this forecast replays the same season of {ref_origin_date.year}.",
                   "detail": (f"The starting price is the {d_(ref_origin_date)} price"
-                             + (f" plus {inflation_pct:.0f}% for a year's inflation" if _ok(inflation_pct) else "") + ". "
+                             + (f", raised by an assumed {inflation_pct:.0f}% a year for general price rises (a fixed app setting: not learned by the model and "
+                                "not a measured 2026 price)" if _ok(inflation_pct) else "") + ". "
                              f"Every figure below is dated from {ref_origin_date.year} records."),
                   "reference_date": ref_origin_date.isoformat()}
 

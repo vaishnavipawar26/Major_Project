@@ -96,6 +96,47 @@ describe("Your estimated price card", () => {
   });
 });
 
+describe("planned date past the model's reach", () => {
+  const reason = "The model forecasts at most 60 days after the market's latest report (31 Dec 2025), that is up to 01 Mar 2026. Your planned date is later, so its price is a historical estimate (recent price level and the usual seasonal change), not a model forecast.";
+  const beyond = () => forecast({
+    target: { ...forecast().target, beats_baseline: false, method: "historical_baseline", validation_reason: reason, model_mae: null, baseline_mae: null },
+    source: { kind: "state_median", method: "trained_model", fallback: true, target_method: "historical_baseline", note: reason },
+    range_info: null, verdict: null,
+    window: makeWindow({ planned: { date: PLANNED, status: "unavailable", price: null, lower: null, upper: null, in_window: true,
+      estimate: { price: 2520, method: "historical_baseline", validated: false, reason } } }),
+  });
+
+  it("labels the headline price as a historical estimate with the backend's reason and shows no range", () => {
+    renderPage(beyond());
+    expect(text("historical-estimate-note")).toMatch(/^Historical estimate, not a model forecast\. The model forecasts at most 60 days/);
+    expect(screen.queryByTestId("range-line")).toBeNull();
+  });
+
+  it("the planned-date tile shows the historical estimate, labelled as such", () => {
+    renderPage(beyond());
+    const tile = text("pf-planned");
+    expect(tile).toContain("₹2,520");
+    expect(tile).toContain("historical estimate (no model, not validated)");
+    expect(tile).not.toMatch(/Unavailable/);
+  });
+
+  it("draws the days the model does not reach as a separately labelled historical estimate", () => {
+    const w = makeWindow();
+    w.entries = w.entries.map((e) => (e.day > 20 ? { ...e, status: "unavailable", predicted_price: null, lower: null, upper: null,
+      estimate: { price: 2300, method: "historical_baseline", validated: false } } : e));
+    renderPage(forecast({ window: w }));
+    expect(text("pf-legend")).toContain("Predicted price");
+    expect(text("pf-legend-estimate")).toBe("Historical estimate (no model, not validated)");
+    expect(text("pf-estimate-note")).toMatch(/^10 day\(s\) are past the last date the model can forecast/);
+    expect(text("pf-estimate-note")).toContain("not a model forecast");
+  });
+
+  it("an ordinary model forecast carries no such label", () => {
+    renderPage(forecast());
+    expect(screen.queryByTestId("historical-estimate-note")).toBeNull();
+  });
+});
+
 describe("30-day price forecast", () => {
   it("summarises the starting price, the planned-date price, the highest price and the change", () => {
     renderPage(forecast({ window: makeWindow({ price: (d) => (d === PLANNED ? 2520 : d === "2026-11-11" ? 2700 : 2400) }) }));
@@ -117,8 +158,12 @@ describe("30-day price forecast", () => {
     expect(screen.queryByTestId("pf-stale")).toBeNull();
     expect(screen.queryByTestId("pf-notes")).toBeNull();
   });
-  it("shows a message, not a line, when no day has a validated prediction", () => {
+  it("with no validated day, draws the experimental estimates (labelled) and shows the message only when they are hidden", () => {
     renderPage(forecast({ window: makeWindow({ ok: () => false }) }));
+    expect(screen.queryByTestId("pf-none")).toBeNull();
+    expect(text("pf-legend")).toContain("Experimental estimate (not validated)");
+    expect(text("pf-legend")).not.toContain("Predicted price");               // nothing is drawn as a validated forecast
+    fireEvent.click(screen.getByTestId("pf-exp-toggle").querySelector("input"));
     expect(screen.getByTestId("pf-none")).toBeTruthy();
   });
   it("asks for a new prediction when the response has no window", () => {
@@ -212,14 +257,84 @@ describe("crops without a validated forecast", () => {
     expect(screen.queryByTestId("no-price")).toBeNull();
     expect(screen.queryByTestId("latest-actual")).toBeNull();                 // not repeated under the headline
   });
-  it("graph summary cards say Unavailable with a reason instead of a dash when nothing is validated", () => {
-    renderPage(blocked());
-    for (const id of ["pf-planned", "pf-high", "pf-change"]) {
+  it("with nothing validated, the planned-date card shows the experimental estimate, labelled; figures the API did not send stay Unavailable with a reason", () => {
+    renderPage(blocked());                                   // this window carries no `estimates` block
+    expect(text("pf-planned")).toContain("₹2,520");
+    expect(text("pf-planned")).toContain("experimental estimate (not validated)");
+    for (const id of ["pf-high", "pf-change"]) {
       expect(text(id)).toContain("Unavailable");
       expect(text(id)).not.toMatch(/—/);
     }
     expect(text("pf-high")).toContain("No validated forecast");
     expect(text("pf-start")).not.toContain("Unavailable");
+  });
+
+  it("highest price and 60-day change come from the API's experimental estimates, each labelled", () => {
+    const w = blockedWindow();
+    w.estimates = { kind: "experimental", validated: false, days: 30, highest: { date: day(TODAY, 20), price: 2650 },
+      change: { from_date: day(TODAY, 1), to_date: day(TODAY, 30), from_price: 2400, to_price: 2520, abs: 120, pct: 5, is_window_end: true } };
+    renderPage(blocked({ window: w }));
+    expect(text("pf-high")).toContain("₹2,650");
+    expect(text("pf-high")).toContain("experimental estimate (not validated)");
+    expect(text("pf-change")).toContain("5.0%");
+    expect(text("pf-change")).toContain("experimental estimate (not validated)");
+  });
+
+  it("a planned date with no prediction and no estimate is genuinely Unavailable, with the reason", () => {
+    const w = blockedWindow();
+    w.planned = { date: PLANNED, status: "unavailable", price: null, lower: null, upper: null, in_window: true, estimate: null };
+    renderPage(blocked({ window: w }));
+    expect(text("pf-planned")).toContain("Unavailable");
+    expect(text("pf-planned")).toContain("the model has no prediction for this date");
+  });
+
+  it("marks the planned date on the experimental curve and shows the provisional suggestion, both labelled in the legend", () => {
+    const w = blockedWindow();
+    w.storage = { default: "ordinary:fresh", plans: { "ordinary:fresh": { facility: "ordinary", facility_used: "ordinary", facility_label: "In shade under ordinary conditions", fallback: false,
+      range: "about 7 days", approximate: true, hold_days: 7, deadline: day(PLANNED, 7), comparison: w.comparison,
+      experimental: { validated: false, planned: { date: PLANNED, status: "validated", price: 2400 },
+        comparison: { code: "alternative", date: day(PLANNED, 3), price: 2600, diff: 200, diff_pct: 8.3, wait_days: 3, deadline: day(PLANNED, 7) } } } } };
+    renderPage(blocked({ window: w }));
+    const legend = text("pf-legend");
+    expect(legend).toContain("Your planned date");
+    expect(text("pf-legend-exprec")).toBe("Experimental selling suggestion (not validated)");
+    expect(legend).not.toContain("Recommended selling date");          // never presented as the validated recommendation
+    expect(legend).not.toContain("Predicted price");
+    fireEvent.click(screen.getByTestId("pf-exp-toggle").querySelector("input"));    // hiding the experimental curve hides the suggestion too
+    expect(screen.queryByTestId("pf-legend-exprec")).toBeNull();
+  });
+
+  it("keeps a suggestion on day 1 inside the plot, stacked above the forecast-start label, and the planned label below its dot", () => {
+    const w = blockedWindow();
+    const sugg = day(TODAY, 1);
+    w.storage = { default: "ordinary:fresh", plans: { "ordinary:fresh": { facility: "ordinary", facility_used: "ordinary",
+      facility_label: "In shade under ordinary conditions", fallback: false, range: "about 7 days", approximate: true, hold_days: 7,
+      deadline: day(PLANNED, 7), comparison: w.comparison,
+      experimental: { validated: false, planned: { date: PLANNED, status: "validated", price: 2400 },
+        comparison: { code: "alternative", date: sugg, price: 2400, diff: 0, diff_pct: 0, wait_days: -11, deadline: day(PLANNED, 7) } } } } };
+    renderPage(blocked({ window: w }));
+    const labels = [...document.querySelectorAll("[data-testid=pf-marker-label]")].map((g) => {
+      const tx = g.querySelector("text");
+      return { text: tx.textContent, anchor: g.dataset.anchor, x: Number(tx.getAttribute("x")), y: Number(tx.getAttribute("y")), g };
+    });
+    const start = labels.find((l) => l.text === "Forecast start");
+    const exp = labels.find((l) => l.text.startsWith("Experimental suggestion"));
+    const mine = labels.find((l) => l.text.startsWith("Your date (estimate)"));
+    expect(exp.anchor).toBe("start");                                  // near the left edge: grows rightwards, never clipped
+    expect(exp.x).toBeGreaterThanOrEqual(8 + 64);                      // inside the plot (left margin + y axis)
+    expect(start.y - exp.y).toBeGreaterThanOrEqual(18);                // stacked: the suggestion sits above the start label
+    // the planned label is below its dot, at least 12 px clear of the dot (and so of the curve through it)
+    const dot = document.querySelectorAll(".recharts-reference-dot circle");
+    const plannedDot = [...dot].find((c) => c.getAttribute("fill") === "#6b3fa0");
+    expect(mine.y - 12.5 - Number(plannedDot.getAttribute("cy"))).toBeGreaterThanOrEqual(12);
+    for (const l of [start, exp, mine]) {                              // every label has the halo, so lines never cut through it
+      expect(l.g.querySelector("text").getAttribute("paint-order")).toBe("stroke");
+    }
+  });
+
+  it("shows the range in the legend only where a range is actually drawn", () => {
+    renderPage(blocked());                                   // ranges are drawn only on validated days; there are none
+    expect(text("pf-legend")).not.toContain("Expected range");
   });
 
   it("labels a moved-forward earlier price as a historical reference with its real source date", () => {
@@ -233,6 +348,7 @@ describe("crops without a validated forecast", () => {
 
   it("shows the market's real price history and the specific test result instead of an empty graph", () => {
     renderPage(blocked());
+    fireEvent.click(screen.getByTestId("pf-exp-toggle").querySelector("input"));      // experimental estimates hidden: nothing model-made is drawn
     expect(text("pf-none")).toContain("No daily price forecast");
     expect(screen.queryByTestId("pf-none-reason")).toBeNull();               // the backtest sentence is not shown
     expect(document.body.textContent).not.toMatch(/backtest|vs no-change/i);
@@ -240,12 +356,14 @@ describe("crops without a validated forecast", () => {
     expect(document.querySelector("[data-testid=hist-chart] .recharts-wrapper")).toBeTruthy();
   });
 
-  it("keeps experimental estimates hidden until asked, and labels them when shown", () => {
-    renderPage(blocked());
-    expect(screen.queryByTestId("pf-exp-warn")).toBeNull();
-    fireEvent.click(screen.getByTestId("pf-exp-toggle").querySelector("input"));
-    expect(text("pf-exp-warn")).toContain("not forecasts to plan with");
+  it("draws experimental estimates by default, labelled in the legend, without the removed notes, and they can be hidden", () => {
+    const w = blockedWindow();
+    w.validation.stale_test = { current_wape_pct: 61.1, flat_wape_pct: 74.7, gap_days: 302 };
+    renderPage(blocked({ window: w }));
     expect(text("pf-legend")).toContain("Experimental estimate (not validated)");
+    expect(document.body.textContent).not.toMatch(/not forecasts to plan with|In tests that copy today's situation/);
+    fireEvent.click(screen.getByTestId("pf-exp-toggle").querySelector("input"));
+    expect(screen.queryByTestId("pf-legend")).toBeNull();                  // nothing model-made is drawn any more
   });
 
   it("recommends no date, without accuracy-test or backtest wording, and leaves no empty explanation box", () => {

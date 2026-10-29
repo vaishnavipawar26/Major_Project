@@ -118,6 +118,15 @@ def weather_context(market: str = Query(min_length=2, max_length=150), target_da
     return price_weather_service.weather_context(market, target_date, _growing(growing_location, latitude, longitude))
 
 
+@router.get("/weather-window")
+def weather_window(market: str = Query(min_length=2, max_length=150), start_date: dt.date | None = Query(None),
+                   growing_location: str | None = _GROWING, latitude: float | None = _LAT, longitude: float | None = _LON) -> dict:
+    """Daily weather for the 60 days after ``start_date`` (default today), the price forecast's window: live forecast days, typical
+    values for the time of year (labelled, not a forecast) and unavailable days. Context only; no model uses it."""
+    return price_weather_service.weather_window(market, start_date or price_weather_service.today(),
+                                                _growing(growing_location, latitude, longitude))
+
+
 @router.get("/soil-context")
 def soil_context(market: str = Query(min_length=2, max_length=150),
                  growing_location: str | None = _GROWING, latitude: float | None = _LAT, longitude: float | None = _LON) -> dict:

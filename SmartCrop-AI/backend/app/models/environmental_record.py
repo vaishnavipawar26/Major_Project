@@ -12,7 +12,7 @@ DATA_TYPES = ("observed", "forecast", "soil_estimate")
 class EnvironmentalRecord(Base):
     """One VALID environmental answer for a place (and, for weather, a day), shared by every user of this database.
 
-    Weather rows hold one day's values for a market town: ``observed`` (a past day, from the archive) or ``forecast`` (today up to 15 days
+    Weather rows hold one day's values for a market town: ``observed`` (a past day, from the archive) or ``forecast`` (today up to 14 days
     ahead); the two are kept apart, so a forecast is never mistaken for a record. Soil rows hold the regional soil-map estimate for a place
     (``soil_estimate``, ``date_key`` 'static'). Failed or empty provider answers are never stored. Values that are missing stay NULL, never 0.
     The price model does not use any of these values: they are context shown beside the prediction.

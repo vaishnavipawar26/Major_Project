@@ -1,0 +1,3436 @@
+{
+ "created": "2026-10-29T00:31:11+00:00",
+ "gap_days": 302,
+ "splits": {
+  "C": [
+   "2024-07-01",
+   "2024-07-01",
+   "2024-12-31"
+  ],
+  "A": [
+   "2025-01-01",
+   "2025-01-01",
+   "2025-06-30"
+  ],
+  "T": [
+   "2025-07-01",
+   "2025-07-01",
+   "2025-12-31"
+  ]
+ },
+ "margin_pct": 2.0,
+ "rows": [
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 3321,
+   "mae": 1518.1,
+   "wape_pct": 47.98
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 3321,
+   "mae": 1171.2,
+   "wape_pct": 37.02
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 3321,
+   "mae": 1202.5,
+   "wape_pct": 38.0
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 3321,
+   "mae": 1139.9,
+   "wape_pct": 36.03
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 3321,
+   "mae": 1212.3,
+   "wape_pct": 38.32
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3321,
+   "mae": 1223.1,
+   "wape_pct": 38.66
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 3321,
+   "mae": 1171.6,
+   "wape_pct": 37.03
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 3321,
+   "mae": 1240.8,
+   "wape_pct": 39.21
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 3321,
+   "mae": 1040.2,
+   "wape_pct": 32.87
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 3321,
+   "mae": 1169.0,
+   "wape_pct": 36.95
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 3321,
+   "mae": 1022.0,
+   "wape_pct": 32.3
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 3584,
+   "mae": 1345.3,
+   "wape_pct": 42.35
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 3584,
+   "mae": 1198.0,
+   "wape_pct": 37.71
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 3584,
+   "mae": 1287.7,
+   "wape_pct": 40.53
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 3584,
+   "mae": 1190.6,
+   "wape_pct": 37.48
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 3584,
+   "mae": 1319.0,
+   "wape_pct": 41.52
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3584,
+   "mae": 1329.1,
+   "wape_pct": 41.83
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 3584,
+   "mae": 1194.8,
+   "wape_pct": 37.61
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 3584,
+   "mae": 1374.7,
+   "wape_pct": 43.27
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 3584,
+   "mae": 1083.7,
+   "wape_pct": 34.11
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 3584,
+   "mae": 1155.7,
+   "wape_pct": 36.38
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 3584,
+   "mae": 1149.1,
+   "wape_pct": 36.17
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 6569,
+   "mae": 1484.8,
+   "wape_pct": 45.73
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 6569,
+   "mae": 1271.6,
+   "wape_pct": 39.16
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 6569,
+   "mae": 1466.2,
+   "wape_pct": 45.16
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 6569,
+   "mae": 1335.1,
+   "wape_pct": 41.12
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 6569,
+   "mae": 1506.5,
+   "wape_pct": 46.4
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 6569,
+   "mae": 1517.5,
+   "wape_pct": 46.74
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 6569,
+   "mae": 1287.8,
+   "wape_pct": 39.66
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 6569,
+   "mae": 1641.3,
+   "wape_pct": 50.55
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 6569,
+   "mae": 1172.1,
+   "wape_pct": 36.1
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 6569,
+   "mae": 1132.9,
+   "wape_pct": 34.89
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 6569,
+   "mae": 1460.1,
+   "wape_pct": 44.97
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 2060,
+   "mae": 1239.1,
+   "wape_pct": 50.18
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 2060,
+   "mae": 1084.7,
+   "wape_pct": 43.93
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 2060,
+   "mae": 1054.5,
+   "wape_pct": 42.7
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 2060,
+   "mae": 1070.5,
+   "wape_pct": 43.35
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 2060,
+   "mae": 1076.8,
+   "wape_pct": 43.61
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2060,
+   "mae": 1050.2,
+   "wape_pct": 42.53
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 2060,
+   "mae": 1051.3,
+   "wape_pct": 42.58
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 2060,
+   "mae": 1022.2,
+   "wape_pct": 41.4
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 2060,
+   "mae": 1106.3,
+   "wape_pct": 44.8
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 2060,
+   "mae": 1024.5,
+   "wape_pct": 41.49
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 2060,
+   "mae": 1106.2,
+   "wape_pct": 44.8
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 2353,
+   "mae": 977.0,
+   "wape_pct": 40.96
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 2353,
+   "mae": 1029.8,
+   "wape_pct": 43.18
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 2353,
+   "mae": 989.2,
+   "wape_pct": 41.47
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 2353,
+   "mae": 1006.8,
+   "wape_pct": 42.21
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 2353,
+   "mae": 1119.2,
+   "wape_pct": 46.92
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2353,
+   "mae": 1037.8,
+   "wape_pct": 43.51
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 2353,
+   "mae": 1034.7,
+   "wape_pct": 43.38
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 2353,
+   "mae": 946.3,
+   "wape_pct": 39.68
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 2353,
+   "mae": 1022.6,
+   "wape_pct": 42.87
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 2353,
+   "mae": 944.0,
+   "wape_pct": 39.58
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 2353,
+   "mae": 1023.3,
+   "wape_pct": 42.9
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 4493,
+   "mae": 852.0,
+   "wape_pct": 37.29
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 4493,
+   "mae": 968.5,
+   "wape_pct": 42.39
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 4493,
+   "mae": 913.0,
+   "wape_pct": 39.96
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 4493,
+   "mae": 928.2,
+   "wape_pct": 40.63
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 4493,
+   "mae": 1238.6,
+   "wape_pct": 54.21
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 4493,
+   "mae": 1071.2,
+   "wape_pct": 46.88
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 4493,
+   "mae": 1061.0,
+   "wape_pct": 46.44
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 4493,
+   "mae": 857.7,
+   "wape_pct": 37.54
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 4493,
+   "mae": 931.6,
+   "wape_pct": 40.77
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 4493,
+   "mae": 865.7,
+   "wape_pct": 37.89
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 4493,
+   "mae": 944.2,
+   "wape_pct": 41.33
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 2899,
+   "mae": 1965.2,
+   "wape_pct": 77.91
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 2899,
+   "mae": 1895.7,
+   "wape_pct": 75.15
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 2899,
+   "mae": 1973.0,
+   "wape_pct": 78.22
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 2899,
+   "mae": 2113.6,
+   "wape_pct": 83.79
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 2899,
+   "mae": 2050.6,
+   "wape_pct": 81.29
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2899,
+   "mae": 2066.5,
+   "wape_pct": 81.92
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 2899,
+   "mae": 2088.2,
+   "wape_pct": 82.78
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 2899,
+   "mae": 2129.6,
+   "wape_pct": 84.42
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 2899,
+   "mae": 1263.5,
+   "wape_pct": 50.09
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 2899,
+   "mae": 1938.9,
+   "wape_pct": 76.87
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 2899,
+   "mae": 1369.5,
+   "wape_pct": 54.29
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "1-14",
+   "candidate": "band_46_60_half",
+   "n": 2899,
+   "mae": 2557.5,
+   "wape_pct": 101.39
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 3344,
+   "mae": 1718.5,
+   "wape_pct": 76.72
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 3344,
+   "mae": 1706.6,
+   "wape_pct": 76.19
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 3344,
+   "mae": 1914.2,
+   "wape_pct": 85.46
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 3344,
+   "mae": 1912.7,
+   "wape_pct": 85.39
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 3344,
+   "mae": 1986.0,
+   "wape_pct": 88.66
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3344,
+   "mae": 2026.7,
+   "wape_pct": 90.48
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 3344,
+   "mae": 2055.1,
+   "wape_pct": 91.75
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 3344,
+   "mae": 2369.4,
+   "wape_pct": 105.78
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 3344,
+   "mae": 1100.0,
+   "wape_pct": 49.11
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 3344,
+   "mae": 1776.1,
+   "wape_pct": 79.29
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 3344,
+   "mae": 1420.6,
+   "wape_pct": 63.42
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "15-30",
+   "candidate": "band_46_60_half",
+   "n": 3344,
+   "mae": 2146.1,
+   "wape_pct": 95.81
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 6213,
+   "mae": 1087.8,
+   "wape_pct": 53.66
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 6213,
+   "mae": 1049.5,
+   "wape_pct": 51.77
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 6213,
+   "mae": 1389.8,
+   "wape_pct": 68.56
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 6213,
+   "mae": 1295.3,
+   "wape_pct": 63.89
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 6213,
+   "mae": 1542.1,
+   "wape_pct": 76.07
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 6213,
+   "mae": 1541.1,
+   "wape_pct": 76.02
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 6213,
+   "mae": 1648.9,
+   "wape_pct": 81.34
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 6213,
+   "mae": 2280.0,
+   "wape_pct": 112.47
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 6213,
+   "mae": 1130.8,
+   "wape_pct": 55.78
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 6213,
+   "mae": 1293.5,
+   "wape_pct": 63.81
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 6213,
+   "mae": 1906.9,
+   "wape_pct": 94.06
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "31-60",
+   "candidate": "band_46_60_half",
+   "n": 6213,
+   "mae": 1435.8,
+   "wape_pct": 70.82
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "46-60",
+   "candidate": "band_46_60_half",
+   "n": 3185,
+   "mae": 1273.6,
+   "wape_pct": 64.0
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "46-60",
+   "candidate": "flat_last_year",
+   "n": 3185,
+   "mae": 2176.8,
+   "wape_pct": 109.39
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "46-60",
+   "candidate": "pooled_prod",
+   "n": 3185,
+   "mae": 945.0,
+   "wape_pct": 47.49
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "band": "46-60",
+   "candidate": "crop_xgb_half",
+   "n": 3185,
+   "mae": 1228.1,
+   "wape_pct": 61.71
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 3165,
+   "mae": 611.8,
+   "wape_pct": 40.49
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 3165,
+   "mae": 563.2,
+   "wape_pct": 37.28
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 3165,
+   "mae": 573.0,
+   "wape_pct": 37.93
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 3165,
+   "mae": 635.9,
+   "wape_pct": 42.09
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 3165,
+   "mae": 637.4,
+   "wape_pct": 42.18
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3165,
+   "mae": 614.6,
+   "wape_pct": 40.68
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 3165,
+   "mae": 640.2,
+   "wape_pct": 42.37
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 3165,
+   "mae": 595.0,
+   "wape_pct": 39.38
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 3165,
+   "mae": 1090.1,
+   "wape_pct": 72.15
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 3165,
+   "mae": 675.1,
+   "wape_pct": 44.68
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 3165,
+   "mae": 1236.0,
+   "wape_pct": 81.8
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 3525,
+   "mae": 641.0,
+   "wape_pct": 43.21
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 3525,
+   "mae": 611.2,
+   "wape_pct": 41.2
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 3525,
+   "mae": 588.6,
+   "wape_pct": 39.68
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 3525,
+   "mae": 692.2,
+   "wape_pct": 46.66
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 3525,
+   "mae": 704.5,
+   "wape_pct": 47.48
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3525,
+   "mae": 634.8,
+   "wape_pct": 42.79
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 3525,
+   "mae": 725.6,
+   "wape_pct": 48.91
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 3525,
+   "mae": 582.7,
+   "wape_pct": 39.28
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 3525,
+   "mae": 1066.8,
+   "wape_pct": 71.91
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 3525,
+   "mae": 784.6,
+   "wape_pct": 52.89
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 3525,
+   "mae": 1438.4,
+   "wape_pct": 96.96
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 6516,
+   "mae": 633.5,
+   "wape_pct": 46.91
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 6516,
+   "mae": 734.4,
+   "wape_pct": 54.38
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 6516,
+   "mae": 611.5,
+   "wape_pct": 45.28
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 6516,
+   "mae": 814.7,
+   "wape_pct": 60.32
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 6516,
+   "mae": 833.4,
+   "wape_pct": 61.7
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 6516,
+   "mae": 649.4,
+   "wape_pct": 48.08
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 6516,
+   "mae": 869.1,
+   "wape_pct": 64.35
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 6516,
+   "mae": 534.8,
+   "wape_pct": 39.6
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 6516,
+   "mae": 1001.7,
+   "wape_pct": 74.16
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 6516,
+   "mae": 885.9,
+   "wape_pct": 65.59
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 6516,
+   "mae": 1705.6,
+   "wape_pct": 126.28
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 2175,
+   "mae": 414.9,
+   "wape_pct": 26.17
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 2175,
+   "mae": 375.1,
+   "wape_pct": 23.66
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 2175,
+   "mae": 400.7,
+   "wape_pct": 25.27
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 2175,
+   "mae": 378.0,
+   "wape_pct": 23.84
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 2175,
+   "mae": 401.9,
+   "wape_pct": 25.35
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2175,
+   "mae": 419.2,
+   "wape_pct": 26.44
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 2175,
+   "mae": 420.3,
+   "wape_pct": 26.51
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 2175,
+   "mae": 439.4,
+   "wape_pct": 27.71
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 2175,
+   "mae": 712.0,
+   "wape_pct": 44.9
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 2175,
+   "mae": 493.7,
+   "wape_pct": 31.14
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 2175,
+   "mae": 808.6,
+   "wape_pct": 51.0
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 2387,
+   "mae": 414.6,
+   "wape_pct": 26.43
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 2387,
+   "mae": 380.8,
+   "wape_pct": 24.28
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 2387,
+   "mae": 401.7,
+   "wape_pct": 25.61
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 2387,
+   "mae": 381.2,
+   "wape_pct": 24.3
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 2387,
+   "mae": 379.0,
+   "wape_pct": 24.16
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2387,
+   "mae": 402.2,
+   "wape_pct": 25.64
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 2387,
+   "mae": 393.5,
+   "wape_pct": 25.09
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 2387,
+   "mae": 439.2,
+   "wape_pct": 28.0
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 2387,
+   "mae": 697.0,
+   "wape_pct": 44.44
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 2387,
+   "mae": 568.0,
+   "wape_pct": 36.21
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 2387,
+   "mae": 938.0,
+   "wape_pct": 59.8
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 4284,
+   "mae": 446.2,
+   "wape_pct": 28.53
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 4284,
+   "mae": 404.5,
+   "wape_pct": 25.86
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 4284,
+   "mae": 414.3,
+   "wape_pct": 26.49
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 4284,
+   "mae": 395.4,
+   "wape_pct": 25.28
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 4284,
+   "mae": 375.8,
+   "wape_pct": 24.03
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 4284,
+   "mae": 394.0,
+   "wape_pct": 25.19
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 4284,
+   "mae": 383.5,
+   "wape_pct": 24.52
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 4284,
+   "mae": 440.5,
+   "wape_pct": 28.17
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 4284,
+   "mae": 682.0,
+   "wape_pct": 43.61
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 4284,
+   "mae": 678.7,
+   "wape_pct": 43.4
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 4284,
+   "mae": 1138.4,
+   "wape_pct": 72.79
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 2946,
+   "mae": 798.8,
+   "wape_pct": 70.15
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 2946,
+   "mae": 901.1,
+   "wape_pct": 79.14
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 2946,
+   "mae": 795.7,
+   "wape_pct": 69.88
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 2946,
+   "mae": 958.1,
+   "wape_pct": 84.14
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 2946,
+   "mae": 860.9,
+   "wape_pct": 75.61
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2946,
+   "mae": 793.5,
+   "wape_pct": 69.68
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 2946,
+   "mae": 887.5,
+   "wape_pct": 77.94
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 2946,
+   "mae": 750.2,
+   "wape_pct": 65.88
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 2946,
+   "mae": 1048.0,
+   "wape_pct": 92.03
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 2946,
+   "mae": 796.4,
+   "wape_pct": 69.94
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 2946,
+   "mae": 1332.7,
+   "wape_pct": 117.04
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "1-14",
+   "candidate": "band_46_60_half",
+   "n": 2946,
+   "mae": 1059.4,
+   "wape_pct": 93.04
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 3246,
+   "mae": 1130.5,
+   "wape_pct": 92.38
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 3246,
+   "mae": 1364.0,
+   "wape_pct": 111.45
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 3246,
+   "mae": 969.6,
+   "wape_pct": 79.22
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 3246,
+   "mae": 1468.9,
+   "wape_pct": 120.03
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 3246,
+   "mae": 1390.9,
+   "wape_pct": 113.65
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3246,
+   "mae": 980.3,
+   "wape_pct": 80.1
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 3246,
+   "mae": 1511.7,
+   "wape_pct": 123.53
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 3246,
+   "mae": 775.5,
+   "wape_pct": 63.37
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 3246,
+   "mae": 962.6,
+   "wape_pct": 78.66
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 3246,
+   "mae": 1011.8,
+   "wape_pct": 82.67
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 3246,
+   "mae": 1943.1,
+   "wape_pct": 158.77
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "15-30",
+   "candidate": "band_46_60_half",
+   "n": 3246,
+   "mae": 1195.1,
+   "wape_pct": 97.65
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 6181,
+   "mae": 1288.4,
+   "wape_pct": 88.81
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 6181,
+   "mae": 1741.7,
+   "wape_pct": 120.05
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 6181,
+   "mae": 907.9,
+   "wape_pct": 62.58
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 6181,
+   "mae": 1883.0,
+   "wape_pct": 129.79
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 6181,
+   "mae": 1942.2,
+   "wape_pct": 133.87
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 6181,
+   "mae": 930.5,
+   "wape_pct": 64.14
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 6181,
+   "mae": 2225.2,
+   "wape_pct": 153.38
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 6181,
+   "mae": 749.7,
+   "wape_pct": 51.67
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 6181,
+   "mae": 995.4,
+   "wape_pct": 68.61
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 6181,
+   "mae": 1009.6,
+   "wape_pct": 69.59
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 6181,
+   "mae": 3272.9,
+   "wape_pct": 225.59
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "31-60",
+   "candidate": "band_46_60_half",
+   "n": 6181,
+   "mae": 995.4,
+   "wape_pct": 68.61
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "46-60",
+   "candidate": "band_46_60_half",
+   "n": 3113,
+   "mae": 926.1,
+   "wape_pct": 60.71
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "46-60",
+   "candidate": "flat_last_year",
+   "n": 3113,
+   "mae": 780.5,
+   "wape_pct": 51.17
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "46-60",
+   "candidate": "pooled_prod",
+   "n": 3113,
+   "mae": 1316.2,
+   "wape_pct": 86.28
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "band": "46-60",
+   "candidate": "crop_xgb_half",
+   "n": 3113,
+   "mae": 861.5,
+   "wape_pct": 56.47
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 3728,
+   "mae": 1956.6,
+   "wape_pct": 153.86
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 3728,
+   "mae": 2082.3,
+   "wape_pct": 163.74
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 3728,
+   "mae": 2085.1,
+   "wape_pct": 163.96
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 3728,
+   "mae": 2109.9,
+   "wape_pct": 165.91
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 3728,
+   "mae": 2139.5,
+   "wape_pct": 168.24
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3728,
+   "mae": 2124.8,
+   "wape_pct": 167.09
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 3728,
+   "mae": 2134.0,
+   "wape_pct": 167.81
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 3728,
+   "mae": 2117.3,
+   "wape_pct": 166.5
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 3728,
+   "mae": 2038.9,
+   "wape_pct": 160.33
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 3728,
+   "mae": 2114.0,
+   "wape_pct": 166.24
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 3728,
+   "mae": 2130.5,
+   "wape_pct": 167.53
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 3778,
+   "mae": 1743.7,
+   "wape_pct": 139.53
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 3778,
+   "mae": 2302.8,
+   "wape_pct": 184.28
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 3778,
+   "mae": 2196.4,
+   "wape_pct": 175.77
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 3778,
+   "mae": 2397.1,
+   "wape_pct": 191.82
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 3778,
+   "mae": 2340.4,
+   "wape_pct": 187.29
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3778,
+   "mae": 2222.3,
+   "wape_pct": 177.84
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 3778,
+   "mae": 2341.3,
+   "wape_pct": 187.36
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 3778,
+   "mae": 2157.2,
+   "wape_pct": 172.63
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 3778,
+   "mae": 2100.0,
+   "wape_pct": 168.05
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 3778,
+   "mae": 2256.8,
+   "wape_pct": 180.6
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 3778,
+   "mae": 2418.0,
+   "wape_pct": 193.5
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 5999,
+   "mae": 1700.2,
+   "wape_pct": 136.75
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 5999,
+   "mae": 2817.8,
+   "wape_pct": 226.64
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 5999,
+   "mae": 2404.0,
+   "wape_pct": 193.35
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 5999,
+   "mae": 2854.4,
+   "wape_pct": 229.58
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 5999,
+   "mae": 2890.7,
+   "wape_pct": 232.5
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 5999,
+   "mae": 2428.1,
+   "wape_pct": 195.29
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 5999,
+   "mae": 2965.2,
+   "wape_pct": 238.49
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 5999,
+   "mae": 2109.2,
+   "wape_pct": 169.65
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 5999,
+   "mae": 2250.8,
+   "wape_pct": 181.03
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 5999,
+   "mae": 2484.6,
+   "wape_pct": 199.84
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 5999,
+   "mae": 2966.7,
+   "wape_pct": 238.61
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 2126,
+   "mae": 1116.8,
+   "wape_pct": 73.75
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 2126,
+   "mae": 1145.0,
+   "wape_pct": 75.61
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 2126,
+   "mae": 1154.0,
+   "wape_pct": 76.2
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 2126,
+   "mae": 1142.6,
+   "wape_pct": 75.45
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 2126,
+   "mae": 1169.0,
+   "wape_pct": 77.19
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2126,
+   "mae": 1167.0,
+   "wape_pct": 77.06
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 2126,
+   "mae": 1161.9,
+   "wape_pct": 76.73
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 2126,
+   "mae": 1165.8,
+   "wape_pct": 76.98
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 2126,
+   "mae": 780.4,
+   "wape_pct": 51.53
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 2126,
+   "mae": 1144.9,
+   "wape_pct": 75.6
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 2126,
+   "mae": 803.4,
+   "wape_pct": 53.05
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 2176,
+   "mae": 1156.0,
+   "wape_pct": 75.66
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 2176,
+   "mae": 1168.8,
+   "wape_pct": 76.5
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 2176,
+   "mae": 1177.1,
+   "wape_pct": 77.04
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 2176,
+   "mae": 1155.5,
+   "wape_pct": 75.63
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 2176,
+   "mae": 1186.2,
+   "wape_pct": 77.64
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 2176,
+   "mae": 1186.4,
+   "wape_pct": 77.65
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 2176,
+   "mae": 1164.5,
+   "wape_pct": 76.22
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 2176,
+   "mae": 1188.8,
+   "wape_pct": 77.8
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 2176,
+   "mae": 820.5,
+   "wape_pct": 53.7
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 2176,
+   "mae": 1124.2,
+   "wape_pct": 73.58
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 2176,
+   "mae": 830.5,
+   "wape_pct": 54.35
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 3591,
+   "mae": 1178.8,
+   "wape_pct": 77.48
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 3591,
+   "mae": 1184.1,
+   "wape_pct": 77.83
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 3591,
+   "mae": 1188.6,
+   "wape_pct": 78.13
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 3591,
+   "mae": 1158.9,
+   "wape_pct": 76.18
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 3591,
+   "mae": 1199.1,
+   "wape_pct": 78.82
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3591,
+   "mae": 1195.8,
+   "wape_pct": 78.6
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 3591,
+   "mae": 1143.7,
+   "wape_pct": 75.18
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 3591,
+   "mae": 1195.5,
+   "wape_pct": 78.58
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 3591,
+   "mae": 885.7,
+   "wape_pct": 58.22
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 3591,
+   "mae": 1109.2,
+   "wape_pct": 72.91
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 3591,
+   "mae": 884.9,
+   "wape_pct": 58.16
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "pooled_prod",
+   "n": 3246,
+   "mae": 1087.5,
+   "wape_pct": 51.24
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb",
+   "n": 3246,
+   "mae": 893.4,
+   "wape_pct": 42.09
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_half",
+   "n": 3246,
+   "mae": 970.7,
+   "wape_pct": 45.73
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_rf",
+   "n": 3246,
+   "mae": 947.7,
+   "wape_pct": 44.65
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate",
+   "n": 3246,
+   "mae": 1091.3,
+   "wape_pct": 51.41
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3246,
+   "mae": 1149.1,
+   "wape_pct": 54.14
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "crop_rf_rate",
+   "n": 3246,
+   "mae": 1134.2,
+   "wape_pct": 53.44
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "flat_last_year",
+   "n": 3246,
+   "mae": 1234.4,
+   "wape_pct": 58.16
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "flat_latest",
+   "n": 3246,
+   "mae": 1153.3,
+   "wape_pct": 54.34
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "seasonal_last_year",
+   "n": 3246,
+   "mae": 1327.5,
+   "wape_pct": 62.55
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "latest_x_season",
+   "n": 3246,
+   "mae": 1337.9,
+   "wape_pct": 63.04
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "1-14",
+   "candidate": "band_46_60_half",
+   "n": 3246,
+   "mae": 901.3,
+   "wape_pct": 42.46
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "pooled_prod",
+   "n": 3371,
+   "mae": 799.9,
+   "wape_pct": 37.23
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb",
+   "n": 3371,
+   "mae": 850.5,
+   "wape_pct": 39.59
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_half",
+   "n": 3371,
+   "mae": 861.4,
+   "wape_pct": 40.1
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_rf",
+   "n": 3371,
+   "mae": 830.8,
+   "wape_pct": 38.67
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate",
+   "n": 3371,
+   "mae": 826.0,
+   "wape_pct": 38.45
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_xgb_rate_half",
+   "n": 3371,
+   "mae": 877.1,
+   "wape_pct": 40.83
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "crop_rf_rate",
+   "n": 3371,
+   "mae": 865.0,
+   "wape_pct": 40.26
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "flat_last_year",
+   "n": 3371,
+   "mae": 1125.6,
+   "wape_pct": 52.39
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "flat_latest",
+   "n": 3371,
+   "mae": 1298.7,
+   "wape_pct": 60.45
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "seasonal_last_year",
+   "n": 3371,
+   "mae": 1232.6,
+   "wape_pct": 57.37
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "latest_x_season",
+   "n": 3371,
+   "mae": 1839.1,
+   "wape_pct": 85.6
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "15-30",
+   "candidate": "band_46_60_half",
+   "n": 3371,
+   "mae": 800.4,
+   "wape_pct": 37.26
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "pooled_prod",
+   "n": 5382,
+   "mae": 688.9,
+   "wape_pct": 33.21
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb",
+   "n": 5382,
+   "mae": 801.2,
+   "wape_pct": 38.62
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_half",
+   "n": 5382,
+   "mae": 712.6,
+   "wape_pct": 34.35
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_rf",
+   "n": 5382,
+   "mae": 758.5,
+   "wape_pct": 36.56
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate",
+   "n": 5382,
+   "mae": 806.0,
+   "wape_pct": 38.85
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_xgb_rate_half",
+   "n": 5382,
+   "mae": 672.1,
+   "wape_pct": 32.4
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "crop_rf_rate",
+   "n": 5382,
+   "mae": 845.1,
+   "wape_pct": 40.73
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "flat_last_year",
+   "n": 5382,
+   "mae": 1136.3,
+   "wape_pct": 54.77
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "flat_latest",
+   "n": 5382,
+   "mae": 1304.0,
+   "wape_pct": 62.86
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "seasonal_last_year",
+   "n": 5382,
+   "mae": 1206.9,
+   "wape_pct": 58.18
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "latest_x_season",
+   "n": 5382,
+   "mae": 2364.3,
+   "wape_pct": 113.97
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "31-60",
+   "candidate": "band_46_60_half",
+   "n": 5382,
+   "mae": 657.6,
+   "wape_pct": 31.7
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "46-60",
+   "candidate": "band_46_60_half",
+   "n": 2575,
+   "mae": 609.6,
+   "wape_pct": 30.18
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "46-60",
+   "candidate": "flat_last_year",
+   "n": 2575,
+   "mae": 1131.1,
+   "wape_pct": 56.0
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "46-60",
+   "candidate": "pooled_prod",
+   "n": 2575,
+   "mae": 660.2,
+   "wape_pct": 32.68
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "band": "46-60",
+   "candidate": "crop_xgb_half",
+   "n": 2575,
+   "mae": 652.0,
+   "wape_pct": 32.28
+  }
+ ],
+ "start_price": [
+  {
+   "crop": "Onion",
+   "split": "C",
+   "start": "last_year_x1.05",
+   "n": 12855,
+   "mae": 1184.8,
+   "wape_pct": 38.19
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "start": "last_year",
+   "n": 12855,
+   "mae": 1246.3,
+   "wape_pct": 40.18
+  },
+  {
+   "crop": "Onion",
+   "split": "C",
+   "start": "latest_report",
+   "n": 12855,
+   "mae": 1014.0,
+   "wape_pct": 32.69
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "start": "last_year_x1.05",
+   "n": 8690,
+   "mae": 1060.5,
+   "wape_pct": 42.37
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "start": "last_year",
+   "n": 8690,
+   "mae": 1128.5,
+   "wape_pct": 45.08
+  },
+  {
+   "crop": "Potato",
+   "split": "C",
+   "start": "latest_report",
+   "n": 8690,
+   "mae": 1137.5,
+   "wape_pct": 45.44
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "start": "last_year_x1.05",
+   "n": 12186,
+   "mae": 2015.5,
+   "wape_pct": 76.84
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "start": "last_year",
+   "n": 12186,
+   "mae": 1939.8,
+   "wape_pct": 73.96
+  },
+  {
+   "crop": "Tomato",
+   "split": "C",
+   "start": "latest_report",
+   "n": 12186,
+   "mae": 1335.3,
+   "wape_pct": 50.91
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "start": "last_year_x1.05",
+   "n": 12729,
+   "mae": 624.4,
+   "wape_pct": 41.07
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "start": "last_year",
+   "n": 12729,
+   "mae": 601.4,
+   "wape_pct": 39.55
+  },
+  {
+   "crop": "Onion",
+   "split": "A",
+   "start": "latest_report",
+   "n": 12729,
+   "mae": 1142.0,
+   "wape_pct": 75.11
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "start": "last_year_x1.05",
+   "n": 8670,
+   "mae": 463.2,
+   "wape_pct": 29.05
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "start": "last_year",
+   "n": 8670,
+   "mae": 420.9,
+   "wape_pct": 26.4
+  },
+  {
+   "crop": "Potato",
+   "split": "A",
+   "start": "latest_report",
+   "n": 8670,
+   "mae": 710.6,
+   "wape_pct": 44.57
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "start": "last_year_x1.05",
+   "n": 12180,
+   "mae": 757.2,
+   "wape_pct": 68.46
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "start": "last_year",
+   "n": 12180,
+   "mae": 692.8,
+   "wape_pct": 62.64
+  },
+  {
+   "crop": "Tomato",
+   "split": "A",
+   "start": "latest_report",
+   "n": 12180,
+   "mae": 1069.2,
+   "wape_pct": 96.67
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "start": "last_year_x1.05",
+   "n": 12749,
+   "mae": 2128.1,
+   "wape_pct": 170.99
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "start": "last_year",
+   "n": 12749,
+   "mae": 1968.4,
+   "wape_pct": 158.16
+  },
+  {
+   "crop": "Onion",
+   "split": "T",
+   "start": "latest_report",
+   "n": 12749,
+   "mae": 2191.6,
+   "wape_pct": 176.09
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "start": "last_year_x1.05",
+   "n": 7611,
+   "mae": 1162.7,
+   "wape_pct": 75.23
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "start": "last_year",
+   "n": 7611,
+   "mae": 1034.7,
+   "wape_pct": 66.95
+  },
+  {
+   "crop": "Potato",
+   "split": "T",
+   "start": "latest_report",
+   "n": 7611,
+   "mae": 836.2,
+   "wape_pct": 54.1
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "start": "last_year_x1.05",
+   "n": 11587,
+   "mae": 1415.0,
+   "wape_pct": 70.21
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "start": "last_year",
+   "n": 11587,
+   "mae": 1341.5,
+   "wape_pct": 66.57
+  },
+  {
+   "crop": "Tomato",
+   "split": "T",
+   "start": "latest_report",
+   "n": 11587,
+   "mae": 889.1,
+   "wape_pct": 44.12
+  }
+ ],
+ "sixty_day": {
+  "Onion": {
+   "pooled_prod": {
+    "C": 1455.9,
+    "A": 630.3,
+    "T": 1783.15,
+    "mean_fold_mae": 1289.78,
+    "mae": 1294.56,
+    "wape_pct": 65.89,
+    "n": 40185
+   },
+   "flat_last_year": {
+    "C": 1471.67,
+    "A": 562.01,
+    "T": 2124.86,
+    "mean_fold_mae": 1386.18,
+    "mae": 1392.25,
+    "wape_pct": 70.86,
+    "n": 40185
+   },
+   "crop_xgb_half": {
+    "C": 1353.72,
+    "A": 596.16,
+    "T": 2257.89,
+    "mean_fold_mae": 1402.59,
+    "mae": 1408.63,
+    "wape_pct": 71.69,
+    "n": 40185
+   },
+   "seasonal_last_year": {
+    "C": 1147.86,
+    "A": 808.34,
+    "T": 2318.57,
+    "mean_fold_mae": 1424.92,
+    "mae": 1429.73,
+    "wape_pct": 72.77,
+    "n": 40185
+   },
+   "flat_latest": {
+    "C": 1116.08,
+    "A": 1040.26,
+    "T": 2150.12,
+    "mean_fold_mae": 1435.49,
+    "mae": 1438.67,
+    "wape_pct": 73.22,
+    "n": 40185
+   },
+   "crop_xgb_rate_half": {
+    "C": 1394.82,
+    "A": 637.16,
+    "T": 2286.8,
+    "mean_fold_mae": 1439.6,
+    "mae": 1445.6,
+    "wape_pct": 73.58,
+    "n": 40185
+   },
+   "crop_xgb": {
+    "C": 1227.28,
+    "A": 660.48,
+    "T": 2470.7,
+    "mean_fold_mae": 1452.82,
+    "mae": 1458.89,
+    "wape_pct": 74.25,
+    "n": 40185
+   },
+   "crop_rf": {
+    "C": 1248.55,
+    "A": 739.15,
+    "T": 2520.95,
+    "mean_fold_mae": 1502.89,
+    "mae": 1508.76,
+    "wape_pct": 76.79,
+    "n": 40185
+   },
+   "crop_rf_rate": {
+    "C": 1234.42,
+    "A": 775.94,
+    "T": 2561.22,
+    "mean_fold_mae": 1523.86,
+    "mae": 1529.65,
+    "wape_pct": 77.85,
+    "n": 40185
+   },
+   "crop_xgb_rate": {
+    "C": 1384.11,
+    "A": 752.02,
+    "T": 2529.39,
+    "mean_fold_mae": 1555.17,
+    "mae": 1561.28,
+    "wape_pct": 79.46,
+    "n": 40185
+   },
+   "latest_x_season": {
+    "C": 1269.4,
+    "A": 1521.73,
+    "T": 2582.37,
+    "mean_fold_mae": 1791.17,
+    "mae": 1793.57,
+    "wape_pct": 91.29,
+    "n": 40185
+   }
+  },
+  "Potato": {
+   "crop_rf": {
+    "C": 981.88,
+    "A": 387.29,
+    "T": 1153.57,
+    "mean_fold_mae": 840.91,
+    "mae": 829.63,
+    "wape_pct": 45.4,
+    "n": 25645
+   },
+   "flat_latest": {
+    "C": 996.05,
+    "A": 693.42,
+    "T": 839.36,
+    "mean_fold_mae": 842.95,
+    "mae": 843.44,
+    "wape_pct": 46.15,
+    "n": 25645
+   },
+   "flat_last_year": {
+    "C": 919.16,
+    "A": 439.88,
+    "T": 1185.65,
+    "mean_fold_mae": 848.23,
+    "mae": 835.86,
+    "wape_pct": 45.74,
+    "n": 25645
+   },
+   "crop_xgb_half": {
+    "C": 965.86,
+    "A": 407.56,
+    "T": 1176.11,
+    "mean_fold_mae": 849.84,
+    "mae": 837.99,
+    "wape_pct": 45.85,
+    "n": 25645
+   },
+   "pooled_prod": {
+    "C": 974.56,
+    "A": 429.98,
+    "T": 1155.81,
+    "mean_fold_mae": 853.45,
+    "mae": 842.5,
+    "wape_pct": 46.1,
+    "n": 25645
+   },
+   "crop_xgb": {
+    "C": 1011.57,
+    "A": 390.88,
+    "T": 1169.35,
+    "mean_fold_mae": 857.27,
+    "mae": 846.03,
+    "wape_pct": 46.3,
+    "n": 25645
+   },
+   "crop_rf_rate": {
+    "C": 1051.81,
+    "A": 395.25,
+    "T": 1154.34,
+    "mean_fold_mae": 867.13,
+    "mae": 856.89,
+    "wape_pct": 46.89,
+    "n": 25645
+   },
+   "crop_xgb_rate_half": {
+    "C": 1057.52,
+    "A": 402.41,
+    "T": 1185.45,
+    "mean_fold_mae": 881.79,
+    "mae": 870.92,
+    "wape_pct": 47.66,
+    "n": 25645
+   },
+   "seasonal_last_year": {
+    "C": 923.12,
+    "A": 603.34,
+    "T": 1122.95,
+    "mean_fold_mae": 883.14,
+    "mae": 874.32,
+    "wape_pct": 47.85,
+    "n": 25645
+   },
+   "crop_xgb_rate": {
+    "C": 1169.63,
+    "A": 383.08,
+    "T": 1187.44,
+    "mean_fold_mae": 913.38,
+    "mae": 903.8,
+    "wape_pct": 49.46,
+    "n": 25645
+   },
+   "latest_x_season": {
+    "C": 1002.57,
+    "A": 1003.23,
+    "T": 847.95,
+    "mean_fold_mae": 951.25,
+    "mae": 955.21,
+    "wape_pct": 52.27,
+    "n": 25645
+   }
+  },
+  "Tomato": {
+   "crop_xgb_half": {
+    "C": 1666.32,
+    "A": 897.37,
+    "T": 824.23,
+    "mean_fold_mae": 1129.3,
+    "mae": 1133.61,
+    "wape_pct": 60.52,
+    "n": 36828
+   },
+   "flat_latest": {
+    "C": 1153.42,
+    "A": 999.32,
+    "T": 1261.74,
+    "mean_fold_mae": 1138.16,
+    "mae": 1136.94,
+    "wape_pct": 60.69,
+    "n": 36828
+   },
+   "pooled_prod": {
+    "C": 1461.33,
+    "A": 1130.4,
+    "T": 827.91,
+    "mean_fold_mae": 1139.88,
+    "mae": 1143.77,
+    "wape_pct": 61.06,
+    "n": 36828
+   },
+   "crop_xgb_rate_half": {
+    "C": 1793.75,
+    "A": 910.95,
+    "T": 858.73,
+    "mean_fold_mae": 1187.81,
+    "mae": 1192.52,
+    "wape_pct": 63.66,
+    "n": 36828
+   },
+   "crop_xgb": {
+    "C": 1422.85,
+    "A": 1442.47,
+    "T": 839.99,
+    "mean_fold_mae": 1235.1,
+    "mae": 1239.54,
+    "wape_pct": 66.17,
+    "n": 36828
+   },
+   "band_46_60_half": {
+    "C": 1887.55,
+    "A": 1063.03,
+    "T": 763.64,
+    "mean_fold_mae": 1238.08,
+    "mae": 1244.36,
+    "wape_pct": 66.43,
+    "n": 36828
+   },
+   "seasonal_last_year": {
+    "C": 1573.27,
+    "A": 959.41,
+    "T": 1246.75,
+    "mean_fold_mae": 1259.81,
+    "mae": 1260.65,
+    "wape_pct": 67.3,
+    "n": 36828
+   },
+   "crop_rf": {
+    "C": 1651.5,
+    "A": 1554.14,
+    "T": 829.99,
+    "mean_fold_mae": 1345.21,
+    "mae": 1351.14,
+    "wape_pct": 72.12,
+    "n": 36828
+   },
+   "flat_last_year": {
+    "C": 2269.0,
+    "A": 756.59,
+    "T": 1159.83,
+    "mean_fold_mae": 1395.14,
+    "mae": 1399.5,
+    "wape_pct": 74.71,
+    "n": 36828
+   },
+   "crop_xgb_rate": {
+    "C": 1779.62,
+    "A": 1540.11,
+    "T": 888.8,
+    "mean_fold_mae": 1402.84,
+    "mae": 1408.91,
+    "wape_pct": 75.21,
+    "n": 36828
+   },
+   "crop_rf_rate": {
+    "C": 1860.19,
+    "A": 1719.51,
+    "T": 928.9,
+    "mean_fold_mae": 1502.87,
+    "mae": 1509.5,
+    "wape_pct": 80.58,
+    "n": 36828
+   },
+   "latest_x_season": {
+    "C": 1651.27,
+    "A": 2462.07,
+    "T": 1939.09,
+    "mean_fold_mae": 2017.48,
+    "mae": 2017.45,
+    "wape_pct": 107.69,
+    "n": 36828
+   }
+  }
+ },
+ "decision": {
+  "Onion": {
+   "replace_with": null,
+   "lowest_mean_mae": "pooled_prod",
+   "lowest_vs_current_pct": 0.0
+  },
+  "Potato": {
+   "replace_with": null,
+   "lowest_mean_mae": "crop_rf",
+   "lowest_vs_current_pct": 1.47
+  },
+  "Tomato": {
+   "replace_with": null,
+   "lowest_mean_mae": "crop_xgb_half",
+   "lowest_vs_current_pct": 0.93
+  }
+ },
+ "seconds": 376
+}

@@ -66,6 +66,8 @@ class ForecastPoint(BaseModel):
     beats_baseline: bool
     model_mae: float | None = None  # None for a historical estimate (no model involved)
     baseline_mae: float | None = None
+    method: Literal["historical_baseline"] | None = None   # set on a target past the model's reach (a historical estimate)
+    validation_reason: str | None = None                   # why this point is not validated, when the backend states it
 
 
 class PeakInfo(BaseModel):
@@ -155,7 +157,8 @@ class ModelInfo(BaseModel):
     version: str
     algorithm: str
     approach: str
-    data_end: dt.date
+    data_end: dt.date                          # newest price really reported in the loaded records
+    trained_data_end: dt.date | None = None    # last date the loaded models were trained on
 
 
 class ProjectionInfo(BaseModel):
@@ -180,7 +183,9 @@ class SourceInfo(BaseModel):
     data_age_days: int
     fallback: bool
     observations: int
-    note: str | None = None   # set when the freshness gate replaced a stale market with the state median
+    note: str | None = None   # set when the freshness gate replaced a stale market with the state median, or the planned date is past the model's reach
+    # "historical_baseline" when only the planned date's price is a historical estimate (past the model's reach); the daily path stays the model's
+    target_method: Literal["historical_baseline"] | None = None
 
 
 class DatesInfo(BaseModel):
@@ -429,6 +434,7 @@ class CommodityOption(BaseModel):
 class PriceOptionsResponse(BaseModel):
     data_start: dt.date
     data_end: dt.date
+    trained_data_end: dt.date | None = None
     projection_end: dt.date
     inflation_annual_pct: float
     today: dt.date

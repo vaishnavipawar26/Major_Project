@@ -31,6 +31,7 @@ reference; its old calendar and commodity map are in `dataset/raw/legacy/`).
 Provided by the project team as `Maharashtra_Crop_Prices_2023_2025_Cleaned.csv`. The column
 layout (State, Market, Commodity, Variety, Arrivals, Min/Max/Modal price in ₹/quintal) matches
 the Government of India **AGMARKNET** mandi price reports (agmarknet.gov.in / data.gov.in).
+**More data:** `dataset/IMPORT_PRICE_DATA.md` lists the sources checked, the fields needed and the validated import (`scripts/import_price_data.py`).
 **To confirm:** the exact download source, licence and the cleaning applied before it was named
 "Cleaned" are not documented in the file; the team should record them here.
 

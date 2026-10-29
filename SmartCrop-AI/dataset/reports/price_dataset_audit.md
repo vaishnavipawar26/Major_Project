@@ -1,6 +1,6 @@
 # Price Dataset Audit
 
-Generated 2026-10-18T16:11:37+00:00 by `scripts/audit_price_data.py` (read-only; raw data untouched).
+Generated 2026-10-28T18:26:30+00:00 by `scripts/audit_price_data.py` (read-only; raw data untouched).
 
 ## 1. Size and identity
 
